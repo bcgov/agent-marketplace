@@ -1,4 +1,4 @@
-.PHONY: setup validate validate-one marketplace generate test docs format lint verify
+.PHONY: setup validate validate-one marketplace generate test docs serve format lint verify
 
 # One-time (or after pulling new deps): install the Python tooling declared in
 # pyproject.toml into a uv-managed virtualenv. Running `uv run` also does this
@@ -30,6 +30,15 @@ test:
 # Build the static site and client-side search index.
 docs:
 	bash docs/build.sh
+
+# Preview the built site. The catalog page fetches assets/catalog.json and the
+# search index, which browsers refuse to load from file:// URLs, so the site
+# has to be served over HTTP to browse it. Run `make docs` first.
+# Usage: make serve [PORT=8000]
+PORT ?= 8000
+serve:
+	@echo "Serving docs/ at http://localhost:$(PORT)/ (Ctrl+C to stop)"
+	@cd docs && uv run python -m http.server $(PORT)
 
 # Auto-format all Python to the repo style (2-space indent, double quotes).
 format:

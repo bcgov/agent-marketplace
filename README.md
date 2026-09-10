@@ -52,6 +52,26 @@ make generate
 make docs
 ```
 
+## Previewing the website locally
+
+`make docs` writes the site into [docs/](docs/) but does not serve it. Open the
+built pages over HTTP rather than from disk: the catalog page fetches
+`assets/catalog.json` and the search index at runtime, and browsers block those
+requests on `file://` URLs, so a directly opened page loads with an empty
+catalog.
+
+```bash
+make generate   # refresh catalog projections if packages or the release changed
+make docs       # assemble the pages and search index
+make serve      # http://localhost:8000/ — Ctrl+C to stop
+```
+
+Pass `PORT` when 8000 is taken, for example `make serve PORT=8080`. The server
+reads whatever is already built, so after editing anything in `docs/_pages/`,
+`docs/_partials/`, or a package, re-run `make generate && make docs` and reload
+the page. Nothing in `docs/*.html` or `docs/_generated/` should be edited by
+hand; those are generated and `make verify` fails on drift.
+
 ## Trust and operations
 
 - **Approved discovery source** means the source may be searched; individual results are not approved.
