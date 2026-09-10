@@ -1604,11 +1604,11 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
-<h1>Pipeline &amp; Governance</h1>
+<h1 id="pipeline-governance">Pipeline &amp; Governance</h1>
 
 <p>The marketplace is repository-backed and statically generated. Publication is a protected GitHub merge, not an application deployment or registry push.</p>
 
-<h2>Publication path</h2>
+<h2 id="publication-path">Publication path</h2>
 
 <pre><code>signed in-repo branch
         │
@@ -1631,15 +1631,15 @@ fork gate → lint/tests → portable skill validation
 
 <p>The single required <code>results</code> job aggregates every PR gate. Validation reads contributed package files as data and never executes their scripts.</p>
 
-<h2>Generated record</h2>
+<h2 id="generated-record">Generated record</h2>
 
 <p><code>scripts/marketplace.py</code> validates the closed manifest, scans package bytes, inventories every file, calculates a package-tree SHA-256 digest, and produces both <code>catalog/catalog.json</code> and escaped website cards. Centrally controlled source, review evidence, and approved third-party discovery sources are added during generation; authors cannot provide them.</p>
 
-<h2>Federated intake</h2>
+<h2 id="federated-intake">Federated intake</h2>
 
 <p>The finder registers one issue fingerprinted by repository, full commit SHA, and package path. The issue workflow independently downloads that immutable candidate, computes its digest, and scans it as data. Unapproved sources, malformed intake, a supplied digest mismatch, or blocking policy findings fail closed. Human review remains asynchronous and only published records enter default discovery.</p>
 
-<h2>Control boundaries</h2>
+<h2 id="control-boundaries">Control boundaries</h2>
 
 <table><thead><tr><th>Actor</th><th>May do</th><th>May not do</th></tr></thead><tbody>
 <tr><td>Finder</td><td>Search, refine, inspect, confirm, install, register</td><td>Install silently, override blockers, confer review</td></tr>
@@ -1648,7 +1648,7 @@ fork gate → lint/tests → portable skill validation
 <tr><td>Reviewers</td><td>Approve exact revisions and capabilities</td><td>Transfer evidence to changed bytes</td></tr>
 </tbody></table>
 
-<h2>Operations</h2>
+<h2 id="operations">Operations</h2>
 
 <p>Marketplace owners can quarantine or remove a record by lifecycle state, regenerate projections, publish receipt-based removal guidance, and roll back to a previously reviewed immutable revision. See the <a href="https://github.com/bcgov/agent-marketplace/blob/main/docs/MARKETPLACE_RUNBOOK.md">operations runbook</a> and <a href="https://github.com/bcgov/agent-marketplace/blob/main/SECURITY.md">private reporting route</a>.</p>
 </main>

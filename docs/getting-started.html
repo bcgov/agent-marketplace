@@ -1604,11 +1604,11 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
-<h1>Getting Started</h1>
+<h1 id="getting-started">Getting Started</h1>
 
 <p>This repository provides two BC Gov marketplace workflows for GitHub Copilot: <code>bcgov-find-extension</code> and <code>bcgov-create-extension</code>.</p>
 
-<h2>Prerequisites</h2>
+<h2 id="prerequisites">Prerequisites</h2>
 
 <ul>
     <li>A GitHub Copilot version that supports Agent Skills.</li>
@@ -1622,7 +1622,7 @@
     <div>The companion skills do not require a marketplace checkout, Python, or <code>uv</code>. Those tools are used by marketplace maintainers and trusted CI.</div>
 </div>
 
-<h2>Available workflows</h2>
+<h2 id="available-workflows">Available workflows</h2>
 
 <dl class="release-facts">
     <div><dt>Finder</dt><dd><code>bcgov-find-extension</code> searches generated catalog records and presents installation evidence.</dd></div>
@@ -1630,7 +1630,7 @@
     <div><dt>Source</dt><dd>Immutable companion folders under <code>.github/skills/</code> in the hosted marketplace repository.</dd></div>
 </dl>
 
-<h2>Install the companions</h2>
+<h2 id="install-the-companions">Install the companions</h2>
 
 <p>Use the published marketplace revision. APM is preferred because it records a manifest and lockfile:</p>
 
@@ -1646,7 +1646,7 @@
     --skill bcgov-find-extension --skill bcgov-create-extension \
     --agent github-copilot -y</code></pre>
 
-<h2>Use the workflows</h2>
+<h2 id="use-the-workflows">Use the workflows</h2>
 
 <p>From any workspace, ask GitHub Copilot:</p>
 

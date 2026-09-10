@@ -1604,13 +1604,13 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
-<h1>Create a Skill</h1>
+<h1 id="create-a-skill">Create a Skill</h1>
 
 <p>The creation companion owns the path from an idea in any workspace to a review-ready draft pull request. The contributor does not need a marketplace checkout, Python, or <code>uv</code>.</p>
 
 <pre><code>Turn this workflow idea into a BC Gov Agent Skill and prepare a draft pull request.</code></pre>
 
-<h2>What it does</h2>
+<h2 id="what-it-does">What it does</h2>
 
 <ol>
     <li>Searches the BC Gov catalog and every approved upstream source for equivalents.</li>
@@ -1624,9 +1624,9 @@
 
 <p><a href="getting-started.html" class="hero-action primary">Install bcgov-create-extension</a></p>
 
-<h2>Package contract</h2>
+<h2 id="package-contract">Package contract</h2>
 
-<pre><code>skills/&lt;name&gt;/
+<pre><code>skills/&lt;community-or-specialty&gt;/&lt;name&gt;/
 ├── SKILL.md
 ├── bcgov-extension.yaml
 ├── scripts/       optional, flat files only
@@ -1635,13 +1635,13 @@
 
 <p>Hosted packages use Apache-2.0 and IDs of the form <code>bcgov-public/&lt;name&gt;</code>. Metadata declares prerequisites and all filesystem, network, command, environment-variable, secret-name, and data-class capabilities. Authors cannot set review fields.</p>
 
-<h2>Publication boundary</h2>
+<h2 id="publication-boundary">Publication boundary</h2>
 
 <div class="alert alert-warning"><div class="alert-icon" aria-hidden="true">!</div><div>The companion cannot approve, merge, assign human review evidence, or transfer evidence to changed bytes. CI and required reviewers decide publication for the exact pull-request revision.</div></div>
 
 <p>If GitHub integration, branch access, or commit signing is unavailable, staged work is preserved and the companion provides the access or recovery action. Forks are not used for submission.</p>
 
-<h2>Manual contribution</h2>
+<h2 id="manual-contribution">Manual contribution</h2>
 
 <p>Marketplace maintainers working directly in this repository follow <a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>. This optional local path uses the repository's Python and <code>uv</code> toolchain:</p>
 

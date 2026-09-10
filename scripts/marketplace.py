@@ -680,13 +680,14 @@ def build_catalog(root: Path) -> tuple[dict, str]:
   # string. Escaping "<" at the JSON level keeps it valid and cannot close the
   # element early.
   vocabulary = json.dumps(
-    {"types": EXTENSION_TYPE_ORDER, "installer-version": str(config["installer-version"])},
+    {
+      "types": EXTENSION_TYPE_ORDER,
+      "installer-version": str(config["installer-version"]),
+    },
     sort_keys=True,
   ).replace("<", "\\u003c")
   header = (
-    '<script type="application/json" id="catalog-vocabulary">'
-    f"{vocabulary}"
-    "</script>"
+    f'<script type="application/json" id="catalog-vocabulary">{vocabulary}</script>'
   )
   return catalog, "\n\n".join([header, *cards]) + "\n"
 
@@ -726,8 +727,10 @@ def _catalog_row(record: dict) -> str:
 
   granted = [phrase for key, _label, phrase in ACCESS_SIGNALS if signals[key]]
   withheld = [phrase for key, _label, phrase in ACCESS_SIGNALS if not signals[key]]
-  sentence = f"Declared access: {_join_phrases(granted)}." if granted else (
-    "Declares no commands, network, or file writes."
+  sentence = (
+    f"Declared access: {_join_phrases(granted)}."
+    if granted
+    else ("Declares no commands, network, or file writes.")
   )
   if granted and withheld:
     sentence += f" Does not declare that it {_join_phrases(withheld)}."
@@ -755,7 +758,8 @@ def _catalog_row(record: dict) -> str:
 
   return "\n".join(
     [
-      f'<article class="cat-row" data-extension-id="{html.escape(record["id"], quote=True)}"',
+      '<article class="cat-row" '
+      f'data-extension-id="{html.escape(record["id"], quote=True)}"',
       f'  data-type="{html.escape(record.get("type") or "", quote=True)}"',
       f'  data-specialty="{html.escape(specialty, quote=True)}"',
       f'  data-lifecycle="{html.escape(record.get("lifecycle") or "", quote=True)}"',

@@ -1604,7 +1604,7 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
-<h1>SKILL.md Spec</h1>
+<h1 id="skillmd-spec">SKILL.md Spec</h1>
 
 <p>Every skill in this repo is described by a <code>SKILL.md</code> manifest, validated by the PR check. This page summarises what the validator enforces. The authoritative document lives at <a href="https://github.com/bcgov/agent-marketplace/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener"><code>spec/SKILL_SPEC.md</code></a>.</p>
 
@@ -1613,7 +1613,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     </div>
     <div>
-        The PR check runs <code>scripts/validate_skill.py</code> against every <strong>changed</strong> skill. Run the same checks locally with <code>uv run python scripts/validate_skill.py --all</code> (or just one skill: <code>uv run python scripts/validate_skill.py skills/&lt;name&gt;/SKILL.md</code>).
+        The PR check runs <code>scripts/validate_skill.py</code> against every <strong>changed</strong> skill. Run the same checks locally with <code>uv run python scripts/validate_skill.py --all</code> (or just one skill: <code>uv run python scripts/validate_skill.py skills/&lt;bucket&gt;/&lt;name&gt;/SKILL.md</code>).
     </div>
 </div>
 
@@ -1644,7 +1644,7 @@
 
 <div class="grid grid-2">
     <div class="card">
-        <h3 style="margin-top:0;"><code>name</code> rules</h3>
+        <h3 id="name-rules" style="margin-top:0;"><code>name</code> rules</h3>
         <ul>
             <li>Kebab-case (<code>^[a-z0-9]+(-[a-z0-9]+)*$</code>): lowercase letters and digits in hyphen-separated groups, no leading, trailing, or consecutive hyphens.</li>
             <li>At most <strong>64 characters</strong>.</li>
@@ -1652,7 +1652,7 @@
         </ul>
     </div>
     <div class="card">
-        <h3 style="margin-top:0;"><code>description</code> rules</h3>
+        <h3 id="description-rules" style="margin-top:0;"><code>description</code> rules</h3>
         <ul>
             <li>At most <strong>1024 characters</strong>.</li>
             <li><strong>No angle brackets</strong> (<code>&lt;</code> or <code>&gt;</code>): they get misread as markup where the manifest is injected.</li>
@@ -1674,7 +1674,7 @@
     </div>
 </div>
 
-<h3 style="margin-top: 1.5rem;">Example</h3>
+<h3 id="example" style="margin-top: 1.5rem;">Example</h3>
 
 <pre><code class="language-yaml">---
 name: example-skill
@@ -1747,9 +1747,9 @@ See [references/REFERENCE.md](references/REFERENCE.md) for &lt;heavy detail&gt;<
     <li><strong>Section headings use a straight ASCII apostrophe.</strong> Write <code>## Don't Use When</code> with <code>'</code> (U+0027), not the curly <code>'</code> (U+2019) that some editors auto-insert. The validator normalises smart quotes to straight in the heading-match step, so the canonical form in your file is the ASCII one.</li>
 </ul>
 
-<h3 style="margin-top: 1.5rem;">Run it locally</h3>
+<h3 id="run-it-locally" style="margin-top: 1.5rem;">Run it locally</h3>
 
-<pre><code>uv run python scripts/validate_skill.py skills/&lt;your-skill&gt;/SKILL.md
+<pre><code>uv run python scripts/validate_skill.py skills/community/&lt;your-skill&gt;/SKILL.md
 
 # or validate every skill
 uv run python scripts/validate_skill.py --all

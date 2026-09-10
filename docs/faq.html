@@ -1604,36 +1604,36 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
-<h1>Frequently Asked Questions</h1>
+<h1 id="frequently-asked-questions">Frequently Asked Questions</h1>
 
-<h2>What is published here?</h2>
+<h2 id="what-is-published-here">What is published here?</h2>
 <p>Agent Skills only: portable <code>SKILL.md</code> instructions plus optional flat resources and closed marketplace metadata. Hooks, MCP servers, custom agents, and automatically executable extension types are not supported by this MVP.</p>
 
-<h2>Does “Marketplace reviewed” mean safe?</h2>
+<h2 id="does-marketplace-reviewed-mean-safe">Does “Marketplace reviewed” mean safe?</h2>
 <p>No. It means named reviewers assessed the exact published revision, digest, declared capabilities, and available evidence. The marketplace does not use “safe” or “verified secure” claims.</p>
 
-<h2>What does “Unreviewed candidate” mean?</h2>
+<h2 id="what-does-unreviewed-candidate-mean">What does “Unreviewed candidate” mean?</h2>
 <p>An immutable third-party source was submitted for review. Trusted CI still needs to compute its digest and run deterministic policy checks, and BC Gov reviewers have not approved it.</p>
 
-<h2>Why is the source a full commit SHA?</h2>
+<h2 id="why-is-the-source-a-full-commit-sha">Why is the source a full commit SHA?</h2>
 <p>A branch or tag can move. A full commit SHA plus package-tree digest binds discovery, scan, review, install, and receipt evidence to the same bytes.</p>
 
-<h2>Why are there two companion skills?</h2>
+<h2 id="why-are-there-two-companion-skills">Why are there two companion skills?</h2>
 <p><code>bcgov-find-extension</code> handles discovery, controlled installation, and third-party candidate registration. <code>bcgov-create-extension</code> handles authoring and hosted submission. Keeping the entry points separate loads only the workflow needed for the request.</p>
 
-<h2>Are installed skills global too?</h2>
+<h2 id="are-installed-skills-global-too">Are installed skills global too?</h2>
 <p>Reviewed catalog skills default to the current project. Third-party candidates are project-local only. The finder shows the exact destination and material capabilities before confirmation.</p>
 
-<h2>Where is installation evidence?</h2>
+<h2 id="where-is-installation-evidence">Where is installation evidence?</h2>
 <p>Preferred APM installs use <code>apm.yml</code> and <code>apm.lock.yaml</code>; the fallback installer may write <code>skills-lock.json</code>. Legacy helper receipts live under <code>.github/agent-marketplace/receipts/</code>. Local evidence stays in the project unless the developer chooses to share it for support or incident response.</p>
 
-<h2>Can a companion publish its own work?</h2>
+<h2 id="can-a-companion-publish-its-own-work">Can a companion publish its own work?</h2>
 <p>No. The creator may open a signed draft pull request, but cannot approve, merge, modify protection, or assign review status. CI and human reviewers decide publication.</p>
 
-<h2>What if I cannot push a branch?</h2>
+<h2 id="what-if-i-cannot-push-a-branch">What if I cannot push a branch?</h2>
 <p>The creator preserves the staged package and provides an access-request action. Fork PRs are intentionally blocked. Third-party registration uses issues and does not require branch access.</p>
 
-<h2>How is a package quarantined?</h2>
+<h2 id="how-is-a-package-quarantined">How is a package quarantined?</h2>
 <p>Maintainers set its lifecycle to <code>quarantined</code>, regenerate, and publish through review. The finder excludes it from default results. Support then identifies affected receipts or declared dependencies and publishes update or removal guidance.</p>
 </main>
     <footer class="site-footer">

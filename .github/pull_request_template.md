@@ -5,7 +5,7 @@
 
 ## What this PR changes
 
-<!-- One or two sentences. Link the skill: skills/<name>/SKILL.md -->
+<!-- One or two sentences. Link the skill: skills/<bucket>/<name>/SKILL.md -->
 
 ## Why
 

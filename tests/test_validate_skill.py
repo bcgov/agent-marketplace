@@ -359,12 +359,16 @@ def test_discover_all_finds_manifests_under_both_roots():
 
 
 def test_discover_all_finds_canonical_layouts():
-  """Canonical packages under skills/community/<name>/ and skills/security/<name>/ are discovered."""
+  """Canonical community and security package layouts are discovered."""
   with tempfile.TemporaryDirectory() as root:
     os.makedirs(os.path.join(root, "skills", "community", "azure-networking"))
-    open(os.path.join(root, "skills", "community", "azure-networking", "SKILL.md"), "w").close()
+    open(
+      os.path.join(root, "skills", "community", "azure-networking", "SKILL.md"), "w"
+    ).close()
     os.makedirs(os.path.join(root, "skills", "security", "repo-hardening"))
-    open(os.path.join(root, "skills", "security", "repo-hardening", "SKILL.md"), "w").close()
+    open(
+      os.path.join(root, "skills", "security", "repo-hardening", "SKILL.md"), "w"
+    ).close()
     cwd = os.getcwd()
     try:
       os.chdir(root)

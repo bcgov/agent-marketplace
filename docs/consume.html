@@ -1604,13 +1604,13 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
-<h1>Install an Extension</h1>
+<h1 id="install-an-extension">Install an Extension</h1>
 
 <p>The supported path starts with the two marketplace companions. They make reviewed discovery, capability presentation, immutable source inspection, installation locks, and third-party registration available inside ordinary GitHub Copilot requests.</p>
 
 <p><a href="getting-started.html" class="hero-action primary">Install the marketplace companions</a></p>
 
-<h2>Reviewed BC Gov skill</h2>
+<h2 id="reviewed-bc-gov-skill">Reviewed BC Gov skill</h2>
 
 <ol>
     <li>Ask Copilot to find a skill for the task.</li>
@@ -1621,7 +1621,7 @@
 
 <pre><code>Find me a reviewed BC Gov skill for hardening GitHub Actions.</code></pre>
 
-<h2>Third-party candidate</h2>
+<h2 id="third-party-candidate">Third-party candidate</h2>
 
 <p>When no BC Gov result fits, the finder searches every approved discovery source. A selected result is resolved to a canonical GitHub repository, full commit SHA, and package path before it enters isolated staging.</p>
 
@@ -1634,13 +1634,13 @@
     <li>Install only after reviewers publish the exact revision and digest in the BC Gov catalog.</li>
 </ol>
 
-<h2>Locks, receipts, and recovery</h2>
+<h2 id="locks-receipts-and-recovery">Locks, receipts, and recovery</h2>
 
 <p>APM records installs in <code>apm.yml</code> and <code>apm.lock.yaml</code>; the fallback installer may write <code>skills-lock.json</code>. Registration evidence includes source, full revision, path, CI-computed digest, policy findings, capabilities, and issue result.</p>
 
 <p>Ask Copilot to verify installed marketplace skills against the installer lock and selected catalog evidence. A registration failure does not remove or relabel a local installation; retry registration independently.</p>
 
-<h2>Direct install</h2>
+<h2 id="direct-install">Direct install</h2>
 
 <pre><code>apm install \
     bcgov/agent-marketplace/skills/&lt;specialty&gt;/&lt;skill-name&gt;#&lt;full-commit-sha&gt; \
