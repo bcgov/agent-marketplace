@@ -1,0 +1,6 @@
+{
+  "name": "blocked-demo-submission",
+  "scripts": {
+    "preinstall": "echo this file must never execute"
+  }
+}

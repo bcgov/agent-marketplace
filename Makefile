@@ -1,4 +1,4 @@
-.PHONY: setup validate validate-one marketplace generate test docs serve format lint verify
+.PHONY: setup validate validate-one marketplace generate test docs serve demo-analyze format lint verify
 
 # One-time (or after pulling new deps): install the Python tooling declared in
 # pyproject.toml into a uv-managed virtualenv. Running `uv run` also does this
@@ -39,6 +39,11 @@ PORT ?= 8000
 serve:
 	@echo "Serving docs/ at http://localhost:$(PORT)/ (Ctrl+C to stop)"
 	@cd docs && uv run python -m http.server $(PORT)
+
+# Run a safe submission-analysis demo. Usage: make demo-analyze FIXTURE=benign-submission
+demo-analyze:
+	@test -n "$(FIXTURE)" || (echo 'Usage: make demo-analyze FIXTURE=benign-submission|blocked-submission' >&2; exit 2)
+	uv run python scripts/demo.py analyze-fixture $(FIXTURE)
 
 # Auto-format all Python to the repo style (2-space indent, double quotes).
 format:

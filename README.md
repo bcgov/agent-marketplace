@@ -66,6 +66,11 @@ make docs       # assemble the pages and search index
 make serve      # http://localhost:8000/ — Ctrl+C to stop
 ```
 
+Community onboarding demos live in
+[docs/demos/README.md](docs/demos/README.md). They cover discovery,
+installation guidance, authoring, submission analysis, the GUI, trust and
+digest evidence, and the no-match path without executing contributed content.
+
 Pass `PORT` when 8000 is taken, for example `make serve PORT=8080`. The server
 reads whatever is already built, so after editing anything in `docs/_pages/`,
 `docs/_partials/`, or a package, re-run `make generate && make docs` and reload

@@ -1,0 +1,22 @@
+schema-version: bcgov-extension/v1alpha1
+id: bcgov-public/demo-submission
+display-name: Demo Submission
+summary: A tiny benign package used to demonstrate deterministic submission analysis.
+publisher: Province of British Columbia
+maintainers:
+  - "@bcgov/platform-services"
+support: https://github.com/bcgov/agent-marketplace/issues
+license: Apache-2.0
+lifecycle: active
+prerequisites:
+  - GitHub Copilot
+capabilities:
+  filesystem:
+    read: []
+    write: []
+  network: []
+  commands: []
+  environment-variables: []
+  secret-names: []
+  data-classes:
+    - PUBLIC

@@ -2,6 +2,7 @@
 
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -248,6 +249,43 @@ def test_scanner_blocks_undeclared_script(tmp_path):
   (scripts / "run.sh").write_text("printf 'hello\\n'\n", encoding="utf-8")
   scan = m.scan_package(package, _manifest())
   assert any(item["code"] == "undeclared-script" for item in scan["findings"])
+
+
+@pytest.mark.parametrize(
+  ("fixture", "outcome", "finding"),
+  [
+    ("benign-submission", "passed", None),
+    ("blocked-submission", "blocked", "blocked-extension-type"),
+  ],
+)
+def test_phase5_demo_fixtures_are_deterministic(fixture, outcome, finding):
+  """Phase 5 fixtures demonstrate pass/block outcomes without execution."""
+  package = ROOT / "docs" / "demos" / "fixtures" / fixture
+  manifest = m.load_yaml(package / m.MANIFEST_NAME)
+  scan = m.scan_package(package, manifest)
+  assert scan["outcome"] == outcome
+  if finding:
+    assert any(item["code"] == finding for item in scan["findings"])
+
+
+def test_phase5_demo_helper_isolated_and_non_executing():
+  """The demo helper reports evidence and removes its temporary package."""
+  result = subprocess.run(
+    [
+      sys.executable,
+      str(ROOT / "scripts" / "demo.py"),
+      "analyze-fixture",
+      "blocked-submission",
+    ],
+    cwd=ROOT,
+    check=True,
+    capture_output=True,
+    text=True,
+  )
+  evidence = json.loads(result.stdout)
+  assert evidence["classification"] == "blocked"
+  assert evidence["scan"]["outcome"] == "blocked"
+  assert not list((ROOT / "skills" / "community").glob("demo-*"))
 
 
 def test_analysis_routes_valid_submission_to_marketplace_review(tmp_path):
