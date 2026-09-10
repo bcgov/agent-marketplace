@@ -322,6 +322,430 @@
             margin-top: 0;
         }
 
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Catalog: faceted rail, aligned rows, sticky evidence panel.
+           Sized for hundreds of records, so nothing here repeats a value
+           that is constant across the corpus. */
+        main:has(.catalog-app) {
+            max-width: 1560px;
+        }
+
+        .catalog-app {
+            display: grid;
+            grid-template-columns: 15rem minmax(0, 1fr) 23rem;
+            align-items: start;
+            gap: 1.75rem;
+            margin: 1.5rem 0 2rem;
+        }
+
+        .catalog-rail {
+            position: sticky;
+            top: 5.5rem;
+            max-height: calc(100vh - 7rem);
+            overflow-y: auto;
+            background: var(--white);
+            border-radius: 10px;
+            padding: 1.1rem 1.15rem 1.25rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .catalog-search {
+            width: 100%;
+            min-height: 44px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 0.6rem 0.75rem;
+            font: inherit;
+            color: var(--text-primary);
+            background: var(--white);
+        }
+
+        .catalog-facet {
+            margin-top: 1.15rem;
+        }
+
+        .catalog-facet h3 {
+            margin: 0 0 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--bc-blue);
+        }
+
+        .catalog-facet ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .catalog-facet li {
+            margin: 0;
+        }
+
+        .facet-option {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.6rem;
+            width: 100%;
+            min-height: 32px;
+            padding: 0.28rem 0.45rem;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            font: inherit;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .facet-option:hover {
+            background: var(--bg-light);
+        }
+
+        .facet-option[aria-pressed="true"] {
+            background: var(--bc-blue);
+            color: var(--white);
+            font-weight: 600;
+        }
+
+        .facet-count {
+            flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+
+        .facet-option[aria-pressed="true"] .facet-count {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .facet-option[disabled] {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        .catalog-reset {
+            margin-top: 1.15rem;
+            padding: 0;
+            border: none;
+            background: none;
+            font: inherit;
+            font-size: 0.875rem;
+            color: var(--bc-blue-light);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .catalog-results {
+            min-width: 0;
+        }
+
+        .catalog-status {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin: 0 0 0.6rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .catalog-legend {
+            display: flex;
+            gap: 1rem;
+            margin: 0 0 0.75rem;
+            padding: 0;
+            list-style: none;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+        }
+
+        .catalog-legend li {
+            margin: 0;
+        }
+
+        .cat-list {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .cat-row {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 6rem 12.5rem 6.5rem;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.5rem 0.9rem;
+            border-top: 1px solid #e6e9ee;
+        }
+
+        .cat-row:first-child {
+            border-top: none;
+        }
+
+        /* An author-level display value outranks the hidden attribute, so
+           filtered rows need this to actually disappear. */
+        .cat-row[hidden] {
+            display: none;
+        }
+
+        .cat-row:hover {
+            background: #f7f9fc;
+        }
+
+        .cat-row.is-selected {
+            background: #fffaed;
+            box-shadow: inset 3px 0 0 var(--bc-gold);
+        }
+
+        .cat-row:focus-within {
+            outline: 3px solid rgba(252, 186, 25, 0.55);
+            outline-offset: -3px;
+        }
+
+        .cat-row-id {
+            min-width: 0;
+        }
+
+        .cat-row h3 {
+            margin: 0;
+            font-size: 0.9375rem;
+            line-height: 1.3;
+        }
+
+        .cat-row-open {
+            display: block;
+            width: 100%;
+            padding: 0;
+            border: none;
+            background: none;
+            font: inherit;
+            font-weight: 700;
+            color: var(--bc-blue);
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .cat-row-open::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+        }
+
+        .cat-row-open:focus-visible {
+            outline: none;
+        }
+
+        .cat-row-summary {
+            margin: 0.1rem 0 0;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            line-height: 1.35;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cat-row-domain {
+            margin: 0;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cat-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.25rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .cat-slot {
+            margin: 0;
+            padding: 0.15rem 0.2rem;
+            border-radius: 4px;
+            font-size: 0.6875rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .cat-slot.is-on {
+            background: #e7eef6;
+            color: var(--bc-blue);
+            font-weight: 600;
+        }
+
+        .cat-slot.is-on[data-signal="network"] {
+            background: #e2ecf7;
+            color: #14507f;
+        }
+
+        .cat-slot.is-on[data-signal="writes"] {
+            background: #f7ebe0;
+            color: #8a4715;
+        }
+
+        .cat-slot.is-off {
+            border: 1px dashed #d7dce3;
+            padding: calc(0.15rem - 1px) calc(0.2rem - 1px);
+            color: #a9b1bd;
+        }
+
+        /* Colour tracks the strength of the evidence, so a weaker review
+           never reads as a full marketplace review. */
+        .cat-row-trust {
+            margin: 0;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1c6b3f;
+            white-space: nowrap;
+        }
+
+        .cat-row-trust[data-status="domain-reviewed"] {
+            color: var(--bc-blue-light);
+        }
+
+        .cat-row-trust[data-status="unreviewed"],
+        .cat-row-trust[data-status="locally-scanned-not-bc-gov-reviewed"] {
+            color: #8a4715;
+        }
+
+        .catalog-detail {
+            position: sticky;
+            top: 5.5rem;
+            max-height: calc(100vh - 7rem);
+            overflow-y: auto;
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow-sm);
+            padding: 1.25rem;
+        }
+
+        .catalog-detail h3 {
+            margin-top: 0;
+        }
+
+        .catalog-detail h4 {
+            margin: 1.1rem 0 0.4rem;
+            font-size: 0.9rem;
+            color: var(--bc-blue);
+        }
+
+        .catalog-detail pre {
+            margin: 0.4rem 0;
+            font-size: 0.8rem;
+        }
+
+        .catalog-detail dl {
+            display: grid;
+            gap: 0.55rem;
+            margin: 0.75rem 0;
+        }
+
+        .catalog-detail dl div {
+            display: grid;
+            grid-template-columns: 6.5rem minmax(0, 1fr);
+            gap: 0.6rem;
+            font-size: 0.875rem;
+        }
+
+        .catalog-detail dt {
+            color: var(--text-secondary);
+        }
+
+        .catalog-detail dd {
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .catalog-empty {
+            padding: 2rem 1.25rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 1240px) {
+            .catalog-app {
+                grid-template-columns: 14rem minmax(0, 1fr);
+            }
+
+            .catalog-detail {
+                position: static;
+                max-height: none;
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .catalog-app {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .catalog-rail {
+                position: static;
+                max-height: none;
+            }
+
+            .cat-row {
+                grid-template-columns: minmax(0, 1fr) auto;
+                grid-template-areas:
+                    "id trust"
+                    "slots domain";
+                gap: 0.4rem 0.75rem;
+                padding: 0.65rem 0.9rem;
+            }
+
+            .cat-row-id {
+                grid-area: id;
+            }
+
+            .cat-row-trust {
+                grid-area: trust;
+                align-self: start;
+            }
+
+            .cat-slots {
+                grid-area: slots;
+                grid-template-columns: repeat(3, minmax(0, 5.5rem));
+                justify-content: start;
+            }
+
+            .cat-row-domain {
+                grid-area: domain;
+                text-align: right;
+                align-self: center;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+
         /* Clickable Cards */
         a.card-link {
             display: block;
@@ -546,22 +970,35 @@
             color: var(--white);
         }
 
-        .shell-switch {
+        .catalog-search:focus,
+        .facet-option:focus-visible,
+        .catalog-reset:focus-visible {
+            outline: 3px solid rgba(252, 186, 25, 0.5);
+            outline-offset: 2px;
+        }
+
+        .install-note {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            font-size: 0.8125rem;
+        }
+
+        .install-switch {
             display: inline-flex;
             border: 1px solid #9aa7b5;
             border-radius: 6px;
             overflow: hidden;
-            margin: 0.5rem 0 1rem;
+            margin: 0.5rem 0 0.6rem;
         }
 
-        .shell-option,
-        .copy-command {
+        .shell-option {
             border: 0;
             background: var(--white);
             color: var(--bc-blue);
             font: inherit;
+            font-size: 0.8125rem;
             font-weight: 600;
-            padding: 0.65rem 1rem;
+            padding: 0.35rem 0.85rem;
             cursor: pointer;
         }
 
@@ -569,15 +1006,50 @@
             border-left: 1px solid #9aa7b5;
         }
 
-        .shell-option.active,
-        .copy-command {
+        .shell-option.active {
             background: var(--bc-blue);
             color: var(--white);
         }
 
+        /* Matches the site's dark code blocks, just scaled for the panel. */
+        .catalog-detail pre {
+            margin: 0;
+            padding: 0.7rem 0.8rem;
+            border-radius: 6px;
+            box-shadow: none;
+        }
+
+        .catalog-detail pre code {
+            font-size: 0.75rem;
+            line-height: 1.5;
+            /* Wrap rather than scroll: a partly hidden command reads as the
+               whole command. The copy button preserves the exact text. */
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
         .copy-command {
+            margin-top: 0.5rem;
+            border: 1px solid var(--bc-blue);
             border-radius: 4px;
-            margin: 0 0 1.5rem;
+            background: var(--white);
+            color: var(--bc-blue);
+            font: inherit;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            padding: 0.35rem 0.85rem;
+            cursor: pointer;
+        }
+
+        .copy-command:hover {
+            background: var(--bc-blue);
+            color: var(--white);
+        }
+
+        .shell-option:focus-visible,
+        .copy-command:focus-visible {
+            outline: 3px solid rgba(252, 186, 25, 0.5);
+            outline-offset: 2px;
         }
 
         .release-facts {
@@ -1134,7 +1606,7 @@
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
 <section class="hero">
     <span class="badge badge-gold">Agent Skills · GitHub backed</span>
-    <h1 id="bc-gov-agent-marketplace">BC Gov Agent Marketplace</h1>
+    <h1>BC Gov Agent Marketplace</h1>
     <p>Find reviewed BC Gov Agent Skills by purpose, inspect exact source and capabilities, and install immutable bytes with a project lockfile.</p>
     <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
         <a href="catalog.html" class="hero-action primary">Browse catalog</a>
@@ -1147,23 +1619,23 @@
     <div><strong>Development release.</strong> The first immutable marketplace commit still needs to be published and pinned before the companion install command is live.</div>
 </div>
 
-<h2 id="use-the-marketplace">Use the marketplace</h2>
+<h2>Use the marketplace</h2>
 
 <div class="grid grid-3">
-    <a href="catalog.html" class="card-link"><div class="card card-gold" style="height:100%;"><h3 id="browse-reviewed-records">Browse reviewed records</h3><p>Compare purpose, owner, exact revision, digest, capabilities, policy outcome, and review evidence generated from package metadata.</p><div class="card-arrow">Open catalog</div></div></a>
-    <a href="getting-started.html" class="card-link"><div class="card" style="height:100%;"><h3 id="ask-copilot-to-find-one">Ask Copilot to find one</h3><p>Install the two global companions, then search and install a reviewed project skill from an ordinary-language request.</p><div class="card-arrow">Get started</div></div></a>
-    <a href="contribute.html" class="card-link"><div class="card" style="height:100%;"><h3 id="turn-work-into-a-skill">Turn work into a skill</h3><p>Create a valid package, scan and preview public output, and open a signed draft pull request without assembling repository files by hand.</p><div class="card-arrow">Create a skill</div></div></a>
+    <a href="catalog.html" class="card-link"><div class="card card-gold" style="height:100%;"><h3>Browse reviewed records</h3><p>Compare purpose, owner, exact revision, digest, capabilities, policy outcome, and review evidence generated from package metadata.</p><div class="card-arrow">Open catalog</div></div></a>
+    <a href="getting-started.html" class="card-link"><div class="card" style="height:100%;"><h3>Ask Copilot to find one</h3><p>Install the two global companions, then search and install a reviewed project skill from an ordinary-language request.</p><div class="card-arrow">Get started</div></div></a>
+    <a href="contribute.html" class="card-link"><div class="card" style="height:100%;"><h3>Turn work into a skill</h3><p>Create a valid package, scan and preview public output, and open a signed draft pull request without assembling repository files by hand.</p><div class="card-arrow">Create a skill</div></div></a>
 </div>
 
-<h2 id="trust-is-attached-to-bytes">Trust is attached to bytes</h2>
+<h2>Trust is attached to bytes</h2>
 
 <div class="grid grid-3">
-    <div class="card"><h3 id="approved-discovery-source">Approved discovery source</h3><p>The finder may search the catalog. An individual result receives no trust status from discovery alone.</p></div>
-    <div class="card"><h3 id="unreviewed-candidate">Unreviewed candidate</h3><p>An immutable source is awaiting trusted CI scanning and human review.</p></div>
-    <div class="card card-gold"><h3 id="marketplace-reviewed">Marketplace reviewed</h3><p>Named reviewers assessed the exact published commit, package digest, and declared capabilities.</p></div>
+    <div class="card"><h3>Approved discovery source</h3><p>The finder may search the catalog. An individual result receives no trust status from discovery alone.</p></div>
+    <div class="card"><h3>Unreviewed candidate</h3><p>An immutable source is awaiting trusted CI scanning and human review.</p></div>
+    <div class="card card-gold"><h3>Marketplace reviewed</h3><p>Named reviewers assessed the exact published commit, package digest, and declared capabilities.</p></div>
 </div>
 
-<h2 id="marketplace-boundary">Marketplace boundary</h2>
+<h2>Marketplace boundary</h2>
 
 <p>The MVP publishes Agent Skills only. It does not publish hooks, MCP servers, custom agents, organization policy, or silent automatic execution. Installation always identifies a destination and requires confirmation.</p>
 </main>

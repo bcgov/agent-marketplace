@@ -594,6 +594,22 @@ def load_marketplace_config(root: Path) -> dict:
   return config
 
 
+TYPE_DIRECTORIES = {
+  "skills": "skill",
+  "prompts": "prompt",
+  "instructions": "instruction",
+  "agents": "agent",
+  "hooks": "hook",
+  "mcp": "mcp",
+}
+
+# Ordered by how likely a reader is to meet the type, not alphabetically.
+# Skills are the only publishable type today; prompts and instructions are
+# inert content and closest behind; agents, hooks, and MCP servers execute and
+# stay deferred until their runtime security models exist.
+EXTENSION_TYPE_ORDER = ["skill", "prompt", "instruction", "agent", "hook", "mcp"]
+
+
 def build_catalog(root: Path) -> tuple[dict, str]:
   """Build machine-readable and escaped HTML catalog projections."""
   schema = load_schema(root)
@@ -611,7 +627,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     specialty = parts[1] if len(parts) > 1 and parts[0] == "skills" else "community"
     record = {
       **manifest,
-      "type": "skill",
+      "type": TYPE_DIRECTORIES.get(parts[0], "skill"),
       "specialty": specialty,
       "source": {
         "repository": config["repository"],
@@ -656,38 +672,117 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     "count": len(records),
     "extensions": records,
   }
-  cards = []
-  for record in records:
-    source = record["source"]
-    source_url = f"{source['repository']}/tree/{source['revision']}/{source['path']}"
-    capabilities = record["capabilities"]
-    capability_count = sum(
-      len(value)
-      if isinstance(value, list)
-      else sum(len(items) for items in value.values())
-      for value in capabilities.values()
+  cards = [_catalog_row(record) for record in records]
+  # The page builds its facets from the rendered rows, so the canonical type
+  # vocabulary travels with them. Types absent from the catalog still appear,
+  # disabled, which shows the reader what this marketplace intends to carry.
+  # Script content is raw text, so HTML escaping would survive into the parsed
+  # string. Escaping "<" at the JSON level keeps it valid and cannot close the
+  # element early.
+  vocabulary = json.dumps(
+    {"types": EXTENSION_TYPE_ORDER, "installer-version": str(config["installer-version"])},
+    sort_keys=True,
+  ).replace("<", "\\u003c")
+  header = (
+    '<script type="application/json" id="catalog-vocabulary">'
+    f"{vocabulary}"
+    "</script>"
+  )
+  return catalog, "\n\n".join([header, *cards]) + "\n"
+
+
+TRUST_LABELS = {
+  "marketplace-reviewed": "Reviewed",
+  "domain-reviewed": "Domain reviewed",
+  "locally-scanned-not-bc-gov-reviewed": "Scanned only",
+  "unreviewed": "Unreviewed",
+}
+
+ACCESS_SIGNALS = (
+  ("commands", "Commands", "runs commands"),
+  ("network", "Network", "reaches the network"),
+  ("writes", "Writes", "writes files"),
+)
+
+
+def _access_signals(capabilities: dict) -> dict[str, list[str]]:
+  """Reduce declared capabilities to the three access facts users compare."""
+  filesystem = capabilities.get("filesystem") or {}
+  return {
+    "commands": list(capabilities.get("commands") or []),
+    "network": list(capabilities.get("network") or []),
+    "writes": list(filesystem.get("write") or []),
+  }
+
+
+def _catalog_row(record: dict) -> str:
+  """Render one catalog row, escaping every author-controlled value."""
+  capabilities = record["capabilities"]
+  signals = _access_signals(capabilities)
+  active = [key for key, _label, _phrase in ACCESS_SIGNALS if signals[key]]
+  status = (record.get("review") or {}).get("status") or "unreviewed"
+  trust = TRUST_LABELS.get(status, "Unreviewed")
+  specialty = record.get("specialty") or "community"
+
+  granted = [phrase for key, _label, phrase in ACCESS_SIGNALS if signals[key]]
+  withheld = [phrase for key, _label, phrase in ACCESS_SIGNALS if not signals[key]]
+  sentence = f"Declared access: {_join_phrases(granted)}." if granted else (
+    "Declares no commands, network, or file writes."
+  )
+  if granted and withheld:
+    sentence += f" Does not declare that it {_join_phrases(withheld)}."
+
+  haystack = " ".join(
+    [
+      record["display-name"],
+      record["summary"],
+      specialty,
+      record.get("type") or "",
+      " ".join(record.get("maintainers") or []),
+      " ".join(signals["commands"]),
+      " ".join(signals["network"]),
+    ]
+  ).lower()
+
+  slots = []
+  for key, label, _phrase in ACCESS_SIGNALS:
+    state = "is-on" if signals[key] else "is-off"
+    detail = ", ".join(signals[key][:6]) if signals[key] else "not declared"
+    slots.append(
+      f'    <li class="cat-slot {state}" data-signal="{key}" '
+      f'title="{label}: {html.escape(detail, quote=True)}">{label}</li>'
     )
-    escaped_id = html.escape(record["id"], quote=True)
-    escaped_owner = html.escape(", ".join(record["maintainers"]))
-    escaped_digest = html.escape(record["content-digest"])
-    escaped_source = html.escape(source_url, quote=True)
-    cards.append(
-      "\n".join(
-        [
-          f'<article class="card card-gold" data-extension-id="{escaped_id}">',
-          f"  <h3>{html.escape(record['display-name'])}</h3>",
-          '  <p><span class="badge badge-gold">Marketplace reviewed</span></p>',
-          f"  <p>{html.escape(record['summary'])}</p>",
-          f"  <p><strong>Owner:</strong> {escaped_owner}<br>",
-          f"  <strong>Capabilities:</strong> {capability_count} declared<br>",
-          f"  <strong>Digest:</strong> <code>{escaped_digest}</code></p>",
-          f'  <p><a href="{escaped_source}" target="_blank" '
-          'rel="noopener">Inspect immutable source</a></p>',
-          "</article>",
-        ]
-      )
-    )
-  return catalog, "\n\n".join(cards) + "\n"
+
+  return "\n".join(
+    [
+      f'<article class="cat-row" data-extension-id="{html.escape(record["id"], quote=True)}"',
+      f'  data-type="{html.escape(record.get("type") or "", quote=True)}"',
+      f'  data-specialty="{html.escape(specialty, quote=True)}"',
+      f'  data-lifecycle="{html.escape(record.get("lifecycle") or "", quote=True)}"',
+      f'  data-status="{html.escape(status, quote=True)}"',
+      f'  data-access="{html.escape(" ".join(active), quote=True)}"',
+      f'  data-haystack="{html.escape(haystack, quote=True)}">',
+      '  <div class="cat-row-id">',
+      f'    <h3><button type="button" class="cat-row-open">'
+      f"{html.escape(record['display-name'])}</button></h3>",
+      f'    <p class="cat-row-summary">{html.escape(record["summary"])}</p>',
+      "  </div>",
+      f'  <p class="cat-row-domain">{html.escape(specialty)}</p>',
+      f'  <ul class="cat-slots" aria-label="{html.escape(sentence, quote=True)}">',
+      *slots,
+      "  </ul>",
+      f'  <p class="cat-row-trust" data-status="{html.escape(status, quote=True)}">'
+      f"{html.escape(trust)}</p>",
+      "</article>",
+    ]
+  )
+
+
+def _join_phrases(items: list[str]) -> str:
+  """Join phrases into readable prose without Oxford-comma edge cases."""
+  if len(items) <= 1:
+    return "".join(items)
+  return f"{', '.join(items[:-1])} and {items[-1]}"
 
 
 def _serialized_catalog(catalog: dict) -> str:

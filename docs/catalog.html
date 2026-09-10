@@ -322,6 +322,430 @@
             margin-top: 0;
         }
 
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Catalog: faceted rail, aligned rows, sticky evidence panel.
+           Sized for hundreds of records, so nothing here repeats a value
+           that is constant across the corpus. */
+        main:has(.catalog-app) {
+            max-width: 1560px;
+        }
+
+        .catalog-app {
+            display: grid;
+            grid-template-columns: 15rem minmax(0, 1fr) 23rem;
+            align-items: start;
+            gap: 1.75rem;
+            margin: 1.5rem 0 2rem;
+        }
+
+        .catalog-rail {
+            position: sticky;
+            top: 5.5rem;
+            max-height: calc(100vh - 7rem);
+            overflow-y: auto;
+            background: var(--white);
+            border-radius: 10px;
+            padding: 1.1rem 1.15rem 1.25rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .catalog-search {
+            width: 100%;
+            min-height: 44px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 0.6rem 0.75rem;
+            font: inherit;
+            color: var(--text-primary);
+            background: var(--white);
+        }
+
+        .catalog-facet {
+            margin-top: 1.15rem;
+        }
+
+        .catalog-facet h3 {
+            margin: 0 0 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--bc-blue);
+        }
+
+        .catalog-facet ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .catalog-facet li {
+            margin: 0;
+        }
+
+        .facet-option {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.6rem;
+            width: 100%;
+            min-height: 32px;
+            padding: 0.28rem 0.45rem;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            font: inherit;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .facet-option:hover {
+            background: var(--bg-light);
+        }
+
+        .facet-option[aria-pressed="true"] {
+            background: var(--bc-blue);
+            color: var(--white);
+            font-weight: 600;
+        }
+
+        .facet-count {
+            flex-shrink: 0;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+
+        .facet-option[aria-pressed="true"] .facet-count {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .facet-option[disabled] {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        .catalog-reset {
+            margin-top: 1.15rem;
+            padding: 0;
+            border: none;
+            background: none;
+            font: inherit;
+            font-size: 0.875rem;
+            color: var(--bc-blue-light);
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .catalog-results {
+            min-width: 0;
+        }
+
+        .catalog-status {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            margin: 0 0 0.6rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .catalog-legend {
+            display: flex;
+            gap: 1rem;
+            margin: 0 0 0.75rem;
+            padding: 0;
+            list-style: none;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+        }
+
+        .catalog-legend li {
+            margin: 0;
+        }
+
+        .cat-list {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .cat-row {
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 6rem 12.5rem 6.5rem;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.5rem 0.9rem;
+            border-top: 1px solid #e6e9ee;
+        }
+
+        .cat-row:first-child {
+            border-top: none;
+        }
+
+        /* An author-level display value outranks the hidden attribute, so
+           filtered rows need this to actually disappear. */
+        .cat-row[hidden] {
+            display: none;
+        }
+
+        .cat-row:hover {
+            background: #f7f9fc;
+        }
+
+        .cat-row.is-selected {
+            background: #fffaed;
+            box-shadow: inset 3px 0 0 var(--bc-gold);
+        }
+
+        .cat-row:focus-within {
+            outline: 3px solid rgba(252, 186, 25, 0.55);
+            outline-offset: -3px;
+        }
+
+        .cat-row-id {
+            min-width: 0;
+        }
+
+        .cat-row h3 {
+            margin: 0;
+            font-size: 0.9375rem;
+            line-height: 1.3;
+        }
+
+        .cat-row-open {
+            display: block;
+            width: 100%;
+            padding: 0;
+            border: none;
+            background: none;
+            font: inherit;
+            font-weight: 700;
+            color: var(--bc-blue);
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .cat-row-open::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+        }
+
+        .cat-row-open:focus-visible {
+            outline: none;
+        }
+
+        .cat-row-summary {
+            margin: 0.1rem 0 0;
+            color: var(--text-secondary);
+            font-size: 0.8125rem;
+            line-height: 1.35;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cat-row-domain {
+            margin: 0;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cat-slots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.25rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .cat-slot {
+            margin: 0;
+            padding: 0.15rem 0.2rem;
+            border-radius: 4px;
+            font-size: 0.6875rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .cat-slot.is-on {
+            background: #e7eef6;
+            color: var(--bc-blue);
+            font-weight: 600;
+        }
+
+        .cat-slot.is-on[data-signal="network"] {
+            background: #e2ecf7;
+            color: #14507f;
+        }
+
+        .cat-slot.is-on[data-signal="writes"] {
+            background: #f7ebe0;
+            color: #8a4715;
+        }
+
+        .cat-slot.is-off {
+            border: 1px dashed #d7dce3;
+            padding: calc(0.15rem - 1px) calc(0.2rem - 1px);
+            color: #a9b1bd;
+        }
+
+        /* Colour tracks the strength of the evidence, so a weaker review
+           never reads as a full marketplace review. */
+        .cat-row-trust {
+            margin: 0;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1c6b3f;
+            white-space: nowrap;
+        }
+
+        .cat-row-trust[data-status="domain-reviewed"] {
+            color: var(--bc-blue-light);
+        }
+
+        .cat-row-trust[data-status="unreviewed"],
+        .cat-row-trust[data-status="locally-scanned-not-bc-gov-reviewed"] {
+            color: #8a4715;
+        }
+
+        .catalog-detail {
+            position: sticky;
+            top: 5.5rem;
+            max-height: calc(100vh - 7rem);
+            overflow-y: auto;
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: var(--shadow-sm);
+            padding: 1.25rem;
+        }
+
+        .catalog-detail h3 {
+            margin-top: 0;
+        }
+
+        .catalog-detail h4 {
+            margin: 1.1rem 0 0.4rem;
+            font-size: 0.9rem;
+            color: var(--bc-blue);
+        }
+
+        .catalog-detail pre {
+            margin: 0.4rem 0;
+            font-size: 0.8rem;
+        }
+
+        .catalog-detail dl {
+            display: grid;
+            gap: 0.55rem;
+            margin: 0.75rem 0;
+        }
+
+        .catalog-detail dl div {
+            display: grid;
+            grid-template-columns: 6.5rem minmax(0, 1fr);
+            gap: 0.6rem;
+            font-size: 0.875rem;
+        }
+
+        .catalog-detail dt {
+            color: var(--text-secondary);
+        }
+
+        .catalog-detail dd {
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .catalog-empty {
+            padding: 2rem 1.25rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 1240px) {
+            .catalog-app {
+                grid-template-columns: 14rem minmax(0, 1fr);
+            }
+
+            .catalog-detail {
+                position: static;
+                max-height: none;
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .catalog-app {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .catalog-rail {
+                position: static;
+                max-height: none;
+            }
+
+            .cat-row {
+                grid-template-columns: minmax(0, 1fr) auto;
+                grid-template-areas:
+                    "id trust"
+                    "slots domain";
+                gap: 0.4rem 0.75rem;
+                padding: 0.65rem 0.9rem;
+            }
+
+            .cat-row-id {
+                grid-area: id;
+            }
+
+            .cat-row-trust {
+                grid-area: trust;
+                align-self: start;
+            }
+
+            .cat-slots {
+                grid-area: slots;
+                grid-template-columns: repeat(3, minmax(0, 5.5rem));
+                justify-content: start;
+            }
+
+            .cat-row-domain {
+                grid-area: domain;
+                text-align: right;
+                align-self: center;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+
         /* Clickable Cards */
         a.card-link {
             display: block;
@@ -546,22 +970,35 @@
             color: var(--white);
         }
 
-        .shell-switch {
+        .catalog-search:focus,
+        .facet-option:focus-visible,
+        .catalog-reset:focus-visible {
+            outline: 3px solid rgba(252, 186, 25, 0.5);
+            outline-offset: 2px;
+        }
+
+        .install-note {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            font-size: 0.8125rem;
+        }
+
+        .install-switch {
             display: inline-flex;
             border: 1px solid #9aa7b5;
             border-radius: 6px;
             overflow: hidden;
-            margin: 0.5rem 0 1rem;
+            margin: 0.5rem 0 0.6rem;
         }
 
-        .shell-option,
-        .copy-command {
+        .shell-option {
             border: 0;
             background: var(--white);
             color: var(--bc-blue);
             font: inherit;
+            font-size: 0.8125rem;
             font-weight: 600;
-            padding: 0.65rem 1rem;
+            padding: 0.35rem 0.85rem;
             cursor: pointer;
         }
 
@@ -569,15 +1006,50 @@
             border-left: 1px solid #9aa7b5;
         }
 
-        .shell-option.active,
-        .copy-command {
+        .shell-option.active {
             background: var(--bc-blue);
             color: var(--white);
         }
 
+        /* Matches the site's dark code blocks, just scaled for the panel. */
+        .catalog-detail pre {
+            margin: 0;
+            padding: 0.7rem 0.8rem;
+            border-radius: 6px;
+            box-shadow: none;
+        }
+
+        .catalog-detail pre code {
+            font-size: 0.75rem;
+            line-height: 1.5;
+            /* Wrap rather than scroll: a partly hidden command reads as the
+               whole command. The copy button preserves the exact text. */
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
         .copy-command {
+            margin-top: 0.5rem;
+            border: 1px solid var(--bc-blue);
             border-radius: 4px;
-            margin: 0 0 1.5rem;
+            background: var(--white);
+            color: var(--bc-blue);
+            font: inherit;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            padding: 0.35rem 0.85rem;
+            cursor: pointer;
+        }
+
+        .copy-command:hover {
+            background: var(--bc-blue);
+            color: var(--white);
+        }
+
+        .shell-option:focus-visible,
+        .copy-command:focus-visible {
+            outline: 3px solid rgba(252, 186, 25, 0.5);
+            outline-offset: 2px;
         }
 
         .release-facts {
@@ -1132,100 +1604,613 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
-<h1 id="agent-extension-catalog">Agent Extension Catalog</h1>
+<h1>Agent Extension Catalog</h1>
 
-<p>These Agent Skills are generated from closed marketplace metadata and the exact package bytes at revision <code>842241b962849ad239e1e9c90589b6bc9c881e53</code>. Every record includes its source, digest, declared capabilities, deterministic policy result, and human review evidence.</p>
+<p>Every record here is generated from the exact package bytes at revision <code>842241b962849ad239e1e9c90589b6bc9c881e53</code>, and carries its source, digest, declared access, policy result, and named review evidence.</p>
 
 <div class="alert alert-info">
     <div class="alert-icon" aria-hidden="true">i</div>
-    <div><strong>Trust language is precise.</strong> Marketplace reviewed means named reviewers assessed the published revision and digest. It is not a claim that software is safe or verified secure. Third-party candidates do not appear here until review is published.</div>
+    <div><strong>Trust language is precise.</strong> Reviewed means named reviewers assessed the published revision and digest. It is not a claim that software is safe or verified secure. Third-party candidates do not appear here until review is published.</div>
 </div>
 
-<p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
+<div class="catalog-app">
+  <form class="catalog-rail" id="catalog-rail" role="search" aria-label="Filter the catalog">
+    <label class="visually-hidden" for="catalog-search">Search the catalog</label>
+    <input id="catalog-search" class="catalog-search" type="search" placeholder="Search by task or tool" autocomplete="off" />
+    <div id="catalog-facets"></div>
+    <button type="button" id="catalog-reset" class="catalog-reset" hidden>Clear all filters</button>
+  </form>
 
-<h2 id="published-skills">Published skills</h2>
+  <div class="catalog-results">
+    <p class="catalog-status"><span id="catalog-count" aria-live="polite">Showing every extension</span></p>
+    <ul class="catalog-legend">
+      <li>Access shown as declared by each extension</li>
+    </ul>
 
-<div id="published-skills" class="grid grid-2">
-<article class="card card-gold" data-extension-id="bcgov-public/azure-networking">
-  <h3 id="azure-networking">Azure Networking</h3>
-  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
-  <p>Design BC Gov Azure Landing Zone subnets, network security groups, service delegations, and private endpoints.</p>
-  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
-  <strong>Capabilities:</strong> 9 declared<br>
-  <strong>Digest:</strong> <code>sha256:bbfa9c9bc082d1e009f9b30f0d4ec28df225d588b54c1809922f4ae8c577ae8c</code></p>
-  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/azure-networking" target="_blank" rel="noopener">Inspect immutable source</a></p>
+    <div id="published-skills" class="cat-list">
+<script type="application/json" id="catalog-vocabulary">{"installer-version": "1.5.23", "types": ["skill", "prompt", "instruction", "agent", "hook", "mcp"]}</script>
+
+<article class="cat-row" data-extension-id="bcgov-public/azure-networking"
+  data-type="skill"
+  data-specialty="community"
+  data-lifecycle="active"
+  data-status="marketplace-reviewed"
+  data-access="commands network writes"
+  data-haystack="azure networking design bc gov azure landing zone subnets, network security groups, service delegations, and private endpoints. community skill @mishraomp @derekroberts az terraform bicep raw.githubusercontent.com learn.microsoft.com citz-do.atlassian.net">
+  <div class="cat-row-id">
+    <h3><button type="button" class="cat-row-open">Azure Networking</button></h3>
+    <p class="cat-row-summary">Design BC Gov Azure Landing Zone subnets, network security groups, service delegations, and private endpoints.</p>
+  </div>
+  <p class="cat-row-domain">community</p>
+  <ul class="cat-slots" aria-label="Declared access: runs commands, reaches the network and writes files.">
+    <li class="cat-slot is-on" data-signal="commands" title="Commands: az, terraform, bicep">Commands</li>
+    <li class="cat-slot is-on" data-signal="network" title="Network: raw.githubusercontent.com, learn.microsoft.com, citz-do.atlassian.net">Network</li>
+    <li class="cat-slot is-on" data-signal="writes" title="Writes: workspace infrastructure files after confirmation">Writes</li>
+  </ul>
+  <p class="cat-row-trust" data-status="marketplace-reviewed">Reviewed</p>
 </article>
 
-<article class="card card-gold" data-extension-id="bcgov-public/github-actions">
-  <h3 id="github-actions">GitHub Actions</h3>
-  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
-  <p>Author and review GitHub Actions workflows using BC Gov permissions, pinning, fork-gate, and required-check patterns.</p>
-  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
-  <strong>Capabilities:</strong> 12 declared<br>
-  <strong>Digest:</strong> <code>sha256:0c072d12707da74da8f073d3894fb676a0299289dd1463b2a28ad25d720da21a</code></p>
-  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/github-actions" target="_blank" rel="noopener">Inspect immutable source</a></p>
+<article class="cat-row" data-extension-id="bcgov-public/github-actions"
+  data-type="skill"
+  data-specialty="community"
+  data-lifecycle="active"
+  data-status="marketplace-reviewed"
+  data-access="commands network writes"
+  data-haystack="github actions author and review github actions workflows using bc gov permissions, pinning, fork-gate, and required-check patterns. community skill @mishraomp @derekroberts act actionlint make shellcheck yamllint docs.github.com npm.pkg.github.com">
+  <div class="cat-row-id">
+    <h3><button type="button" class="cat-row-open">GitHub Actions</button></h3>
+    <p class="cat-row-summary">Author and review GitHub Actions workflows using BC Gov permissions, pinning, fork-gate, and required-check patterns.</p>
+  </div>
+  <p class="cat-row-domain">community</p>
+  <ul class="cat-slots" aria-label="Declared access: runs commands, reaches the network and writes files.">
+    <li class="cat-slot is-on" data-signal="commands" title="Commands: act, actionlint, make, shellcheck, yamllint">Commands</li>
+    <li class="cat-slot is-on" data-signal="network" title="Network: docs.github.com, npm.pkg.github.com">Network</li>
+    <li class="cat-slot is-on" data-signal="writes" title="Writes: workspace GitHub configuration after confirmation">Writes</li>
+  </ul>
+  <p class="cat-row-trust" data-status="marketplace-reviewed">Reviewed</p>
 </article>
 
-<article class="card card-gold" data-extension-id="bcgov-public/github-repo-setup">
-  <h3 id="github-repository-setup">GitHub Repository Setup</h3>
-  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
-  <p>Assess a GitHub repository against BC Gov DevOps and security standards and produce an evidence-based maturity report.</p>
-  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
-  <strong>Capabilities:</strong> 9 declared<br>
-  <strong>Digest:</strong> <code>sha256:39c052747fa7d319576fdca00b44e1ad8b825dcbd9a1cb7abba3b6467828db1c</code></p>
-  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/github-repo-setup" target="_blank" rel="noopener">Inspect immutable source</a></p>
+<article class="cat-row" data-extension-id="bcgov-public/github-repo-setup"
+  data-type="skill"
+  data-specialty="community"
+  data-lifecycle="active"
+  data-status="marketplace-reviewed"
+  data-access="commands network writes"
+  data-haystack="github repository setup assess a github repository against bc gov devops and security standards and produce an evidence-based maturity report. community skill @mishraomp @derekroberts gh npm api.github.com github.com www.first.org">
+  <div class="cat-row-id">
+    <h3><button type="button" class="cat-row-open">GitHub Repository Setup</button></h3>
+    <p class="cat-row-summary">Assess a GitHub repository against BC Gov DevOps and security standards and produce an evidence-based maturity report.</p>
+  </div>
+  <p class="cat-row-domain">community</p>
+  <ul class="cat-slots" aria-label="Declared access: runs commands, reaches the network and writes files.">
+    <li class="cat-slot is-on" data-signal="commands" title="Commands: gh, npm">Commands</li>
+    <li class="cat-slot is-on" data-signal="network" title="Network: api.github.com, github.com, www.first.org">Network</li>
+    <li class="cat-slot is-on" data-signal="writes" title="Writes: MATURITY_REPORT.md after confirmation">Writes</li>
+  </ul>
+  <p class="cat-row-trust" data-status="marketplace-reviewed">Reviewed</p>
 </article>
 
-<article class="card card-gold" data-extension-id="bcgov-public/n8n-runbook-parser">
-  <h3 id="n8n-runbook-parser">n8n Runbook Parser</h3>
-  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
-  <p>Extract code from prose runbooks into version-controlled snippets, detect drift, and backport reviewed fixes to source documentation.</p>
-  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
-  <strong>Capabilities:</strong> 16 declared<br>
-  <strong>Digest:</strong> <code>sha256:bf8b38eb8f53a9341d19b1844320c02212e18f402312c5387a2add1d35189e6e</code></p>
-  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/n8n-runbook-parser" target="_blank" rel="noopener">Inspect immutable source</a></p>
+<article class="cat-row" data-extension-id="bcgov-public/n8n-runbook-parser"
+  data-type="skill"
+  data-specialty="community"
+  data-lifecycle="active"
+  data-status="marketplace-reviewed"
+  data-access="commands network writes"
+  data-haystack="n8n runbook parser extract code from prose runbooks into version-controlled snippets, detect drift, and backport reviewed fixes to source documentation. community skill @mishraomp @derekroberts doc_links.py parser.py rb_commands.py rb_config.py rb_log.py rb_markdown.py rb_model.py rb_reconstruct.py rb_seal.py github.com raw.githubusercontent.com img.shields.io">
+  <div class="cat-row-id">
+    <h3><button type="button" class="cat-row-open">n8n Runbook Parser</button></h3>
+    <p class="cat-row-summary">Extract code from prose runbooks into version-controlled snippets, detect drift, and backport reviewed fixes to source documentation.</p>
+  </div>
+  <p class="cat-row-domain">community</p>
+  <ul class="cat-slots" aria-label="Declared access: runs commands, reaches the network and writes files.">
+    <li class="cat-slot is-on" data-signal="commands" title="Commands: doc_links.py, parser.py, rb_commands.py, rb_config.py, rb_log.py, rb_markdown.py">Commands</li>
+    <li class="cat-slot is-on" data-signal="network" title="Network: github.com, raw.githubusercontent.com, img.shields.io">Network</li>
+    <li class="cat-slot is-on" data-signal="writes" title="Writes: generated snippets and parser state after confirmation">Writes</li>
+  </ul>
+  <p class="cat-row-trust" data-status="marketplace-reviewed">Reviewed</p>
 </article>
 
-<article class="card card-gold" data-extension-id="bcgov-public/n8n-workflow-builder">
-  <h3 id="n8n-workflow-builder">n8n Workflow Builder</h3>
-  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
-  <p>Compose reviewed runbook snippets into local and n8n operational triage workflows with explicit API publication steps.</p>
-  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
-  <strong>Capabilities:</strong> 18 declared<br>
-  <strong>Digest:</strong> <code>sha256:84146ec685ef4d17931f60c5d03f5dbdae320ff4274e501a35f0d22f144368e0</code></p>
-  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/n8n-workflow-builder" target="_blank" rel="noopener">Inspect immutable source</a></p>
+<article class="cat-row" data-extension-id="bcgov-public/n8n-workflow-builder"
+  data-type="skill"
+  data-specialty="community"
+  data-lifecycle="active"
+  data-status="marketplace-reviewed"
+  data-access="commands network writes"
+  data-haystack="n8n workflow builder compose reviewed runbook snippets into local and n8n operational triage workflows with explicit api publication steps. community skill @mishraomp @derekroberts merge.sh n8n-entrypoint.sh pull.sh push.sh render.sh report.sh sync.sh utils.sh view.sh localhost cdn.jsdelivr.net img.shields.io">
+  <div class="cat-row-id">
+    <h3><button type="button" class="cat-row-open">n8n Workflow Builder</button></h3>
+    <p class="cat-row-summary">Compose reviewed runbook snippets into local and n8n operational triage workflows with explicit API publication steps.</p>
+  </div>
+  <p class="cat-row-domain">community</p>
+  <ul class="cat-slots" aria-label="Declared access: runs commands, reaches the network and writes files.">
+    <li class="cat-slot is-on" data-signal="commands" title="Commands: merge.sh, n8n-entrypoint.sh, pull.sh, push.sh, render.sh, report.sh">Commands</li>
+    <li class="cat-slot is-on" data-signal="network" title="Network: localhost, cdn.jsdelivr.net, img.shields.io">Network</li>
+    <li class="cat-slot is-on" data-signal="writes" title="Writes: tools/n8n generated workflows after confirmation">Writes</li>
+  </ul>
+  <p class="cat-row-trust" data-status="marketplace-reviewed">Reviewed</p>
 </article>
 
-<article class="card card-gold" data-extension-id="bcgov-public/openshift-deployment">
-  <h3 id="openshift-deployment">OpenShift Deployment</h3>
-  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
-  <p>Design BC Gov Private Cloud workload manifests with appropriate controllers, resources, probes, disruption budgets, and security contexts.</p>
-  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
-  <strong>Capabilities:</strong> 11 declared<br>
-  <strong>Digest:</strong> <code>sha256:55fd1005c185c8e5210051568f7dcac7987171eeb8e8b6e3b1da17a31225060f</code></p>
-  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/openshift-deployment" target="_blank" rel="noopener">Inspect immutable source</a></p>
+<article class="cat-row" data-extension-id="bcgov-public/openshift-deployment"
+  data-type="skill"
+  data-specialty="community"
+  data-lifecycle="active"
+  data-status="marketplace-reviewed"
+  data-access="commands network writes"
+  data-haystack="openshift deployment design bc gov private cloud workload manifests with appropriate controllers, resources, probes, disruption budgets, and security contexts. community skill @mishraomp @derekroberts kubectl oc developer.gov.bc.ca docs.openshift.com github.com kubernetes.io registry.developer.gov.bc.ca">
+  <div class="cat-row-id">
+    <h3><button type="button" class="cat-row-open">OpenShift Deployment</button></h3>
+    <p class="cat-row-summary">Design BC Gov Private Cloud workload manifests with appropriate controllers, resources, probes, disruption budgets, and security contexts.</p>
+  </div>
+  <p class="cat-row-domain">community</p>
+  <ul class="cat-slots" aria-label="Declared access: runs commands, reaches the network and writes files.">
+    <li class="cat-slot is-on" data-signal="commands" title="Commands: kubectl, oc">Commands</li>
+    <li class="cat-slot is-on" data-signal="network" title="Network: developer.gov.bc.ca, docs.openshift.com, github.com, kubernetes.io, registry.developer.gov.bc.ca">Network</li>
+    <li class="cat-slot is-on" data-signal="writes" title="Writes: workspace Kubernetes and OpenShift manifests after confirmation">Writes</li>
+  </ul>
+  <p class="cat-row-trust" data-status="marketplace-reviewed">Reviewed</p>
 </article>
 
-<article class="card card-gold" data-extension-id="bcgov-public/repo-hardening">
-  <h3 id="repo-hardening">Repo Hardening</h3>
-  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
-  <p>Apply a baseline repository hardening recipe for branch protection, secret handling, review gates, and deterministic validation.</p>
-  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
-  <strong>Capabilities:</strong> 10 declared<br>
-  <strong>Digest:</strong> <code>sha256:9fd010749fc81d20119daa1b504c89aa10ebde34f172d8277992720201d16355</code></p>
-  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/security/repo-hardening" target="_blank" rel="noopener">Inspect immutable source</a></p>
+<article class="cat-row" data-extension-id="bcgov-public/repo-hardening"
+  data-type="skill"
+  data-specialty="security"
+  data-lifecycle="active"
+  data-status="marketplace-reviewed"
+  data-access="commands network writes"
+  data-haystack="repo hardening apply a baseline repository hardening recipe for branch protection, secret handling, review gates, and deterministic validation. security skill @mishraomp @derekroberts git gh github.com docs.github.com">
+  <div class="cat-row-id">
+    <h3><button type="button" class="cat-row-open">Repo Hardening</button></h3>
+    <p class="cat-row-summary">Apply a baseline repository hardening recipe for branch protection, secret handling, review gates, and deterministic validation.</p>
+  </div>
+  <p class="cat-row-domain">security</p>
+  <ul class="cat-slots" aria-label="Declared access: runs commands, reaches the network and writes files.">
+    <li class="cat-slot is-on" data-signal="commands" title="Commands: git, gh">Commands</li>
+    <li class="cat-slot is-on" data-signal="network" title="Network: github.com, docs.github.com">Network</li>
+    <li class="cat-slot is-on" data-signal="writes" title="Writes: local draft hardening plan after confirmation">Writes</li>
+  </ul>
+  <p class="cat-row-trust" data-status="marketplace-reviewed">Reviewed</p>
 </article>
+      <p class="catalog-empty" id="catalog-empty" hidden>Nothing matches those filters. <a href="getting-started.html">Request an extension or contribute one</a> when no suitable match exists.</p>
+    </div>
+  </div>
+
+  <aside id="catalog-detail" class="catalog-detail" aria-live="polite" aria-label="Extension evidence">
+    <h3>Select an extension</h3>
+    <p>Choose any row to read its declared access, review evidence, immutable source, and install command.</p>
+  </aside>
 </div>
 
-<h2 id="project-scoped-direct-install">Project-scoped direct install</h2>
+<noscript><p>Filtering needs JavaScript. Every published extension is listed above, and <a href="assets/catalog.json"><code>catalog.json</code></a> holds the same records in machine-readable form.</p></noscript>
 
-<p>After inspecting a record's immutable source and capabilities, install its exact package path and revision. APM is preferred because it records the dependency and resolved bytes in a lockfile.</p>
+<h2>Installing from this catalog</h2>
+
+<p>After checking a record's declared access and immutable source, install its exact path and revision. APM is preferred because it records the dependency and resolved bytes in a lockfile.</p>
 
 <pre><code>apm install \
   bcgov/agent-marketplace/skills/&lt;specialty&gt;/&lt;skill-name&gt;#842241b962849ad239e1e9c90589b6bc9c881e53 \
   --target copilot</code></pre>
 
 <p>If APM is unavailable, the finder offers a pinned <code>npx skills@1.5.23</code> command and recommends installing APM for future dependency and lockfile management. Both paths require confirmation.</p>
+
+<p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
+
+<script>
+(function () {
+  const list = document.getElementById('published-skills');
+  const searchInput = document.getElementById('catalog-search');
+  const facetHost = document.getElementById('catalog-facets');
+  const resetButton = document.getElementById('catalog-reset');
+  const countLabel = document.getElementById('catalog-count');
+  const emptyState = document.getElementById('catalog-empty');
+  const detail = document.getElementById('catalog-detail');
+  const rail = document.getElementById('catalog-rail');
+
+  const ACCESS_LABELS = {
+    commands: 'Runs commands',
+    network: 'Reaches network',
+    writes: 'Writes files'
+  };
+
+  // Read-only vocabulary emitted by the catalog generator, so the page never
+  // keeps a second list of extension types.
+  const vocabulary = (() => {
+    const node = document.getElementById('catalog-vocabulary');
+    try {
+      return node ? JSON.parse(node.textContent) : {};
+    } catch (error) {
+      return {};
+    }
+  })();
+  const TYPE_ORDER = vocabulary.types || [];
+  const INSTALLER_VERSION = vocabulary['installer-version'] || 'latest';
+
+  const TYPE_LABELS = {
+    skill: 'Skill',
+    prompt: 'Prompt',
+    instruction: 'Instruction',
+    agent: 'Agent',
+    hook: 'Hook',
+    mcp: 'MCP server'
+  };
+
+  const TRUST_LABELS = {
+    'marketplace-reviewed': 'Reviewed',
+    'domain-reviewed': 'Domain reviewed',
+    'locally-scanned-not-bc-gov-reviewed': 'Scanned only',
+    unreviewed: 'Unreviewed'
+  };
+
+  // Strongest evidence first. Alphabetical order would put "Domain reviewed"
+  // above "Reviewed", which misreads as a ranking of trust.
+  const TRUST_ORDER = [
+    'marketplace-reviewed',
+    'domain-reviewed',
+    'locally-scanned-not-bc-gov-reviewed',
+    'unreviewed'
+  ];
+
+  const TRUST_EVIDENCE = {
+    'marketplace-reviewed': 'Named reviewers assessed this exact revision and digest.',
+    'domain-reviewed': 'A specialty owner reviewed this exact revision and digest. It is not marketplace reviewed.',
+    'locally-scanned-not-bc-gov-reviewed': 'Scanned locally. No BC Gov review evidence exists for it.',
+    unreviewed: 'No review evidence is published for this record.'
+  };
+
+  // Cache each row's filterable values once, so typing never re-reads the DOM.
+  const rows = Array.from(list.querySelectorAll('.cat-row')).map((node) => ({
+    node,
+    id: node.dataset.extensionId,
+    haystack: node.dataset.haystack || '',
+    specialty: node.dataset.specialty || '',
+    type: node.dataset.type || '',
+    status: node.dataset.status || 'unreviewed',
+    lifecycle: node.dataset.lifecycle || '',
+    access: (node.dataset.access || '').split(' ').filter(Boolean)
+  }));
+
+  const state = { query: '', specialty: '', type: '', status: '', lifecycle: '', access: '' };
+  let catalogData = null;
+  let selectedId = null;
+
+  function distinct(key) {
+    return Array.from(new Set(rows.map((row) => row[key]).filter(Boolean))).sort();
+  }
+
+  function matches(row, ignore) {
+    if (ignore !== 'query' && state.query && !row.haystack.includes(state.query)) return false;
+    if (ignore !== 'specialty' && state.specialty && row.specialty !== state.specialty) return false;
+    if (ignore !== 'type' && state.type && row.type !== state.type) return false;
+    if (ignore !== 'status' && state.status && row.status !== state.status) return false;
+    if (ignore !== 'lifecycle' && state.lifecycle && row.lifecycle !== state.lifecycle) return false;
+    if (ignore !== 'access' && state.access && !row.access.includes(state.access)) return false;
+    return true;
+  }
+
+  // Sort known values by a curated order and append anything unrecognised, so
+  // a new value from the generator still appears instead of vanishing.
+  function ordered(values, order) {
+    const known = order.filter((value) => values.includes(value));
+    const rest = values.filter((value) => !order.includes(value)).sort();
+    return known.concat(rest);
+  }
+
+  // A facet whose value never varies cannot narrow anything, so it is not
+  // rendered. Type is the exception: it always shows the full vocabulary,
+  // because which kinds of extension exist is itself worth knowing.
+  function facetGroups() {
+    const groups = [];
+
+    if (distinct('specialty').length > 1) {
+      groups.push({
+        key: 'specialty',
+        title: 'Domain',
+        options: distinct('specialty').map((value) => ({ value, label: value }))
+      });
+    }
+
+    const typeValues = TYPE_ORDER.concat(
+      distinct('type').filter((value) => !TYPE_ORDER.includes(value))
+    );
+    if (typeValues.length) {
+      groups.push({
+        key: 'type',
+        title: 'Type',
+        options: typeValues.map((value) => ({
+          value,
+          label: TYPE_LABELS[value] || value
+        }))
+      });
+    }
+
+    const trustValues = distinct('status');
+    if (trustValues.length > 1) {
+      groups.push({
+        key: 'status',
+        title: 'Trust',
+        options: ordered(trustValues, TRUST_ORDER).map((value) => ({
+          value,
+          label: TRUST_LABELS[value] || value
+        }))
+      });
+    }
+
+    const lifecycleValues = distinct('lifecycle');
+    if (lifecycleValues.length > 1) {
+      groups.push({
+        key: 'lifecycle',
+        title: 'Lifecycle',
+        options: lifecycleValues.map((value) => ({ value, label: value }))
+      });
+    }
+
+    const accessValues = Object.keys(ACCESS_LABELS)
+      .filter((key) => rows.some((row) => row.access.includes(key)))
+      .filter((key) => !rows.every((row) => row.access.includes(key)));
+    if (accessValues.length) {
+      groups.push({
+        key: 'access',
+        title: 'Declared access',
+        options: accessValues.map((value) => ({ value, label: ACCESS_LABELS[value] }))
+      });
+    }
+    return groups;
+  }
+
+  const groups = facetGroups();
+
+  function renderFacets() {
+    facetHost.innerHTML = groups.map((group) => {
+      const options = group.options.map((option) => {
+        const count = rows.filter(
+          (row) => matches(row, group.key) && (
+            group.key === 'access'
+              ? row.access.includes(option.value)
+              : row[group.key] === option.value
+          )
+        ).length;
+        const pressed = state[group.key] === option.value;
+        const disabled = count === 0 && !pressed ? ' disabled' : '';
+        return `<li><button type="button" class="facet-option" data-facet="${group.key}" ` +
+          `data-value="${option.value}" aria-pressed="${pressed}"${disabled}>` +
+          `<span>${option.label}</span><span class="facet-count">${count}</span></button></li>`;
+      }).join('');
+      return `<div class="catalog-facet"><h3>${group.title}</h3><ul>${options}</ul></div>`;
+    }).join('');
+  }
+
+  function apply() {
+    let visible = 0;
+    for (const row of rows) {
+      const show = matches(row, null);
+      row.node.hidden = !show;
+      if (show) visible += 1;
+    }
+
+    const filtered = Object.values(state).some(Boolean);
+    countLabel.textContent = filtered
+      ? `${visible} of ${rows.length} extensions`
+      : `Showing every extension`;
+    emptyState.hidden = visible !== 0;
+    resetButton.hidden = !filtered;
+    renderFacets();
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, (character) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]
+    ));
+  }
+
+  function accessDetail(record) {
+    const capabilities = record.capabilities || {};
+    const filesystem = capabilities.filesystem || {};
+    const entries = [
+      ['Commands', capabilities.commands],
+      ['Network', capabilities.network],
+      ['Writes', filesystem.write],
+      ['Reads', filesystem.read],
+      ['Data classes', capabilities['data-classes']],
+      ['Secrets', capabilities['secret-names']],
+      ['Environment', capabilities['environment-variables']]
+    ].filter(([, values]) => Array.isArray(values) && values.length);
+
+    if (!entries.length) return '<p>Declares no commands, network reach, or file writes.</p>';
+    return '<dl>' + entries.map(([label, values]) => (
+      `<div><dt>${label}</dt><dd>${escapeHtml(values.join(', '))}</dd></div>`
+    )).join('') + '</dl>';
+  }
+
+  function renderDetail(row) {
+    const record = catalogData
+      ? (catalogData.extensions || []).find((item) => item.id === row.id)
+      : null;
+
+    if (!record) {
+      const name = row.node.querySelector('.cat-row-open');
+      detail.innerHTML = `<h3>${escapeHtml(name ? name.textContent : 'Extension')}</h3>` +
+        `<p>${escapeHtml(row.node.querySelector('.cat-row-summary').textContent)}</p>` +
+        '<p class="install-note">Full evidence needs <code>catalog.json</code>, which did not load. ' +
+        'Reload the page to try again.</p>';
+      return;
+    }
+
+    const source = record.source || {};
+    const revision = source.revision || (record.review || {}).revision || 'not available';
+    const sourceUrl = source.repository && source.path
+      ? `${source.repository}/tree/${revision}/${source.path}`
+      : null;
+    const status = (record.review || {}).status || 'unreviewed';
+    const reviewers = ((record.review || {}).reviewers || []).join(', ');
+    const repoPath = (source.repository || '').replace(/^https?:\/\/github\.com\//, '');
+
+    // Installation is activated only for active skills, so anything else says
+    // so plainly instead of offering a command that will not be honoured.
+    const installable = record.type === 'skill' && record.lifecycle === 'active';
+    const commands = {
+      apm: source.path
+        ? `apm install ${repoPath}/${source.path}#${revision} --target copilot`
+        : 'apm install <owner>/<repository>/<package-path>#<commit-sha> --target copilot',
+      npx: sourceUrl
+        ? `npx skills@${INSTALLER_VERSION} add \\\n  ${sourceUrl} \\\n  --agent github-copilot -y`
+        : `npx skills@${INSTALLER_VERSION} add <immutable-tree-url> --agent github-copilot -y`
+    };
+
+    const installBlock = installable
+      ? `
+      <h4>Install</h4>
+      <div class="install-switch" role="group" aria-label="Choose installer">
+        <button type="button" class="shell-option active" aria-pressed="true" data-installer="apm">APM</button>
+        <button type="button" class="shell-option" aria-pressed="false" data-installer="npx">Skills CLI</button>
+      </div>
+      <pre aria-live="polite"><code id="install-command">${escapeHtml(commands.apm)}</code></pre>
+      <button type="button" class="copy-command" data-copy>Copy command</button>
+      <p class="install-note" id="install-rationale">APM records the dependency and resolved bytes in a lockfile. Pinned to the reviewed revision and digest, and installing still needs your confirmation.</p>`
+      : `
+      <h4>Install</h4>
+      <p class="install-note">Installation is activated for active skills only. This record is
+      ${escapeHtml(record.lifecycle === 'active' ? `a ${record.type || 'non-skill'} extension` : `${record.lifecycle || 'not active'}`)},
+      so no install command is offered.</p>`;
+
+    detail.innerHTML = `
+      <h3>${escapeHtml(record['display-name'] || 'Extension')}</h3>
+      <p>${escapeHtml(record.summary || '')}</p>
+
+      <h4>What it can access</h4>
+      ${accessDetail(record)}
+
+      <h4>Review</h4>
+      <p>${escapeHtml(TRUST_EVIDENCE[status] || TRUST_EVIDENCE.unreviewed)}</p>
+      <dl>
+        <div><dt>Type</dt><dd>${escapeHtml(TYPE_LABELS[record.type] || record.type || 'Unknown')}</dd></div>
+        <div><dt>Reviewers</dt><dd>${escapeHtml(reviewers || 'Not published')}</dd></div>
+        <div><dt>Policy</dt><dd>${escapeHtml((record.policy || {}).outcome || 'not available')}</dd></div>
+        <div><dt>Maintainers</dt><dd>${escapeHtml((record.maintainers || []).join(', ') || 'Unknown')}</dd></div>
+        <div><dt>License</dt><dd>${escapeHtml(record.license || 'Not specified')}</dd></div>
+        <div><dt>Prerequisites</dt><dd>${escapeHtml((record.prerequisites || ['None declared']).join('; '))}</dd></div>
+        <div><dt>Digest</dt><dd><code>${escapeHtml(record['content-digest'] || 'not available')}</code></dd></div>
+      </dl>
+      ${sourceUrl ? `<p><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener">Read the source at this revision</a></p>` : ''}
+      ${installBlock}
+      ${record.support ? `<p><a href="${escapeHtml(record.support)}" target="_blank" rel="noopener">Get support</a></p>` : ''}
+    `;
+
+    if (installable) wireInstaller(commands);
+  }
+
+  // Tabs swap the command text in place; the copy button reports back on the
+  // button itself so the result is visible where the action happened.
+  function wireInstaller(commands) {
+    const code = detail.querySelector('#install-command');
+    const rationale = detail.querySelector('#install-rationale');
+    const copyButton = detail.querySelector('[data-copy]');
+    const tabs = Array.from(detail.querySelectorAll('[data-installer]'));
+    const NOTES = {
+      apm: 'APM records the dependency and resolved bytes in a lockfile. Pinned to the reviewed revision and digest, and installing still needs your confirmation.',
+      npx: 'Use this when APM is unavailable. It installs from the immutable tree at the reviewed revision; APM is still preferred because it adds a manifest and lockfile.'
+    };
+
+    for (const tab of tabs) {
+      tab.addEventListener('click', () => {
+        const installer = tab.dataset.installer;
+        code.textContent = commands[installer];
+        rationale.textContent = NOTES[installer];
+        for (const other of tabs) {
+          const isActive = other === tab;
+          other.classList.toggle('active', isActive);
+          other.setAttribute('aria-pressed', String(isActive));
+        }
+        copyButton.textContent = 'Copy command';
+      });
+    }
+
+    copyButton.addEventListener('click', async () => {
+      const text = code.textContent;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const scratch = document.createElement('textarea');
+          scratch.value = text;
+          scratch.setAttribute('readonly', '');
+          scratch.style.position = 'fixed';
+          scratch.style.opacity = '0';
+          document.body.appendChild(scratch);
+          scratch.select();
+          document.execCommand('copy');
+          scratch.remove();
+        }
+        copyButton.textContent = 'Copied';
+      } catch (error) {
+        copyButton.textContent = 'Press Ctrl+C to copy';
+        const range = document.createRange();
+        range.selectNodeContents(code);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      window.setTimeout(() => { copyButton.textContent = 'Copy command'; }, 2000);
+    });
+  }
+
+  function select(row) {
+    selectedId = row.id;
+    for (const other of rows) {
+      other.node.classList.toggle('is-selected', other.id === selectedId);
+    }
+    renderDetail(row);
+    if (window.matchMedia('(max-width: 1240px)').matches) {
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  list.addEventListener('click', (event) => {
+    const node = event.target.closest('.cat-row');
+    if (!node) return;
+    const row = rows.find((item) => item.node === node);
+    if (row) select(row);
+  });
+
+  facetHost.addEventListener('click', (event) => {
+    const button = event.target.closest('.facet-option');
+    if (!button) return;
+    const { facet, value } = button.dataset;
+    state[facet] = state[facet] === value ? '' : value;
+    apply();
+  });
+
+  resetButton.addEventListener('click', () => {
+    for (const key of Object.keys(state)) state[key] = '';
+    searchInput.value = '';
+    apply();
+  });
+
+  rail.addEventListener('submit', (event) => event.preventDefault());
+
+  let searchTimer = null;
+  searchInput.addEventListener('input', () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(() => {
+      state.query = searchInput.value.trim().toLowerCase();
+      apply();
+    }, 120);
+  });
+
+  apply();
+
+  fetch('assets/catalog.json')
+    .then((response) => {
+      if (!response.ok) throw new Error('catalog unavailable');
+      return response.json();
+    })
+    .then((data) => {
+      catalogData = data;
+      if (selectedId) {
+        const row = rows.find((item) => item.id === selectedId);
+        if (row) renderDetail(row);
+      }
+    })
+    .catch(() => { /* Rows stay usable; the panel explains the gap on selection. */ });
+})();
+</script>
 </main>
     <footer class="site-footer">
         <div class="footer-content">

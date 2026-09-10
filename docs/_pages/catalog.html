@@ -3,27 +3,468 @@
 
 <h1>Agent Extension Catalog</h1>
 
-<p>These Agent Skills are generated from closed marketplace metadata and the exact package bytes at revision <code>842241b962849ad239e1e9c90589b6bc9c881e53</code>. Every record includes its source, digest, declared capabilities, deterministic policy result, and human review evidence.</p>
+<p>Every record here is generated from the exact package bytes at revision <code>842241b962849ad239e1e9c90589b6bc9c881e53</code>, and carries its source, digest, declared access, policy result, and named review evidence.</p>
 
 <div class="alert alert-info">
     <div class="alert-icon" aria-hidden="true">i</div>
-    <div><strong>Trust language is precise.</strong> Marketplace reviewed means named reviewers assessed the published revision and digest. It is not a claim that software is safe or verified secure. Third-party candidates do not appear here until review is published.</div>
+    <div><strong>Trust language is precise.</strong> Reviewed means named reviewers assessed the published revision and digest. It is not a claim that software is safe or verified secure. Third-party candidates do not appear here until review is published.</div>
 </div>
 
-<p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
+<div class="catalog-app">
+  <form class="catalog-rail" id="catalog-rail" role="search" aria-label="Filter the catalog">
+    <label class="visually-hidden" for="catalog-search">Search the catalog</label>
+    <input id="catalog-search" class="catalog-search" type="search" placeholder="Search by task or tool" autocomplete="off" />
+    <div id="catalog-facets"></div>
+    <button type="button" id="catalog-reset" class="catalog-reset" hidden>Clear all filters</button>
+  </form>
 
-<h2>Published skills</h2>
+  <div class="catalog-results">
+    <p class="catalog-status"><span id="catalog-count" aria-live="polite">Showing every extension</span></p>
+    <ul class="catalog-legend">
+      <li>Access shown as declared by each extension</li>
+    </ul>
 
-<div id="published-skills" class="grid grid-2">
+    <div id="published-skills" class="cat-list">
 {{CATALOG_CARDS}}
+      <p class="catalog-empty" id="catalog-empty" hidden>Nothing matches those filters. <a href="getting-started.html">Request an extension or contribute one</a> when no suitable match exists.</p>
+    </div>
+  </div>
+
+  <aside id="catalog-detail" class="catalog-detail" aria-live="polite" aria-label="Extension evidence">
+    <h3>Select an extension</h3>
+    <p>Choose any row to read its declared access, review evidence, immutable source, and install command.</p>
+  </aside>
 </div>
 
-<h2>Project-scoped direct install</h2>
+<noscript><p>Filtering needs JavaScript. Every published extension is listed above, and <a href="assets/catalog.json"><code>catalog.json</code></a> holds the same records in machine-readable form.</p></noscript>
 
-<p>After inspecting a record's immutable source and capabilities, install its exact package path and revision. APM is preferred because it records the dependency and resolved bytes in a lockfile.</p>
+<h2>Installing from this catalog</h2>
+
+<p>After checking a record's declared access and immutable source, install its exact path and revision. APM is preferred because it records the dependency and resolved bytes in a lockfile.</p>
 
 <pre><code>apm install \
   bcgov/agent-marketplace/skills/&lt;specialty&gt;/&lt;skill-name&gt;#842241b962849ad239e1e9c90589b6bc9c881e53 \
   --target copilot</code></pre>
 
 <p>If APM is unavailable, the finder offers a pinned <code>npx skills@1.5.23</code> command and recommends installing APM for future dependency and lockfile management. Both paths require confirmation.</p>
+
+<p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
+
+<script>
+(function () {
+  const list = document.getElementById('published-skills');
+  const searchInput = document.getElementById('catalog-search');
+  const facetHost = document.getElementById('catalog-facets');
+  const resetButton = document.getElementById('catalog-reset');
+  const countLabel = document.getElementById('catalog-count');
+  const emptyState = document.getElementById('catalog-empty');
+  const detail = document.getElementById('catalog-detail');
+  const rail = document.getElementById('catalog-rail');
+
+  const ACCESS_LABELS = {
+    commands: 'Runs commands',
+    network: 'Reaches network',
+    writes: 'Writes files'
+  };
+
+  // Read-only vocabulary emitted by the catalog generator, so the page never
+  // keeps a second list of extension types.
+  const vocabulary = (() => {
+    const node = document.getElementById('catalog-vocabulary');
+    try {
+      return node ? JSON.parse(node.textContent) : {};
+    } catch (error) {
+      return {};
+    }
+  })();
+  const TYPE_ORDER = vocabulary.types || [];
+  const INSTALLER_VERSION = vocabulary['installer-version'] || 'latest';
+
+  const TYPE_LABELS = {
+    skill: 'Skill',
+    prompt: 'Prompt',
+    instruction: 'Instruction',
+    agent: 'Agent',
+    hook: 'Hook',
+    mcp: 'MCP server'
+  };
+
+  const TRUST_LABELS = {
+    'marketplace-reviewed': 'Reviewed',
+    'domain-reviewed': 'Domain reviewed',
+    'locally-scanned-not-bc-gov-reviewed': 'Scanned only',
+    unreviewed: 'Unreviewed'
+  };
+
+  // Strongest evidence first. Alphabetical order would put "Domain reviewed"
+  // above "Reviewed", which misreads as a ranking of trust.
+  const TRUST_ORDER = [
+    'marketplace-reviewed',
+    'domain-reviewed',
+    'locally-scanned-not-bc-gov-reviewed',
+    'unreviewed'
+  ];
+
+  const TRUST_EVIDENCE = {
+    'marketplace-reviewed': 'Named reviewers assessed this exact revision and digest.',
+    'domain-reviewed': 'A specialty owner reviewed this exact revision and digest. It is not marketplace reviewed.',
+    'locally-scanned-not-bc-gov-reviewed': 'Scanned locally. No BC Gov review evidence exists for it.',
+    unreviewed: 'No review evidence is published for this record.'
+  };
+
+  // Cache each row's filterable values once, so typing never re-reads the DOM.
+  const rows = Array.from(list.querySelectorAll('.cat-row')).map((node) => ({
+    node,
+    id: node.dataset.extensionId,
+    haystack: node.dataset.haystack || '',
+    specialty: node.dataset.specialty || '',
+    type: node.dataset.type || '',
+    status: node.dataset.status || 'unreviewed',
+    lifecycle: node.dataset.lifecycle || '',
+    access: (node.dataset.access || '').split(' ').filter(Boolean)
+  }));
+
+  const state = { query: '', specialty: '', type: '', status: '', lifecycle: '', access: '' };
+  let catalogData = null;
+  let selectedId = null;
+
+  function distinct(key) {
+    return Array.from(new Set(rows.map((row) => row[key]).filter(Boolean))).sort();
+  }
+
+  function matches(row, ignore) {
+    if (ignore !== 'query' && state.query && !row.haystack.includes(state.query)) return false;
+    if (ignore !== 'specialty' && state.specialty && row.specialty !== state.specialty) return false;
+    if (ignore !== 'type' && state.type && row.type !== state.type) return false;
+    if (ignore !== 'status' && state.status && row.status !== state.status) return false;
+    if (ignore !== 'lifecycle' && state.lifecycle && row.lifecycle !== state.lifecycle) return false;
+    if (ignore !== 'access' && state.access && !row.access.includes(state.access)) return false;
+    return true;
+  }
+
+  // Sort known values by a curated order and append anything unrecognised, so
+  // a new value from the generator still appears instead of vanishing.
+  function ordered(values, order) {
+    const known = order.filter((value) => values.includes(value));
+    const rest = values.filter((value) => !order.includes(value)).sort();
+    return known.concat(rest);
+  }
+
+  // A facet whose value never varies cannot narrow anything, so it is not
+  // rendered. Type is the exception: it always shows the full vocabulary,
+  // because which kinds of extension exist is itself worth knowing.
+  function facetGroups() {
+    const groups = [];
+
+    if (distinct('specialty').length > 1) {
+      groups.push({
+        key: 'specialty',
+        title: 'Domain',
+        options: distinct('specialty').map((value) => ({ value, label: value }))
+      });
+    }
+
+    const typeValues = TYPE_ORDER.concat(
+      distinct('type').filter((value) => !TYPE_ORDER.includes(value))
+    );
+    if (typeValues.length) {
+      groups.push({
+        key: 'type',
+        title: 'Type',
+        options: typeValues.map((value) => ({
+          value,
+          label: TYPE_LABELS[value] || value
+        }))
+      });
+    }
+
+    const trustValues = distinct('status');
+    if (trustValues.length > 1) {
+      groups.push({
+        key: 'status',
+        title: 'Trust',
+        options: ordered(trustValues, TRUST_ORDER).map((value) => ({
+          value,
+          label: TRUST_LABELS[value] || value
+        }))
+      });
+    }
+
+    const lifecycleValues = distinct('lifecycle');
+    if (lifecycleValues.length > 1) {
+      groups.push({
+        key: 'lifecycle',
+        title: 'Lifecycle',
+        options: lifecycleValues.map((value) => ({ value, label: value }))
+      });
+    }
+
+    const accessValues = Object.keys(ACCESS_LABELS)
+      .filter((key) => rows.some((row) => row.access.includes(key)))
+      .filter((key) => !rows.every((row) => row.access.includes(key)));
+    if (accessValues.length) {
+      groups.push({
+        key: 'access',
+        title: 'Declared access',
+        options: accessValues.map((value) => ({ value, label: ACCESS_LABELS[value] }))
+      });
+    }
+    return groups;
+  }
+
+  const groups = facetGroups();
+
+  function renderFacets() {
+    facetHost.innerHTML = groups.map((group) => {
+      const options = group.options.map((option) => {
+        const count = rows.filter(
+          (row) => matches(row, group.key) && (
+            group.key === 'access'
+              ? row.access.includes(option.value)
+              : row[group.key] === option.value
+          )
+        ).length;
+        const pressed = state[group.key] === option.value;
+        const disabled = count === 0 && !pressed ? ' disabled' : '';
+        return `<li><button type="button" class="facet-option" data-facet="${group.key}" ` +
+          `data-value="${option.value}" aria-pressed="${pressed}"${disabled}>` +
+          `<span>${option.label}</span><span class="facet-count">${count}</span></button></li>`;
+      }).join('');
+      return `<div class="catalog-facet"><h3>${group.title}</h3><ul>${options}</ul></div>`;
+    }).join('');
+  }
+
+  function apply() {
+    let visible = 0;
+    for (const row of rows) {
+      const show = matches(row, null);
+      row.node.hidden = !show;
+      if (show) visible += 1;
+    }
+
+    const filtered = Object.values(state).some(Boolean);
+    countLabel.textContent = filtered
+      ? `${visible} of ${rows.length} extensions`
+      : `Showing every extension`;
+    emptyState.hidden = visible !== 0;
+    resetButton.hidden = !filtered;
+    renderFacets();
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, (character) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]
+    ));
+  }
+
+  function accessDetail(record) {
+    const capabilities = record.capabilities || {};
+    const filesystem = capabilities.filesystem || {};
+    const entries = [
+      ['Commands', capabilities.commands],
+      ['Network', capabilities.network],
+      ['Writes', filesystem.write],
+      ['Reads', filesystem.read],
+      ['Data classes', capabilities['data-classes']],
+      ['Secrets', capabilities['secret-names']],
+      ['Environment', capabilities['environment-variables']]
+    ].filter(([, values]) => Array.isArray(values) && values.length);
+
+    if (!entries.length) return '<p>Declares no commands, network reach, or file writes.</p>';
+    return '<dl>' + entries.map(([label, values]) => (
+      `<div><dt>${label}</dt><dd>${escapeHtml(values.join(', '))}</dd></div>`
+    )).join('') + '</dl>';
+  }
+
+  function renderDetail(row) {
+    const record = catalogData
+      ? (catalogData.extensions || []).find((item) => item.id === row.id)
+      : null;
+
+    if (!record) {
+      const name = row.node.querySelector('.cat-row-open');
+      detail.innerHTML = `<h3>${escapeHtml(name ? name.textContent : 'Extension')}</h3>` +
+        `<p>${escapeHtml(row.node.querySelector('.cat-row-summary').textContent)}</p>` +
+        '<p class="install-note">Full evidence needs <code>catalog.json</code>, which did not load. ' +
+        'Reload the page to try again.</p>';
+      return;
+    }
+
+    const source = record.source || {};
+    const revision = source.revision || (record.review || {}).revision || 'not available';
+    const sourceUrl = source.repository && source.path
+      ? `${source.repository}/tree/${revision}/${source.path}`
+      : null;
+    const status = (record.review || {}).status || 'unreviewed';
+    const reviewers = ((record.review || {}).reviewers || []).join(', ');
+    const repoPath = (source.repository || '').replace(/^https?:\/\/github\.com\//, '');
+
+    // Installation is activated only for active skills, so anything else says
+    // so plainly instead of offering a command that will not be honoured.
+    const installable = record.type === 'skill' && record.lifecycle === 'active';
+    const commands = {
+      apm: source.path
+        ? `apm install ${repoPath}/${source.path}#${revision} --target copilot`
+        : 'apm install <owner>/<repository>/<package-path>#<commit-sha> --target copilot',
+      npx: sourceUrl
+        ? `npx skills@${INSTALLER_VERSION} add \\\n  ${sourceUrl} \\\n  --agent github-copilot -y`
+        : `npx skills@${INSTALLER_VERSION} add <immutable-tree-url> --agent github-copilot -y`
+    };
+
+    const installBlock = installable
+      ? `
+      <h4>Install</h4>
+      <div class="install-switch" role="group" aria-label="Choose installer">
+        <button type="button" class="shell-option active" aria-pressed="true" data-installer="apm">APM</button>
+        <button type="button" class="shell-option" aria-pressed="false" data-installer="npx">Skills CLI</button>
+      </div>
+      <pre aria-live="polite"><code id="install-command">${escapeHtml(commands.apm)}</code></pre>
+      <button type="button" class="copy-command" data-copy>Copy command</button>
+      <p class="install-note" id="install-rationale">APM records the dependency and resolved bytes in a lockfile. Pinned to the reviewed revision and digest, and installing still needs your confirmation.</p>`
+      : `
+      <h4>Install</h4>
+      <p class="install-note">Installation is activated for active skills only. This record is
+      ${escapeHtml(record.lifecycle === 'active' ? `a ${record.type || 'non-skill'} extension` : `${record.lifecycle || 'not active'}`)},
+      so no install command is offered.</p>`;
+
+    detail.innerHTML = `
+      <h3>${escapeHtml(record['display-name'] || 'Extension')}</h3>
+      <p>${escapeHtml(record.summary || '')}</p>
+
+      <h4>What it can access</h4>
+      ${accessDetail(record)}
+
+      <h4>Review</h4>
+      <p>${escapeHtml(TRUST_EVIDENCE[status] || TRUST_EVIDENCE.unreviewed)}</p>
+      <dl>
+        <div><dt>Type</dt><dd>${escapeHtml(TYPE_LABELS[record.type] || record.type || 'Unknown')}</dd></div>
+        <div><dt>Reviewers</dt><dd>${escapeHtml(reviewers || 'Not published')}</dd></div>
+        <div><dt>Policy</dt><dd>${escapeHtml((record.policy || {}).outcome || 'not available')}</dd></div>
+        <div><dt>Maintainers</dt><dd>${escapeHtml((record.maintainers || []).join(', ') || 'Unknown')}</dd></div>
+        <div><dt>License</dt><dd>${escapeHtml(record.license || 'Not specified')}</dd></div>
+        <div><dt>Prerequisites</dt><dd>${escapeHtml((record.prerequisites || ['None declared']).join('; '))}</dd></div>
+        <div><dt>Digest</dt><dd><code>${escapeHtml(record['content-digest'] || 'not available')}</code></dd></div>
+      </dl>
+      ${sourceUrl ? `<p><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener">Read the source at this revision</a></p>` : ''}
+      ${installBlock}
+      ${record.support ? `<p><a href="${escapeHtml(record.support)}" target="_blank" rel="noopener">Get support</a></p>` : ''}
+    `;
+
+    if (installable) wireInstaller(commands);
+  }
+
+  // Tabs swap the command text in place; the copy button reports back on the
+  // button itself so the result is visible where the action happened.
+  function wireInstaller(commands) {
+    const code = detail.querySelector('#install-command');
+    const rationale = detail.querySelector('#install-rationale');
+    const copyButton = detail.querySelector('[data-copy]');
+    const tabs = Array.from(detail.querySelectorAll('[data-installer]'));
+    const NOTES = {
+      apm: 'APM records the dependency and resolved bytes in a lockfile. Pinned to the reviewed revision and digest, and installing still needs your confirmation.',
+      npx: 'Use this when APM is unavailable. It installs from the immutable tree at the reviewed revision; APM is still preferred because it adds a manifest and lockfile.'
+    };
+
+    for (const tab of tabs) {
+      tab.addEventListener('click', () => {
+        const installer = tab.dataset.installer;
+        code.textContent = commands[installer];
+        rationale.textContent = NOTES[installer];
+        for (const other of tabs) {
+          const isActive = other === tab;
+          other.classList.toggle('active', isActive);
+          other.setAttribute('aria-pressed', String(isActive));
+        }
+        copyButton.textContent = 'Copy command';
+      });
+    }
+
+    copyButton.addEventListener('click', async () => {
+      const text = code.textContent;
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const scratch = document.createElement('textarea');
+          scratch.value = text;
+          scratch.setAttribute('readonly', '');
+          scratch.style.position = 'fixed';
+          scratch.style.opacity = '0';
+          document.body.appendChild(scratch);
+          scratch.select();
+          document.execCommand('copy');
+          scratch.remove();
+        }
+        copyButton.textContent = 'Copied';
+      } catch (error) {
+        copyButton.textContent = 'Press Ctrl+C to copy';
+        const range = document.createRange();
+        range.selectNodeContents(code);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      window.setTimeout(() => { copyButton.textContent = 'Copy command'; }, 2000);
+    });
+  }
+
+  function select(row) {
+    selectedId = row.id;
+    for (const other of rows) {
+      other.node.classList.toggle('is-selected', other.id === selectedId);
+    }
+    renderDetail(row);
+    if (window.matchMedia('(max-width: 1240px)').matches) {
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  list.addEventListener('click', (event) => {
+    const node = event.target.closest('.cat-row');
+    if (!node) return;
+    const row = rows.find((item) => item.node === node);
+    if (row) select(row);
+  });
+
+  facetHost.addEventListener('click', (event) => {
+    const button = event.target.closest('.facet-option');
+    if (!button) return;
+    const { facet, value } = button.dataset;
+    state[facet] = state[facet] === value ? '' : value;
+    apply();
+  });
+
+  resetButton.addEventListener('click', () => {
+    for (const key of Object.keys(state)) state[key] = '';
+    searchInput.value = '';
+    apply();
+  });
+
+  rail.addEventListener('submit', (event) => event.preventDefault());
+
+  let searchTimer = null;
+  searchInput.addEventListener('input', () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(() => {
+      state.query = searchInput.value.trim().toLowerCase();
+      apply();
+    }, 120);
+  });
+
+  apply();
+
+  fetch('assets/catalog.json')
+    .then((response) => {
+      if (!response.ok) throw new Error('catalog unavailable');
+      return response.json();
+    })
+    .then((data) => {
+      catalogData = data;
+      if (selectedId) {
+        const row = rows.find((item) => item.id === selectedId);
+        if (row) renderDetail(row);
+      }
+    })
+    .catch(() => { /* Rows stay usable; the panel explains the gap on selection. */ });
+})();
+</script>
