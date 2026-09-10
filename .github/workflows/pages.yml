@@ -10,6 +10,11 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "catalog/**"
+      - "config/marketplace.yaml"
+      - "schemas/**"
+      - "skills/**"
+      - "scripts/marketplace.py"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
   schedule:
@@ -44,12 +49,19 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.11.19"
+          enable-cache: true
+
+      - name: Validate marketplace projection
+        run: uv run python scripts/marketplace.py validate
+
       - name: Build documentation
         run: |
           set -euo pipefail
-          cd docs
-          chmod +x build.sh
-          ./build.sh
+          bash docs/build.sh
 
       - name: Setup Pages
         uses: actions/configure-pages@v6

@@ -1,0 +1,33 @@
+schema-version: bcgov-extension/v1alpha1
+id: bcgov-public/openshift-deployment
+display-name: OpenShift Deployment
+summary: Design BC Gov Private Cloud workload manifests with appropriate controllers, resources, probes, disruption budgets, and security contexts.
+publisher: Province of British Columbia
+maintainers:
+  - "@mishraomp"
+  - "@DerekRoberts"
+support: https://github.com/bcgov/agent-marketplace/issues
+license: Apache-2.0
+lifecycle: active
+prerequisites:
+  - Access to a BC Gov Private Cloud project for live validation
+capabilities:
+  filesystem:
+    read:
+      - workspace Kubernetes and OpenShift manifests
+    write:
+      - workspace Kubernetes and OpenShift manifests after confirmation
+  network:
+    - developer.gov.bc.ca
+    - docs.openshift.com
+    - github.com
+    - kubernetes.io
+    - registry.developer.gov.bc.ca
+  commands:
+    - kubectl
+    - oc
+  environment-variables:
+    - S6_OVERLAY_VERSION
+  secret-names: []
+  data-classes:
+    - INTERNAL

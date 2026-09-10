@@ -80,7 +80,7 @@ function getPageTitle(html, filename) {
   const t = TITLE_RE.exec(html);
   if (t) {
     return norm(stripHtml(t[1]))
-      .replace(/\s*\|\s*BC Gov Agent Skills\s*$/, "")
+      .replace(/\s*\|\s*BC Gov Agent Marketplace\s*$/, "")
       .trim();
   }
   return filename;

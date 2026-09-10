@@ -1,0 +1,33 @@
+schema-version: bcgov-extension/v1alpha1
+id: bcgov-public/repo-hardening
+display-name: Repo Hardening
+summary: Apply a baseline repository hardening recipe for branch protection, secret handling, review gates, and deterministic validation.
+publisher: Province of British Columbia
+maintainers:
+  - "@mishraomp"
+  - "@DerekRoberts"
+support: https://github.com/bcgov/agent-marketplace/issues
+license: Apache-2.0
+lifecycle: active
+prerequisites:
+  - GitHub repository with branch protection enabled
+  - Access to repo settings and CI permissions
+capabilities:
+  filesystem:
+    read:
+      - repository configuration files
+      - GitHub Actions and workflow metadata
+    write:
+      - local draft hardening plan after confirmation
+  network:
+    - github.com
+    - docs.github.com
+  commands:
+    - git
+    - gh
+  environment-variables:
+    - GH_TOKEN
+  secret-names:
+    - GITHUB_TOKEN
+  data-classes:
+    - INTERNAL

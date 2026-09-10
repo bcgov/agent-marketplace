@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAQ | BC Gov Agent Skills</title>
+    <title>FAQ | BC Gov Agent Marketplace</title>
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <style>
         :root {
@@ -226,6 +226,37 @@
             margin: 0 auto;
         }
 
+        .hero-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 0.7rem 1.1rem;
+            border: 2px solid var(--bc-blue);
+            border-radius: 4px;
+            background: var(--bc-blue);
+            color: var(--white);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .hero-action:hover {
+            background: var(--bc-blue-light);
+            border-color: var(--bc-blue-light);
+        }
+
+        .hero .hero-action.primary {
+            background: var(--bc-gold);
+            border-color: var(--bc-gold);
+            color: var(--bc-blue);
+        }
+
+        .hero .hero-action.secondary {
+            background: transparent;
+            border-color: var(--white);
+            color: var(--white);
+        }
+
         /* Typography */
         h1 {
             color: var(--bc-blue);
@@ -260,6 +291,11 @@
 
         p {
             margin-bottom: 1rem;
+        }
+
+        :not(pre) > code {
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         /* Cards - Enhanced */
@@ -508,6 +544,66 @@
         .badge-blue {
             background: var(--bc-blue);
             color: var(--white);
+        }
+
+        .shell-switch {
+            display: inline-flex;
+            border: 1px solid #9aa7b5;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0.5rem 0 1rem;
+        }
+
+        .shell-option,
+        .copy-command {
+            border: 0;
+            background: var(--white);
+            color: var(--bc-blue);
+            font: inherit;
+            font-weight: 600;
+            padding: 0.65rem 1rem;
+            cursor: pointer;
+        }
+
+        .shell-option + .shell-option {
+            border-left: 1px solid #9aa7b5;
+        }
+
+        .shell-option.active,
+        .copy-command {
+            background: var(--bc-blue);
+            color: var(--white);
+        }
+
+        .copy-command {
+            border-radius: 4px;
+            margin: 0 0 1.5rem;
+        }
+
+        .release-facts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1px;
+            background: #c8d0d8;
+            border: 1px solid #c8d0d8;
+            margin: 1rem 0 2rem;
+        }
+
+        .release-facts > div {
+            background: var(--white);
+            padding: 1rem;
+            min-width: 0;
+        }
+
+        .release-facts dt {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .release-facts dd {
+            overflow-wrap: anywhere;
         }
 
         /* Accordion / Collapsible */
@@ -984,19 +1080,20 @@
         <a href="index.html" class="bc-header-brand">
             <img src="assets/bc_citz_logo.jpg" alt="BC Government" class="bc-header-logo">
             <div>
-                <div class="bc-header-title">BC Gov Agent Skills</div>
+                <div class="bc-header-title">BC Gov Agent Marketplace</div>
                 <div class="bc-header-subtitle">A shared catalogue of agent skill profiles</div>
             </div>
         </a>
         <nav class="bc-nav">
             <a href="index.html" class="">Home</a>
+            <a href="getting-started.html" class="">Get Started</a>
             <a href="catalog.html" class="">Catalogue</a>
             <a href="consume.html" class="">Consume</a>
             <a href="contribute.html" class="">Contribute</a>
             <a href="spec.html" class="">Spec</a>
             <a href="architecture.html" class="">Pipeline</a>
             <a href="faq.html" class="active">FAQ</a>
-            <a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener" class="">GitHub ↗</a>
+            <a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener" class="">GitHub</a>
 
             <!-- Search button -->
             <button class="search-btn" id="search-btn" type="button" aria-label="Search documentation">
@@ -1035,95 +1132,57 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
-
 <h1 id="frequently-asked-questions">Frequently Asked Questions</h1>
 
-<p>If the answer you're looking for isn't here, the four pages it likely lives on are: <a href="consume.html">Consume a Skill</a>, <a href="contribute.html">Contribute a Skill</a>, <a href="spec.html">the spec</a>, and <a href="architecture.html">Pipeline &amp; governance</a>.</p>
+<h2 id="what-is-published-here">What is published here?</h2>
+<p>Agent Skills only: portable <code>SKILL.md</code> instructions plus optional flat resources and closed marketplace metadata. Hooks, MCP servers, custom agents, and automatically executable extension types are not supported by this MVP.</p>
 
-<h2 id="what-is-a-skill">What exactly is a "skill"?</h2>
+<h2 id="does-marketplace-reviewed-mean-safe">Does “Marketplace reviewed” mean safe?</h2>
+<p>No. It means named reviewers assessed the exact published revision, digest, declared capabilities, and available evidence. The marketplace does not use “safe” or “verified secure” claims.</p>
 
-<div class="card">
-    <p>A skill is a small, focused Markdown document — <code>SKILL.md</code> — that teaches an AI coding agent <strong>when</strong> to act, <strong>what</strong> to do, and <strong>what to avoid</strong>. Each skill targets one specific situation (e.g., "adding subnets inside an existing VNet") rather than trying to cover a whole topic.</p>
-    <p style="margin-bottom: 0;">The format is interoperable with GitHub Copilot, Claude, and other agents that load <code>SKILL.md</code> manifests. See <a href="https://agentskills.io" target="_blank" rel="noopener">agentskills.io</a> for the broader ecosystem and <a href="spec.html">our spec</a> for the exact rules this repo enforces.</p>
-</div>
+<h2 id="what-does-unreviewed-candidate-mean">What does “Unreviewed candidate” mean?</h2>
+<p>An immutable third-party source was submitted for review. Trusted CI still needs to compute its digest and run deterministic policy checks, and BC Gov reviewers have not approved it.</p>
 
-<h2 id="how-to-wire-up">How do I point my agent at an installed skill?</h2>
+<h2 id="why-is-the-source-a-full-commit-sha">Why is the source a full commit SHA?</h2>
+<p>A branch or tag can move. A full commit SHA plus package-tree digest binds discovery, scan, review, install, and receipt evidence to the same bytes.</p>
 
-<div class="card">
-    <p>You don't need to. <code>npx skills add bcgov/agent-skills</code> asks which agent you're using (or you can pass <code>--agent github-copilot</code>, <code>claude-code</code>, <code>cursor</code>, <code>cline</code>, <code>continue</code>, etc.) and copies the skill folder into the location that agent already reads. The next time the agent loads, the skill is there.</p>
-    <p style="margin-bottom: 0;">If your agent isn't on the supported list, see the <em>Manual install</em> section on <a href="consume.html#manual">Consume a Skill</a> for the <code>git clone</code> + <code>cp -r</code> fallback.</p>
-</div>
+<h2 id="why-are-there-two-companion-skills">Why are there two companion skills?</h2>
+<p><code>bcgov-find-extension</code> handles discovery, controlled installation, and third-party candidate registration. <code>bcgov-create-extension</code> handles authoring and hosted submission. Keeping the entry points separate loads only the workflow needed for the request.</p>
 
-<h2 id="why-bcgov-specific">Why does this repo only host BC Gov–specific skills?</h2>
+<h2 id="are-installed-skills-global-too">Are installed skills global too?</h2>
+<p>Reviewed catalog skills default to the current project. Third-party candidates are project-local only. The finder shows the exact destination and material capabilities before confirmation.</p>
 
-<div class="card">
-    <p>Generic skills — Azure SDKs, Microsoft Foundry, M365, document formats, language workflows — are already maintained in larger upstream catalogues (<a href="contribute.html#upstream-catalogs">listed on Contribute</a>). Duplicating them here would fragment the ecosystem and double the maintenance cost without giving consumers anything they couldn't already get.</p>
-    <p style="margin-bottom: 0;">What's missing upstream is the BC Gov–specific layer: Public Cloud Landing Zone constraints, internal services, policy-driven workflows, organisational conventions. That's the gap this repo fills, and the bar we apply when reviewing new skills.</p>
-</div>
+<h2 id="where-is-installation-evidence">Where is installation evidence?</h2>
+<p>Preferred APM installs use <code>apm.yml</code> and <code>apm.lock.yaml</code>; the fallback installer may write <code>skills-lock.json</code>. Legacy helper receipts live under <code>.github/agent-marketplace/receipts/</code>. Local evidence stays in the project unless the developer chooses to share it for support or incident response.</p>
 
-<h2 id="why-no-registry">Why doesn't this use a registry like npm or GitHub Packages?</h2>
+<h2 id="can-a-companion-publish-its-own-work">Can a companion publish its own work?</h2>
+<p>No. The creator may open a signed draft pull request, but cannot approve, merge, modify protection, or assign review status. CI and human reviewers decide publication.</p>
 
-<div class="card">
-    <p>The merge-to-<code>main</code> state of the repo is the release. <code>npx skills add</code> reads <code>SKILL.md</code> files straight out of the repo (via the <a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener">vercel-labs/skills</a> CLI) and copies the containing folder into the location each agent reads. That removes:</p>
-    <ul>
-        <li>A publish workflow and the <code>packages: write</code> token it would need.</li>
-        <li>An auth flow on the consumer side &mdash; no tokens, no <code>.npmrc</code>, no <code>gh auth login</code> just to read public skills.</li>
-        <li>Version metadata to keep in sync between the manifest and a package file.</li>
-    </ul>
-    <p style="margin-bottom: 0;">If you need a reproducible install, pin to a specific commit: <code>npx skills add https://github.com/bcgov/agent-skills/tree/&lt;sha&gt;</code>. See <a href="consume.html#pinning">Consume → Pinning</a>.</p>
-</div>
+<h2 id="what-if-i-cannot-push-a-branch">What if I cannot push a branch?</h2>
+<p>The creator preserves the staged package and provides an access-request action. Fork PRs are intentionally blocked. Third-party registration uses issues and does not require branch access.</p>
 
-<h2 id="why-no-fork">Why can't I open a PR from a fork?</h2>
-
-<div class="card">
-    <p>The PR workflow has a <code>fork-gate</code> job that fails any PR whose head repo isn't this one. That failure cascades into the <code>results</code> aggregator, which is the required status check on <code>main</code>. The reason: fork PRs would let untrusted code influence what we validate (and, potentially, what we publish). Maintainers re-land fork-style contributions by pushing the change to an in-repo branch after review.</p>
-    <p style="margin-bottom: 0;">If you don't have push access to <code>bcgov/agent-skills</code>, file an issue describing what you'd like to add. See <a href="architecture.html#pr-workflow">Pipeline → PR workflow</a> for the full rationale.</p>
-</div>
-
-<h2 id="why-signed-commits">Why are signed commits required?</h2>
-
-<div class="card">
-    <p>The <code>main</code> branch ruleset requires it. Signed commits give us a verifiable chain of who actually authored each change in the history. That's useful for audit, for catching compromised credentials, and for keeping the catalogue traceable back to a real contributor.</p>
-    <p style="margin-bottom: 0;">SSH commit signing is the simplest path on a developer laptop. See <a href="https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification" target="_blank" rel="noopener">GitHub's signing docs</a>.</p>
-</div>
-
-<h2 id="meta-skills">What are "meta-skills"?</h2>
-
-<div class="card">
-    <p>Skills that operate on this repository itself: scaffolding a new skill and validating the spec. They live under <code>.github/skills/</code> and are validated against the same <a href="spec.html">SKILL.md spec</a> as the public catalogue, but they aren't part of it. They ship with the repo so agents working in a checkout can use them.</p>
-    <p style="margin-bottom: 0;">Listed on the <a href="catalog.html#meta-skills">catalogue</a>.</p>
-</div>
-
-<h2 id="when-not-here">My situation isn't BC Gov–specific. Where should I look?</h2>
-
-<div class="card">
-    <p>Start with the upstream catalogues; they cover most general agent workflows:</p>
-    <ul>
-        <li><a href="https://microsoft.github.io/skills/#agents" target="_blank" rel="noopener">Microsoft Agent Skills</a>: Azure, Microsoft Foundry, M365, cross-cutting workflows.</li>
-        <li><a href="https://github.com/anthropics/skills" target="_blank" rel="noopener">anthropics/skills</a>: reference skills and the SKILL.md format.</li>
-        <li><a href="https://github.com/github/awesome-copilot" target="_blank" rel="noopener">awesome-copilot</a>: community-curated index of skills, prompts, and agents.</li>
-    </ul>
-    <p style="margin-bottom: 0;">If something close exists but isn't quite right, an issue or PR upstream benefits the widest audience. See <a href="contribute.html#upstream-catalogs">Contribute → Upstream catalogues</a>.</p>
-</div>
-    </main>
+<h2 id="how-is-a-package-quarantined">How is a package quarantined?</h2>
+<p>Maintainers set its lifecycle to <code>quarantined</code>, regenerate, and publish through review. The finder excludes it from default results. Support then identifies affected receipts or declared dependencies and publishes update or removal guidance.</p>
+</main>
     <footer class="site-footer">
         <div class="footer-content">
             <div class="footer-brand">
-                <h4>BC Gov Agent Skills</h4>
-                <p>A shared catalogue of agent skill profiles, validated in CI and installed with <code>npx skills add</code>.</p>
+                <h4>BC Gov Agent Marketplace</h4>
+                <p>Reviewed Agent Skills with immutable sources, declared capabilities, and deterministic policy evidence.</p>
             </div>
             <div class="footer-links">
                 <h4>Repository</h4>
                 <ul>
-                    <li><a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener">GitHub Repository</a></li>
-                    <li><a href="https://github.com/bcgov/agent-skills/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener">SKILL.md Spec (source)</a></li>
-                    <li><a href="https://github.com/bcgov/agent-skills/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener">GitHub Repository</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener">SKILL.md Spec (source)</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a></li>
                 </ul>
             </div>
             <div class="footer-links">
                 <h4>Documentation</h4>
                 <ul>
                     <li><a href="catalog.html">Skill Catalogue</a></li>
+                    <li><a href="getting-started.html">Getting Started</a></li>
                     <li><a href="consume.html">Consume a Skill</a></li>
                     <li><a href="contribute.html">Contribute a Skill</a></li>
                     <li><a href="spec.html">SKILL.md Spec</a></li>
@@ -1141,7 +1200,7 @@
             </div>
             <div class="footer-copyright">
                 <p>&copy; 2026 Province of British Columbia</p>
-                <p class="footer-meta">Built with a zero-dependency Bash + Node template engine</p>
+                <p class="footer-meta">Built with dependency-free Node.js tooling</p>
             </div>
         </div>
     </footer>

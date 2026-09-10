@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{PAGE_TITLE}} | BC Gov Agent Skills</title>
+    <title>{{PAGE_TITLE}} | BC Gov Agent Marketplace</title>
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <style>
         :root {
@@ -226,6 +226,37 @@
             margin: 0 auto;
         }
 
+        .hero-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 0.7rem 1.1rem;
+            border: 2px solid var(--bc-blue);
+            border-radius: 4px;
+            background: var(--bc-blue);
+            color: var(--white);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .hero-action:hover {
+            background: var(--bc-blue-light);
+            border-color: var(--bc-blue-light);
+        }
+
+        .hero .hero-action.primary {
+            background: var(--bc-gold);
+            border-color: var(--bc-gold);
+            color: var(--bc-blue);
+        }
+
+        .hero .hero-action.secondary {
+            background: transparent;
+            border-color: var(--white);
+            color: var(--white);
+        }
+
         /* Typography */
         h1 {
             color: var(--bc-blue);
@@ -260,6 +291,11 @@
 
         p {
             margin-bottom: 1rem;
+        }
+
+        :not(pre) > code {
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         /* Cards - Enhanced */
@@ -508,6 +544,66 @@
         .badge-blue {
             background: var(--bc-blue);
             color: var(--white);
+        }
+
+        .shell-switch {
+            display: inline-flex;
+            border: 1px solid #9aa7b5;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0.5rem 0 1rem;
+        }
+
+        .shell-option,
+        .copy-command {
+            border: 0;
+            background: var(--white);
+            color: var(--bc-blue);
+            font: inherit;
+            font-weight: 600;
+            padding: 0.65rem 1rem;
+            cursor: pointer;
+        }
+
+        .shell-option + .shell-option {
+            border-left: 1px solid #9aa7b5;
+        }
+
+        .shell-option.active,
+        .copy-command {
+            background: var(--bc-blue);
+            color: var(--white);
+        }
+
+        .copy-command {
+            border-radius: 4px;
+            margin: 0 0 1.5rem;
+        }
+
+        .release-facts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1px;
+            background: #c8d0d8;
+            border: 1px solid #c8d0d8;
+            margin: 1rem 0 2rem;
+        }
+
+        .release-facts > div {
+            background: var(--white);
+            padding: 1rem;
+            min-width: 0;
+        }
+
+        .release-facts dt {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .release-facts dd {
+            overflow-wrap: anywhere;
         }
 
         /* Accordion / Collapsible */
@@ -984,19 +1080,20 @@
         <a href="index.html" class="bc-header-brand">
             <img src="assets/bc_citz_logo.jpg" alt="BC Government" class="bc-header-logo">
             <div>
-                <div class="bc-header-title">BC Gov Agent Skills</div>
+                <div class="bc-header-title">BC Gov Agent Marketplace</div>
                 <div class="bc-header-subtitle">A shared catalogue of agent skill profiles</div>
             </div>
         </a>
         <nav class="bc-nav">
             <a href="index.html" class="{{NAV_INDEX}}">Home</a>
+            <a href="getting-started.html" class="{{NAV_GETTING_STARTED}}">Get Started</a>
             <a href="catalog.html" class="{{NAV_CATALOG}}">Catalogue</a>
             <a href="consume.html" class="{{NAV_CONSUME}}">Consume</a>
             <a href="contribute.html" class="{{NAV_CONTRIBUTE}}">Contribute</a>
             <a href="spec.html" class="{{NAV_SPEC}}">Spec</a>
             <a href="architecture.html" class="{{NAV_ARCHITECTURE}}">Pipeline</a>
             <a href="faq.html" class="{{NAV_FAQ}}">FAQ</a>
-            <a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener" class="{{NAV_GITHUB}}">GitHub ↗</a>
+            <a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener" class="{{NAV_GITHUB}}">GitHub</a>
 
             <!-- Search button -->
             <button class="search-btn" id="search-btn" type="button" aria-label="Search documentation">

@@ -1,0 +1,63 @@
+[
+  {
+    "name": "assigned-secret",
+    "path": "notes.md",
+    "content": "token=abcdefghijklmnop\n",
+    "expected": ["assigned-secret"]
+  },
+  {
+    "name": "hidden-unicode",
+    "path": "notes.md",
+    "content": "ordinary\u202etext\n",
+    "expected": ["hidden-unicode"]
+  },
+  {
+    "name": "blocked-extension-type",
+    "path": "hooks.json",
+    "content": "{}\n",
+    "expected": ["blocked-extension-type"]
+  },
+  {
+    "name": "archive",
+    "path": "assets/payload.zip",
+    "content": "not an archive\n",
+    "expected": ["archive"]
+  },
+  {
+    "name": "unsupported-file-type",
+    "path": "assets/payload.exe",
+    "content": "not executable content\n",
+    "expected": ["unsupported-file-type"]
+  },
+  {
+    "name": "nested-resource",
+    "path": "references/nested/payload.md",
+    "content": "nested\n",
+    "expected": ["nested-resource"]
+  },
+  {
+    "name": "executable-bit",
+    "path": "assets/tool.sh",
+    "content": "printf 'hello\\n'\n",
+    "mode": "executable",
+    "expected": ["executable-bit"]
+  },
+  {
+    "name": "undeclared-script",
+    "path": "scripts/run.sh",
+    "content": "printf 'hello\\n'\n",
+    "expected": ["undeclared-script"]
+  },
+  {
+    "name": "undeclared-network",
+    "path": "notes.md",
+    "content": "curl https://unlisted.example/resource\n",
+    "expected": ["undeclared-network"]
+  },
+  {
+    "name": "undeclared-environment-variable",
+    "path": "notes.md",
+    "content": "echo $UNDECLARED_VALUE\n",
+    "expected": ["undeclared-environment-variable"]
+  }
+]

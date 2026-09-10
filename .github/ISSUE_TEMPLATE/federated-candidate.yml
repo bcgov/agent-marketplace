@@ -1,0 +1,65 @@
+name: Federated Agent Skill candidate
+description: Register an immutable third-party Agent Skill for trusted CI and human review.
+title: "Federated candidate: "
+labels:
+  - federated-candidate
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Register only an Agent Skill from an approved discovery source. Source approval does not approve the candidate. Trusted CI independently downloads the exact commit, computes its digest, and scans it without executing candidate content.
+  - type: input
+    id: discovery-catalog
+    attributes:
+      label: Discovery catalog
+      description: Approved catalog where this candidate was discovered.
+      placeholder: https://skills.sh/
+    validations:
+      required: true
+  - type: input
+    id: repository
+    attributes:
+      label: Source repository
+      description: Canonical HTTPS GitHub repository URL linked by the discovery catalog.
+      placeholder: https://github.com/owner/repository
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Full commit SHA
+      description: A lowercase 40-character immutable Git commit SHA.
+      placeholder: 0123456789abcdef0123456789abcdef01234567
+    validations:
+      required: true
+  - type: input
+    id: package-path
+    attributes:
+      label: Package path
+      description: Repository-relative directory containing SKILL.md.
+      placeholder: skills/example-skill
+    validations:
+      required: true
+  - type: input
+    id: digest
+    attributes:
+      label: Package-tree digest
+      description: Optional expected digest from an installer or prior inspection. Trusted CI always computes and publishes its own digest.
+      placeholder: sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Declared capabilities
+      description: JSON object covering filesystem, network, commands, environment variables, secret names, and data classes.
+      render: json
+    validations:
+      required: true
+  - type: dropdown
+    id: acknowledgement
+    attributes:
+      label: Trust acknowledgement
+      description: Registration does not confer BC Gov review status.
+      options:
+        - Unreviewed candidate - trusted CI and human review are pending
+    validations:
+      required: true

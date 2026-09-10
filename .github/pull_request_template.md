@@ -11,13 +11,22 @@
 
 <!-- Who needs this and what problem does it solve? When should an agent fire it? -->
 
+## Upstream search and provenance
+
+<!-- Link equivalent searches. For federated content, give repository, full commit SHA, package path, digest, and license. -->
+
+## Capabilities and review evidence
+
+<!-- Summarize filesystem, network, command, environment, secret-name, and data-class capabilities. Human review fields are generated, never authored. -->
+
 ## Checklist
 
 - [ ] Followed [spec/SKILL_SPEC.md](../spec/SKILL_SPEC.md) (7 sections, ≤500 lines, kebab-case name, flat resource dirs).
+- [ ] Added or updated `bcgov-extension.yaml` and declared every material capability.
 - [ ] Updated `SKILL.md` when behaviour changed (description, Use When, Workflow, Examples).
-- [ ] Ran `make validate` (or `uv run python scripts/validate_skill.py skills/<name>/SKILL.md`) locally and it passed.
-- [ ] Ran `make format` and `make lint` if Python under `scripts/` or `tests/` changed.
+- [ ] Ran `make verify` locally and it passed without executing contributed package scripts.
 - [ ] Confirmed no secrets, tokens, or credentials are committed.
+- [ ] Reviewed the exact head revision and generated package digest shown by CI.
 
 ## Notes for reviewers
 

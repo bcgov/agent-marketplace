@@ -1,0 +1,33 @@
+schema-version: bcgov-marketplace/v1alpha1
+release-state: development
+repository: https://github.com/bcgov/agent-marketplace
+revision: 842241b962849ad239e1e9c90589b6bc9c881e53
+installer-version: 1.5.23
+reviewers:
+  - "@mishraomp"
+  - "@DerekRoberts"
+approved-discovery-sources:
+  - id: vercel-agent-skills
+    name: Agent Skills Directory
+    status: active
+    extension-types: [skill]
+    repository: https://github.com/vercel-labs/skills
+    catalog: https://skills.sh/
+  - id: microsoft-agent-skills
+    name: Microsoft Agent Skills
+    status: active
+    extension-types: [skill]
+    repository: https://github.com/microsoft/skills
+    catalog: https://microsoft.github.io/skills/
+  - id: anthropic-skills
+    name: Anthropic Skills
+    status: active
+    extension-types: [skill]
+    repository: https://github.com/anthropics/skills
+    catalog: https://github.com/anthropics/skills
+  - id: awesome-copilot
+    name: Awesome Copilot
+    status: active
+    extension-types: [skill, prompt, instructions, agent]
+    repository: https://github.com/github/awesome-copilot
+    catalog: https://github.com/github/awesome-copilot

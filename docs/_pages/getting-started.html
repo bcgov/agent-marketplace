@@ -1,0 +1,58 @@
+<!-- TITLE: Getting Started -->
+<!-- NAV: getting_started -->
+
+<h1>Getting Started</h1>
+
+<p>This repository provides two BC Gov marketplace workflows for GitHub Copilot: <code>bcgov-find-extension</code> and <code>bcgov-create-extension</code>.</p>
+
+<h2>Prerequisites</h2>
+
+<ul>
+    <li>A GitHub Copilot version that supports Agent Skills.</li>
+    <li>Network access to the hosted marketplace catalog.</li>
+    <li>APM, or Node.js with <code>npx</code>, only when installing a published skill.</li>
+    <li>GitHub authentication only when registering a candidate or submitting a draft pull request.</li>
+</ul>
+
+<div class="alert alert-info">
+    <div class="alert-icon" aria-hidden="true">i</div>
+    <div>The companion skills do not require a marketplace checkout, Python, or <code>uv</code>. Those tools are used by marketplace maintainers and trusted CI.</div>
+</div>
+
+<h2>Available workflows</h2>
+
+<dl class="release-facts">
+    <div><dt>Finder</dt><dd><code>bcgov-find-extension</code> searches generated catalog records and presents installation evidence.</dd></div>
+    <div><dt>Creator</dt><dd><code>bcgov-create-extension</code> routes extension types, scaffolds active candidates, analyzes, previews, and submits after confirmation.</dd></div>
+    <div><dt>Source</dt><dd>Immutable companion folders under <code>.github/skills/</code> in the hosted marketplace repository.</dd></div>
+</dl>
+
+<h2>Install the companions</h2>
+
+<p>Use the published marketplace revision. APM is preferred because it records a manifest and lockfile:</p>
+
+<pre><code>apm install \
+    bcgov/agent-marketplace/.github/skills/bcgov-find-extension#&lt;published-commit-sha&gt; \
+    bcgov/agent-marketplace/.github/skills/bcgov-create-extension#&lt;published-commit-sha&gt; \
+    --target copilot</code></pre>
+
+<p>If APM is unavailable, use the catalog-pinned Skills CLI:</p>
+
+<pre><code>npx skills@&lt;catalog-installer-version&gt; add \
+    https://github.com/bcgov/agent-marketplace/tree/&lt;published-commit-sha&gt; \
+    --skill bcgov-find-extension --skill bcgov-create-extension \
+    --agent github-copilot -y</code></pre>
+
+<h2>Use the workflows</h2>
+
+<p>From any workspace, ask GitHub Copilot:</p>
+
+<ul>
+    <li><strong>Finder:</strong> “Find me a reviewed BC Gov extension for hardening GitHub Actions.”</li>
+    <li><strong>Creator:</strong> “Turn this workflow idea into a BC Gov extension and prepare a draft pull request.”</li>
+</ul>
+
+<div class="alert alert-warning">
+    <div class="alert-icon" aria-hidden="true">!</div>
+    <div>These workflows assist discovery and submission but do not approve, merge, or assign marketplace review status. Installation and submission require explicit confirmation.</div>
+</div>

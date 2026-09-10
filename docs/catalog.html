@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skill Catalogue | BC Gov Agent Skills</title>
+    <title>Agent Extension Catalog | BC Gov Agent Marketplace</title>
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <style>
         :root {
@@ -226,6 +226,37 @@
             margin: 0 auto;
         }
 
+        .hero-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 0.7rem 1.1rem;
+            border: 2px solid var(--bc-blue);
+            border-radius: 4px;
+            background: var(--bc-blue);
+            color: var(--white);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .hero-action:hover {
+            background: var(--bc-blue-light);
+            border-color: var(--bc-blue-light);
+        }
+
+        .hero .hero-action.primary {
+            background: var(--bc-gold);
+            border-color: var(--bc-gold);
+            color: var(--bc-blue);
+        }
+
+        .hero .hero-action.secondary {
+            background: transparent;
+            border-color: var(--white);
+            color: var(--white);
+        }
+
         /* Typography */
         h1 {
             color: var(--bc-blue);
@@ -260,6 +291,11 @@
 
         p {
             margin-bottom: 1rem;
+        }
+
+        :not(pre) > code {
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         /* Cards - Enhanced */
@@ -508,6 +544,66 @@
         .badge-blue {
             background: var(--bc-blue);
             color: var(--white);
+        }
+
+        .shell-switch {
+            display: inline-flex;
+            border: 1px solid #9aa7b5;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0.5rem 0 1rem;
+        }
+
+        .shell-option,
+        .copy-command {
+            border: 0;
+            background: var(--white);
+            color: var(--bc-blue);
+            font: inherit;
+            font-weight: 600;
+            padding: 0.65rem 1rem;
+            cursor: pointer;
+        }
+
+        .shell-option + .shell-option {
+            border-left: 1px solid #9aa7b5;
+        }
+
+        .shell-option.active,
+        .copy-command {
+            background: var(--bc-blue);
+            color: var(--white);
+        }
+
+        .copy-command {
+            border-radius: 4px;
+            margin: 0 0 1.5rem;
+        }
+
+        .release-facts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1px;
+            background: #c8d0d8;
+            border: 1px solid #c8d0d8;
+            margin: 1rem 0 2rem;
+        }
+
+        .release-facts > div {
+            background: var(--white);
+            padding: 1rem;
+            min-width: 0;
+        }
+
+        .release-facts dt {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .release-facts dd {
+            overflow-wrap: anywhere;
         }
 
         /* Accordion / Collapsible */
@@ -984,19 +1080,20 @@
         <a href="index.html" class="bc-header-brand">
             <img src="assets/bc_citz_logo.jpg" alt="BC Government" class="bc-header-logo">
             <div>
-                <div class="bc-header-title">BC Gov Agent Skills</div>
+                <div class="bc-header-title">BC Gov Agent Marketplace</div>
                 <div class="bc-header-subtitle">A shared catalogue of agent skill profiles</div>
             </div>
         </a>
         <nav class="bc-nav">
             <a href="index.html" class="">Home</a>
+            <a href="getting-started.html" class="">Get Started</a>
             <a href="catalog.html" class="active">Catalogue</a>
             <a href="consume.html" class="">Consume</a>
             <a href="contribute.html" class="">Contribute</a>
             <a href="spec.html" class="">Spec</a>
             <a href="architecture.html" class="">Pipeline</a>
             <a href="faq.html" class="">FAQ</a>
-            <a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener" class="">GitHub ↗</a>
+            <a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener" class="">GitHub</a>
 
             <!-- Search button -->
             <button class="search-btn" id="search-btn" type="button" aria-label="Search documentation">
@@ -1035,113 +1132,120 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
+<h1 id="agent-extension-catalog">Agent Extension Catalog</h1>
 
-<h1 id="skill-catalogue">Skill Catalogue</h1>
-
-<p>Every skill in this repo, grouped by whether it ships in the public catalogue (<strong>Public</strong>) or stays inside the repo as a tool for working <em>on</em> the repo itself (<strong>Meta</strong>). Both are validated against the same <a href="spec.html">SKILL.md spec</a>.</p>
+<p>These Agent Skills are generated from closed marketplace metadata and the exact package bytes at revision <code>842241b962849ad239e1e9c90589b6bc9c881e53</code>. Every record includes its source, digest, declared capabilities, deterministic policy result, and human review evidence.</p>
 
 <div class="alert alert-info">
-    <div class="alert-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-    </div>
-    <div>
-        <strong>The catalogue is intentionally short.</strong> Skills live here only when they are <strong>BC Gov–specific</strong>. Before adding a new skill, contributors check the <a href="contribute.html#upstream-catalogs">upstream catalogues</a> first. See <a href="contribute.html">Contribute a Skill</a>.
-    </div>
+    <div class="alert-icon" aria-hidden="true">i</div>
+    <div><strong>Trust language is precise.</strong> Marketplace reviewed means named reviewers assessed the published revision and digest. It is not a claim that software is safe or verified secure. Third-party candidates do not appear here until review is published.</div>
 </div>
 
-<h2 id="published">Public skills</h2>
+<p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
 
-<p>Public skills live under <a href="https://github.com/bcgov/agent-skills/tree/main/skills" target="_blank" rel="noopener"><code>skills/</code></a> in the repo. Each card below is hand-listed from the skill's <code>SKILL.md</code> frontmatter so the catalogue reads at a glance; the live source is always the linked file. List the skills available from the CLI itself with:</p>
+<h2 id="published-skills">Published skills</h2>
 
-<pre><code>npx skills add bcgov/agent-skills --list</code></pre>
+<div id="published-skills" class="grid grid-2">
+<article class="card card-gold" data-extension-id="bcgov-public/azure-networking">
+  <h3 id="azure-networking">Azure Networking</h3>
+  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
+  <p>Design BC Gov Azure Landing Zone subnets, network security groups, service delegations, and private endpoints.</p>
+  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
+  <strong>Capabilities:</strong> 9 declared<br>
+  <strong>Digest:</strong> <code>sha256:bbfa9c9bc082d1e009f9b30f0d4ec28df225d588b54c1809922f4ae8c577ae8c</code></p>
+  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/azure-networking" target="_blank" rel="noopener">Inspect immutable source</a></p>
+</article>
 
-<div id="published-skills">
-    <div class="card card-gold">
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <h3 id="azure-networking" style="margin: 0; color: var(--bc-blue);">azure-networking</h3>
-            <span class="badge badge-gold">public</span>
-        </div>
-        <p>Azure subnet, NSG, and private-endpoint patterns for adding subnets inside an existing VNet — atomic NSG-at-creation, per-service delegation, PE subnet layout, ARM write serialization, and reference NSG layouts for PE, APIM, App Gateway, and Container Apps subnets. Tool-agnostic guidance with Terraform (<code>azapi_resource</code>), Bicep, and az CLI examples.</p>
-        <p><strong>Use when</strong> adding subnets, debugging delegation or PE errors, or sizing a PE subnet.</p>
-        <p style="margin-top: 1rem; margin-bottom: 0;"><a href="https://github.com/bcgov/agent-skills/blob/main/skills/azure-networking/SKILL.md" target="_blank" rel="noopener"><strong>Read <code>skills/azure-networking/SKILL.md</code> →</strong></a></p>
-    </div>
+<article class="card card-gold" data-extension-id="bcgov-public/github-actions">
+  <h3 id="github-actions">GitHub Actions</h3>
+  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
+  <p>Author and review GitHub Actions workflows using BC Gov permissions, pinning, fork-gate, and required-check patterns.</p>
+  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
+  <strong>Capabilities:</strong> 12 declared<br>
+  <strong>Digest:</strong> <code>sha256:0c072d12707da74da8f073d3894fb676a0299289dd1463b2a28ad25d720da21a</code></p>
+  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/github-actions" target="_blank" rel="noopener">Inspect immutable source</a></p>
+</article>
 
-    <div class="card card-gold">
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <h3 id="github-actions" style="margin: 0; color: var(--bc-blue);">github-actions</h3>
-            <span class="badge badge-gold">public</span>
-        </div>
-        <p>BC Gov hardening patterns for GitHub Actions workflows — deny-all <code>permissions: {}</code> baseline with per-job step-ups, first-party tag vs third-party SHA pinning, fork-gate, single results-aggregator required check, pinned <code>ubuntu-24.04</code> runners, script-injection-safe env handling, and signed-commit ruleset interaction. Covers <code>.github/workflows/*.yml</code>, <code>dependabot.yml</code>, and the branch-protection / repository-ruleset settings that pair with them.</p>
-        <p><strong>Use when</strong> authoring or reviewing a workflow in a BC Gov repo, debugging permission-denied errors, or onboarding Dependabot.</p>
-        <p style="margin-top: 1rem; margin-bottom: 0;"><a href="https://github.com/bcgov/agent-skills/blob/main/skills/github-actions/SKILL.md" target="_blank" rel="noopener"><strong>Read <code>skills/github-actions/SKILL.md</code> →</strong></a></p>
-    </div>
+<article class="card card-gold" data-extension-id="bcgov-public/github-repo-setup">
+  <h3 id="github-repository-setup">GitHub Repository Setup</h3>
+  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
+  <p>Assess a GitHub repository against BC Gov DevOps and security standards and produce an evidence-based maturity report.</p>
+  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
+  <strong>Capabilities:</strong> 9 declared<br>
+  <strong>Digest:</strong> <code>sha256:39c052747fa7d319576fdca00b44e1ad8b825dcbd9a1cb7abba3b6467828db1c</code></p>
+  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/github-repo-setup" target="_blank" rel="noopener">Inspect immutable source</a></p>
+</article>
 
-    <div class="card card-gold">
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <h3 id="openshift-deployment" style="margin: 0; color: var(--bc-blue);">openshift-deployment</h3>
-            <span class="badge badge-gold">public</span>
-        </div>
-        <p>BC Gov Private Cloud OpenShift workload-manifest guidance: picking the right controller (<code>Deployment</code>, <code>StatefulSet</code>, <code>DaemonSet</code>, <code>Job</code>, <code>CronJob</code>) and shaping it for the platform — container resources and QoS, namespace <code>LimitRange</code> defaults, liveness/readiness/startup probes, <code>terminationGracePeriod</code> and SIGTERM handling, PID-1 reaping with <code>tini</code> or <code>dumb-init</code>, <code>PodDisruptionBudget</code>s, horizontal scaling (HPA, VPA), and <code>CronJob</code> admission rules.</p>
-        <p><strong>Use when</strong> authoring or reviewing a workload manifest bound for a license-plate runtime namespace. <strong>Out of scope:</strong> NetworkPolicies, Vault/ESO, Argo CD/GitOps, Artifactory image pulls, Porter TCP exposure, storage class choice, Sysdig, ACS, security assessment.</p>
-        <p style="margin-top: 1rem; margin-bottom: 0;"><a href="https://github.com/bcgov/agent-skills/blob/main/skills/openshift-deployment/SKILL.md" target="_blank" rel="noopener"><strong>Read <code>skills/openshift-deployment/SKILL.md</code> →</strong></a></p>
-    </div>
+<article class="card card-gold" data-extension-id="bcgov-public/n8n-runbook-parser">
+  <h3 id="n8n-runbook-parser">n8n Runbook Parser</h3>
+  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
+  <p>Extract code from prose runbooks into version-controlled snippets, detect drift, and backport reviewed fixes to source documentation.</p>
+  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
+  <strong>Capabilities:</strong> 16 declared<br>
+  <strong>Digest:</strong> <code>sha256:bf8b38eb8f53a9341d19b1844320c02212e18f402312c5387a2add1d35189e6e</code></p>
+  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/n8n-runbook-parser" target="_blank" rel="noopener">Inspect immutable source</a></p>
+</article>
+
+<article class="card card-gold" data-extension-id="bcgov-public/n8n-workflow-builder">
+  <h3 id="n8n-workflow-builder">n8n Workflow Builder</h3>
+  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
+  <p>Compose reviewed runbook snippets into local and n8n operational triage workflows with explicit API publication steps.</p>
+  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
+  <strong>Capabilities:</strong> 18 declared<br>
+  <strong>Digest:</strong> <code>sha256:84146ec685ef4d17931f60c5d03f5dbdae320ff4274e501a35f0d22f144368e0</code></p>
+  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/n8n-workflow-builder" target="_blank" rel="noopener">Inspect immutable source</a></p>
+</article>
+
+<article class="card card-gold" data-extension-id="bcgov-public/openshift-deployment">
+  <h3 id="openshift-deployment">OpenShift Deployment</h3>
+  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
+  <p>Design BC Gov Private Cloud workload manifests with appropriate controllers, resources, probes, disruption budgets, and security contexts.</p>
+  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
+  <strong>Capabilities:</strong> 11 declared<br>
+  <strong>Digest:</strong> <code>sha256:55fd1005c185c8e5210051568f7dcac7987171eeb8e8b6e3b1da17a31225060f</code></p>
+  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/community/openshift-deployment" target="_blank" rel="noopener">Inspect immutable source</a></p>
+</article>
+
+<article class="card card-gold" data-extension-id="bcgov-public/repo-hardening">
+  <h3 id="repo-hardening">Repo Hardening</h3>
+  <p><span class="badge badge-gold">Marketplace reviewed</span></p>
+  <p>Apply a baseline repository hardening recipe for branch protection, secret handling, review gates, and deterministic validation.</p>
+  <p><strong>Owner:</strong> @mishraomp, @DerekRoberts<br>
+  <strong>Capabilities:</strong> 10 declared<br>
+  <strong>Digest:</strong> <code>sha256:9fd010749fc81d20119daa1b504c89aa10ebde34f172d8277992720201d16355</code></p>
+  <p><a href="https://github.com/bcgov/agent-marketplace/tree/842241b962849ad239e1e9c90589b6bc9c881e53/skills/security/repo-hardening" target="_blank" rel="noopener">Inspect immutable source</a></p>
+</article>
 </div>
 
-<h2 id="meta-skills">Meta-skills</h2>
+<h2 id="project-scoped-direct-install">Project-scoped direct install</h2>
 
-<p>Skills the repo uses on itself: scaffolding a new skill and validating the spec. They live under <a href="https://github.com/bcgov/agent-skills/tree/main/.github/skills" target="_blank" rel="noopener"><code>.github/skills/</code></a> and are validated by the same PR check, but they aren't part of the public catalogue; they're picked up by agents working in a checkout of this repo.</p>
+<p>After inspecting a record's immutable source and capabilities, install its exact package path and revision. APM is preferred because it records the dependency and resolved bytes in a lockfile.</p>
 
-<div id="meta-skill-cards">
-    <div class="card">
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <h3 id="skill-author" style="margin: 0;">skill-author</h3>
-            <span class="badge">meta</span>
-        </div>
-        <p>Scaffolds a new skill profile in this repo and fills in the required <code>SKILL.md</code> structure when a contributor wants to add a skill.</p>
-        <p style="margin-top: 1rem; margin-bottom: 0;"><a href="https://github.com/bcgov/agent-skills/blob/main/.github/skills/skill-author/SKILL.md" target="_blank" rel="noopener"><strong>Read <code>.github/skills/skill-author/SKILL.md</code> →</strong></a></p>
-    </div>
+<pre><code>apm install \
+  bcgov/agent-marketplace/skills/&lt;specialty&gt;/&lt;skill-name&gt;#842241b962849ad239e1e9c90589b6bc9c881e53 \
+  --target copilot</code></pre>
 
-    <div class="card">
-        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <h3 id="skill-validator" style="margin: 0;">skill-validator</h3>
-            <span class="badge">meta</span>
-        </div>
-        <p>Validates skill profiles against the spec and explains how to fix failures before a PR is opened or merged.</p>
-        <p style="margin-top: 1rem; margin-bottom: 0;"><a href="https://github.com/bcgov/agent-skills/blob/main/.github/skills/skill-validator/SKILL.md" target="_blank" rel="noopener"><strong>Read <code>.github/skills/skill-validator/SKILL.md</code> →</strong></a></p>
-    </div>
-</div>
-
-<h2 id="dont-see-what-you-need">Don't see what you need?</h2>
-
-<div class="grid grid-2">
-    <div class="card">
-        <h3 id="check-the-upstream-catalogues-first" style="margin-top:0;">Check the upstream catalogues first</h3>
-        <p>Generic skills (Azure SDKs, Microsoft Foundry, document formats, language workflows) are usually already published elsewhere. The catalogues we check first are listed on the <a href="contribute.html#upstream-catalogs">contribute</a> page.</p>
-    </div>
-    <div class="card card-gold">
-        <h3 id="then-add-yours-here" style="margin-top:0;">Then add yours here</h3>
-        <p>If your use case is BC Gov–specific — a Landing Zone constraint, an internal service, a policy-driven workflow — open a PR. The <a href="contribute.html">contribute guide</a> walks through it.</p>
-    </div>
-</div>
-    </main>
+<p>If APM is unavailable, the finder offers a pinned <code>npx skills@1.5.23</code> command and recommends installing APM for future dependency and lockfile management. Both paths require confirmation.</p>
+</main>
     <footer class="site-footer">
         <div class="footer-content">
             <div class="footer-brand">
-                <h4>BC Gov Agent Skills</h4>
-                <p>A shared catalogue of agent skill profiles, validated in CI and installed with <code>npx skills add</code>.</p>
+                <h4>BC Gov Agent Marketplace</h4>
+                <p>Reviewed Agent Skills with immutable sources, declared capabilities, and deterministic policy evidence.</p>
             </div>
             <div class="footer-links">
                 <h4>Repository</h4>
                 <ul>
-                    <li><a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener">GitHub Repository</a></li>
-                    <li><a href="https://github.com/bcgov/agent-skills/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener">SKILL.md Spec (source)</a></li>
-                    <li><a href="https://github.com/bcgov/agent-skills/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener">GitHub Repository</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener">SKILL.md Spec (source)</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a></li>
                 </ul>
             </div>
             <div class="footer-links">
                 <h4>Documentation</h4>
                 <ul>
                     <li><a href="catalog.html">Skill Catalogue</a></li>
+                    <li><a href="getting-started.html">Getting Started</a></li>
                     <li><a href="consume.html">Consume a Skill</a></li>
                     <li><a href="contribute.html">Contribute a Skill</a></li>
                     <li><a href="spec.html">SKILL.md Spec</a></li>
@@ -1159,7 +1263,7 @@
             </div>
             <div class="footer-copyright">
                 <p>&copy; 2026 Province of British Columbia</p>
-                <p class="footer-meta">Built with a zero-dependency Bash + Node template engine</p>
+                <p class="footer-meta">Built with dependency-free Node.js tooling</p>
             </div>
         </div>
     </footer>

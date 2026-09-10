@@ -1,0 +1,41 @@
+schema-version: bcgov-extension/v1alpha1
+id: bcgov-public/n8n-workflow-builder
+display-name: n8n Workflow Builder
+summary: Compose reviewed runbook snippets into local and n8n operational triage workflows with explicit API publication steps.
+publisher: Province of British Columbia
+maintainers:
+  - "@mishraomp"
+  - "@DerekRoberts"
+support: https://github.com/bcgov/agent-marketplace/issues
+license: Apache-2.0
+lifecycle: active
+prerequisites:
+  - Bash and jq
+  - n8n access is required only for pull and push operations
+capabilities:
+  filesystem:
+    read:
+      - tools/n8n and selected cleaned snippets
+    write:
+      - tools/n8n generated workflows after confirmation
+  network:
+    - localhost
+    - cdn.jsdelivr.net
+    - img.shields.io
+  commands:
+    - merge.sh
+    - n8n-entrypoint.sh
+    - pull.sh
+    - push.sh
+    - render.sh
+    - report.sh
+    - sync.sh
+    - utils.sh
+    - view.sh
+  environment-variables:
+    - "*"
+  secret-names:
+    - N8N_API_KEY
+  data-classes:
+    - INTERNAL
+    - CONFIDENTIAL

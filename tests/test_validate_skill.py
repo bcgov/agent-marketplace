@@ -73,7 +73,7 @@ def _make_skill(root, name="demo"):
   Returns:
     The path to the created skill directory.
   """
-  skill_dir = os.path.join(root, name)
+  skill_dir = os.path.join(root, "community", name)
   os.makedirs(skill_dir, exist_ok=True)
   with open(os.path.join(skill_dir, "SKILL.md"), "w", encoding="utf-8") as f:
     f.write(VALID)
@@ -341,8 +341,8 @@ def test_validate_file_valid_skill():
 def test_discover_all_finds_manifests_under_both_roots():
   """SKILL.md files under both skills/ and .github/skills/ are discovered."""
   with tempfile.TemporaryDirectory() as root:
-    os.makedirs(os.path.join(root, "skills", "demo"))
-    open(os.path.join(root, "skills", "demo", "SKILL.md"), "w").close()
+    os.makedirs(os.path.join(root, "skills", "community", "demo"))
+    open(os.path.join(root, "skills", "community", "demo", "SKILL.md"), "w").close()
     os.makedirs(os.path.join(root, ".github", "skills", "meta"))
     open(os.path.join(root, ".github", "skills", "meta", "SKILL.md"), "w").close()
     cwd = os.getcwd()
@@ -354,8 +354,41 @@ def test_discover_all_finds_manifests_under_both_roots():
     # Paths are normalized to forward slashes on every platform.
     assert found == [
       ".github/skills/meta/SKILL.md",
-      "skills/demo/SKILL.md",
+      "skills/community/demo/SKILL.md",
     ]
+
+
+def test_discover_all_finds_canonical_layouts():
+  """Canonical packages under skills/community/<name>/ and skills/security/<name>/ are discovered."""
+  with tempfile.TemporaryDirectory() as root:
+    os.makedirs(os.path.join(root, "skills", "community", "azure-networking"))
+    open(os.path.join(root, "skills", "community", "azure-networking", "SKILL.md"), "w").close()
+    os.makedirs(os.path.join(root, "skills", "security", "repo-hardening"))
+    open(os.path.join(root, "skills", "security", "repo-hardening", "SKILL.md"), "w").close()
+    cwd = os.getcwd()
+    try:
+      os.chdir(root)
+      found = v.discover_all()
+    finally:
+      os.chdir(cwd)
+    assert found == [
+      "skills/community/azure-networking/SKILL.md",
+      "skills/security/repo-hardening/SKILL.md",
+    ]
+
+
+def test_discover_all_ignores_legacy_flat_layout():
+  """The old flat skills/<name>/ layout is not treated as a canonical package."""
+  with tempfile.TemporaryDirectory() as root:
+    os.makedirs(os.path.join(root, "skills", "demo"))
+    open(os.path.join(root, "skills", "demo", "SKILL.md"), "w").close()
+    cwd = os.getcwd()
+    try:
+      os.chdir(root)
+      found = v.discover_all()
+    finally:
+      os.chdir(cwd)
+    assert found == []
 
 
 # --- changed_modules --------------------------------------------------------
@@ -367,15 +400,15 @@ def test_changed_modules_maps_changed_files_to_manifests():
   class _FakeProc:
     returncode = 0
     stdout = (
-      "skills/demo/SKILL.md\n"
+      "skills/community/demo/SKILL.md\n"
       ".github/skills/meta/SKILL.md\n"
       "README.md\n"
       "scripts/validate_skill.py\n"
     )
 
   with tempfile.TemporaryDirectory() as root:
-    os.makedirs(os.path.join(root, "skills", "demo"))
-    open(os.path.join(root, "skills", "demo", "SKILL.md"), "w").close()
+    os.makedirs(os.path.join(root, "skills", "community", "demo"))
+    open(os.path.join(root, "skills", "community", "demo", "SKILL.md"), "w").close()
     os.makedirs(os.path.join(root, ".github", "skills", "meta"))
     open(os.path.join(root, ".github", "skills", "meta", "SKILL.md"), "w").close()
     orig_run = v.subprocess.run
@@ -390,7 +423,7 @@ def test_changed_modules_maps_changed_files_to_manifests():
     # Manifest paths use forward slashes on every platform.
     assert mods == [
       ".github/skills/meta/SKILL.md",
-      "skills/demo/SKILL.md",
+      "skills/community/demo/SKILL.md",
     ]
 
 
@@ -444,7 +477,7 @@ def _write_skill_for_dup(root, name, *, desc="A demo skill.", body_suffix=""):
   (same name, same description, same body, all distinct) by varying just
   the inputs that matter for the test.
   """
-  skill_dir = os.path.join(root, name)
+  skill_dir = os.path.join(root, "community", name)
   os.makedirs(skill_dir, exist_ok=True)
   text = (
     f"---\nname: {name}\ndescription: {desc}\n---\n\n"

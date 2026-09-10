@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKILL.md Spec | BC Gov Agent Skills</title>
+    <title>SKILL.md Spec | BC Gov Agent Marketplace</title>
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <style>
         :root {
@@ -226,6 +226,37 @@
             margin: 0 auto;
         }
 
+        .hero-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 0.7rem 1.1rem;
+            border: 2px solid var(--bc-blue);
+            border-radius: 4px;
+            background: var(--bc-blue);
+            color: var(--white);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .hero-action:hover {
+            background: var(--bc-blue-light);
+            border-color: var(--bc-blue-light);
+        }
+
+        .hero .hero-action.primary {
+            background: var(--bc-gold);
+            border-color: var(--bc-gold);
+            color: var(--bc-blue);
+        }
+
+        .hero .hero-action.secondary {
+            background: transparent;
+            border-color: var(--white);
+            color: var(--white);
+        }
+
         /* Typography */
         h1 {
             color: var(--bc-blue);
@@ -260,6 +291,11 @@
 
         p {
             margin-bottom: 1rem;
+        }
+
+        :not(pre) > code {
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         /* Cards - Enhanced */
@@ -508,6 +544,66 @@
         .badge-blue {
             background: var(--bc-blue);
             color: var(--white);
+        }
+
+        .shell-switch {
+            display: inline-flex;
+            border: 1px solid #9aa7b5;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0.5rem 0 1rem;
+        }
+
+        .shell-option,
+        .copy-command {
+            border: 0;
+            background: var(--white);
+            color: var(--bc-blue);
+            font: inherit;
+            font-weight: 600;
+            padding: 0.65rem 1rem;
+            cursor: pointer;
+        }
+
+        .shell-option + .shell-option {
+            border-left: 1px solid #9aa7b5;
+        }
+
+        .shell-option.active,
+        .copy-command {
+            background: var(--bc-blue);
+            color: var(--white);
+        }
+
+        .copy-command {
+            border-radius: 4px;
+            margin: 0 0 1.5rem;
+        }
+
+        .release-facts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1px;
+            background: #c8d0d8;
+            border: 1px solid #c8d0d8;
+            margin: 1rem 0 2rem;
+        }
+
+        .release-facts > div {
+            background: var(--white);
+            padding: 1rem;
+            min-width: 0;
+        }
+
+        .release-facts dt {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .release-facts dd {
+            overflow-wrap: anywhere;
         }
 
         /* Accordion / Collapsible */
@@ -984,19 +1080,20 @@
         <a href="index.html" class="bc-header-brand">
             <img src="assets/bc_citz_logo.jpg" alt="BC Government" class="bc-header-logo">
             <div>
-                <div class="bc-header-title">BC Gov Agent Skills</div>
+                <div class="bc-header-title">BC Gov Agent Marketplace</div>
                 <div class="bc-header-subtitle">A shared catalogue of agent skill profiles</div>
             </div>
         </a>
         <nav class="bc-nav">
             <a href="index.html" class="">Home</a>
+            <a href="getting-started.html" class="">Get Started</a>
             <a href="catalog.html" class="">Catalogue</a>
             <a href="consume.html" class="">Consume</a>
             <a href="contribute.html" class="">Contribute</a>
             <a href="spec.html" class="active">Spec</a>
             <a href="architecture.html" class="">Pipeline</a>
             <a href="faq.html" class="">FAQ</a>
-            <a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener" class="">GitHub ↗</a>
+            <a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener" class="">GitHub</a>
 
             <!-- Search button -->
             <button class="search-btn" id="search-btn" type="button" aria-label="Search documentation">
@@ -1035,10 +1132,9 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
-
 <h1 id="skillmd-spec">SKILL.md Spec</h1>
 
-<p>Every skill in this repo is described by a <code>SKILL.md</code> manifest, validated by the PR check. This page summarises what the validator enforces. The authoritative document lives at <a href="https://github.com/bcgov/agent-skills/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener"><code>spec/SKILL_SPEC.md</code></a>.</p>
+<p>Every skill in this repo is described by a <code>SKILL.md</code> manifest, validated by the PR check. This page summarises what the validator enforces. The authoritative document lives at <a href="https://github.com/bcgov/agent-marketplace/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener"><code>spec/SKILL_SPEC.md</code></a>.</p>
 
 <div class="alert alert-info">
     <div class="alert-icon">
@@ -1154,7 +1250,7 @@ See [references/REFERENCE.md](references/REFERENCE.md) for &lt;heavy detail&gt;<
 
 <h2 id="validator-checks">3. What the PR check enforces</h2>
 
-<p>For each <strong>changed</strong> skill, the validator confirms all of the following. If this list and the validator script (<a href="https://github.com/bcgov/agent-skills/blob/main/scripts/validate_skill.py" target="_blank" rel="noopener"><code>scripts/validate_skill.py</code></a>) ever disagree, the script wins. If you see a failure on a PR, this list maps directly to the checks:</p>
+<p>For each <strong>changed</strong> skill, the validator confirms all of the following. If this list and the validator script (<a href="https://github.com/bcgov/agent-marketplace/blob/main/scripts/validate_skill.py" target="_blank" rel="noopener"><code>scripts/validate_skill.py</code></a>) ever disagree, the script wins. If you see a failure on a PR, this list maps directly to the checks:</p>
 
 <div class="card">
     <ol>
@@ -1188,25 +1284,26 @@ uv run python scripts/validate_skill.py --all
 
 # or via the Makefile
 make validate</code></pre>
-    </main>
+</main>
     <footer class="site-footer">
         <div class="footer-content">
             <div class="footer-brand">
-                <h4>BC Gov Agent Skills</h4>
-                <p>A shared catalogue of agent skill profiles, validated in CI and installed with <code>npx skills add</code>.</p>
+                <h4>BC Gov Agent Marketplace</h4>
+                <p>Reviewed Agent Skills with immutable sources, declared capabilities, and deterministic policy evidence.</p>
             </div>
             <div class="footer-links">
                 <h4>Repository</h4>
                 <ul>
-                    <li><a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener">GitHub Repository</a></li>
-                    <li><a href="https://github.com/bcgov/agent-skills/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener">SKILL.md Spec (source)</a></li>
-                    <li><a href="https://github.com/bcgov/agent-skills/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener">GitHub Repository</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener">SKILL.md Spec (source)</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a></li>
                 </ul>
             </div>
             <div class="footer-links">
                 <h4>Documentation</h4>
                 <ul>
                     <li><a href="catalog.html">Skill Catalogue</a></li>
+                    <li><a href="getting-started.html">Getting Started</a></li>
                     <li><a href="consume.html">Consume a Skill</a></li>
                     <li><a href="contribute.html">Contribute a Skill</a></li>
                     <li><a href="spec.html">SKILL.md Spec</a></li>
@@ -1224,7 +1321,7 @@ make validate</code></pre>
             </div>
             <div class="footer-copyright">
                 <p>&copy; 2026 Province of British Columbia</p>
-                <p class="footer-meta">Built with a zero-dependency Bash + Node template engine</p>
+                <p class="footer-meta">Built with dependency-free Node.js tooling</p>
             </div>
         </div>
     </footer>

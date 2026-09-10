@@ -3,92 +3,32 @@
 
 <h1>Frequently Asked Questions</h1>
 
-<p>If the answer you're looking for isn't here, the four pages it likely lives on are: <a href="consume.html">Consume a Skill</a>, <a href="contribute.html">Contribute a Skill</a>, <a href="spec.html">the spec</a>, and <a href="architecture.html">Pipeline &amp; governance</a>.</p>
+<h2>What is published here?</h2>
+<p>Agent Skills only: portable <code>SKILL.md</code> instructions plus optional flat resources and closed marketplace metadata. Hooks, MCP servers, custom agents, and automatically executable extension types are not supported by this MVP.</p>
 
-<h2 id="what-is-npx">What is <code>npx</code>?</h2>
+<h2>Does “Marketplace reviewed” mean safe?</h2>
+<p>No. It means named reviewers assessed the exact published revision, digest, declared capabilities, and available evidence. The marketplace does not use “safe” or “verified secure” claims.</p>
 
-<div class="card">
-    <p><code>npx</code> is a command-line tool that runs npm packages without installing them globally. It ships with <a href="https://nodejs.org/" target="_blank" rel="noopener">Node.js</a> and the npm package manager.</p>
-    <p>When you run <code>npx skills add bcgov/agent-skills</code>, <code>npx</code> downloads and runs the <a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener">vercel-labs/skills</a> CLI in one step, then cleans up after itself. No global install needed.</p>
-    <p><strong>Do I already have <code>npx</code?</strong> Open a terminal and run <code>npx --version</code>. If it prints a number, you're good. If you see <code>command not found</code>, you need Node.js &mdash; see the prerequisites on the <a href="consume.html#install-nodejs">Consume a Skill</a> page.</p>
-    <p style="margin-bottom: 0;"><strong>Troubleshooting:</strong> See the full <a href="consume.html#troubleshooting">Troubleshooting section on Consume a Skill</a> for solutions to common <code>npx</code> errors.</p>
-</div>
+<h2>What does “Unreviewed candidate” mean?</h2>
+<p>An immutable third-party source was submitted for review. Trusted CI still needs to compute its digest and run deterministic policy checks, and BC Gov reviewers have not approved it.</p>
 
-<h2 id="npx-not-working">What if I can't get <code>npx</code> to work?</h2>
+<h2>Why is the source a full commit SHA?</h2>
+<p>A branch or tag can move. A full commit SHA plus package-tree digest binds discovery, scan, review, install, and receipt evidence to the same bytes.</p>
 
-<div class="card">
-    <p>The most common issue is that Node.js isn't installed, or the terminal hasn't picked up the new <code>PATH</code> after install.</p>
-    <p><strong>Quick fix:</strong></p>
-    <ul>
-        <li>Close your terminal completely and open a fresh one.</li>
-        <li>Run <code>node --version</code>. If it prints a version, Node.js is installed and you should have <code>npx</code> too.</li>
-        <li>Run <code>npx --version</code>. If that works, try your skill install again.</li>
-    </ul>
-    <p><strong>If Node.js isn't installed:</strong> Head to <a href="consume.html#install-nodejs">Consume a Skill → Install Node.js</a> for platform-specific steps (Windows, macOS, Linux).</p>
-    <p><strong>Still stuck?</strong> See the full <a href="consume.html#troubleshooting">Troubleshooting section on Consume a Skill</a> for solutions to network errors, proxy issues, cache problems, and more. If you absolutely cannot use <code>npx</code>, you can <a href="consume.html#manual">manually install skills</a> by cloning the repo and copying the skill folder by hand.</p>
-    <p style="margin-bottom: 0;"><strong>Don't want to install Node.js?</strong> Use the <a href="consume.html#manual">manual install method</a> instead: just clone the repo and copy the skill folder to the right location for your agent.</p>
-</div>
+<h2>Why are there two companion skills?</h2>
+<p><code>bcgov-find-extension</code> handles discovery, controlled installation, and third-party candidate registration. <code>bcgov-create-extension</code> handles authoring and hosted submission. Keeping the entry points separate loads only the workflow needed for the request.</p>
 
-<div class="card">
-    <p>A skill is a small, focused Markdown document — <code>SKILL.md</code> — that teaches an AI coding agent <strong>when</strong> to act, <strong>what</strong> to do, and <strong>what to avoid</strong>. Each skill targets one specific situation (e.g., "adding subnets inside an existing VNet") rather than trying to cover a whole topic.</p>
-    <p style="margin-bottom: 0;">The format is interoperable with GitHub Copilot, Claude, and other agents that load <code>SKILL.md</code> manifests. See <a href="https://agentskills.io" target="_blank" rel="noopener">agentskills.io</a> for the broader ecosystem and <a href="spec.html">our spec</a> for the exact rules this repo enforces.</p>
-</div>
+<h2>Are installed skills global too?</h2>
+<p>Reviewed catalog skills default to the current project. Third-party candidates are project-local only. The finder shows the exact destination and material capabilities before confirmation.</p>
 
-<h2 id="how-to-wire-up">How do I point my agent at an installed skill?</h2>
+<h2>Where is installation evidence?</h2>
+<p>Preferred APM installs use <code>apm.yml</code> and <code>apm.lock.yaml</code>; the fallback installer may write <code>skills-lock.json</code>. Legacy helper receipts live under <code>.github/agent-marketplace/receipts/</code>. Local evidence stays in the project unless the developer chooses to share it for support or incident response.</p>
 
-<div class="card">
-    <p>You don't need to. <code>npx skills add bcgov/agent-skills</code> asks which agent you're using (or you can pass <code>--agent github-copilot</code>, <code>claude-code</code>, <code>cursor</code>, <code>cline</code>, <code>continue</code>, etc.) and copies the skill folder into the location that agent already reads. The next time the agent loads, the skill is there.</p>
-    <p style="margin-bottom: 0;">If your agent isn't on the supported list, see the <em>Manual install</em> section on <a href="consume.html#manual">Consume a Skill</a> for the <code>git clone</code> + <code>cp -r</code> fallback.</p>
-</div>
+<h2>Can a companion publish its own work?</h2>
+<p>No. The creator may open a signed draft pull request, but cannot approve, merge, modify protection, or assign review status. CI and human reviewers decide publication.</p>
 
-<h2 id="why-bcgov-specific">Why does this repo only host BC Gov–specific skills?</h2>
+<h2>What if I cannot push a branch?</h2>
+<p>The creator preserves the staged package and provides an access-request action. Fork PRs are intentionally blocked. Third-party registration uses issues and does not require branch access.</p>
 
-<div class="card">
-    <p>Generic skills — Azure SDKs, Microsoft Foundry, M365, document formats, language workflows — are already maintained in larger upstream catalogues (<a href="contribute.html#upstream-catalogs">listed on Contribute</a>). Duplicating them here would fragment the ecosystem and double the maintenance cost without giving consumers anything they couldn't already get.</p>
-    <p style="margin-bottom: 0;">What's missing upstream is the BC Gov–specific layer: Public Cloud Landing Zone constraints, internal services, policy-driven workflows, organisational conventions. That's the gap this repo fills, and the bar we apply when reviewing new skills.</p>
-</div>
-
-<h2 id="why-no-registry">Why doesn't this use a registry like npm or GitHub Packages?</h2>
-
-<div class="card">
-    <p>The merge-to-<code>main</code> state of the repo is the release. <code>npx skills add</code> reads <code>SKILL.md</code> files straight out of the repo (via the <a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener">vercel-labs/skills</a> CLI) and copies the containing folder into the location each agent reads. That removes:</p>
-    <ul>
-        <li>A publish workflow and the <code>packages: write</code> token it would need.</li>
-        <li>An auth flow on the consumer side &mdash; no tokens, no <code>.npmrc</code>, no <code>gh auth login</code> just to read public skills.</li>
-        <li>Version metadata to keep in sync between the manifest and a package file.</li>
-    </ul>
-    <p style="margin-bottom: 0;">If you need a reproducible install, pin to a specific commit: <code>npx skills add https://github.com/bcgov/agent-skills/tree/&lt;sha&gt;</code>. See <a href="consume.html#pinning">Consume → Pinning</a>.</p>
-</div>
-
-<h2 id="why-no-fork">Why can't I open a PR from a fork?</h2>
-
-<div class="card">
-    <p>The PR workflow has a <code>fork-gate</code> job that fails any PR whose head repo isn't this one. That failure cascades into the <code>results</code> aggregator, which is the required status check on <code>main</code>. The reason: fork PRs would let untrusted code influence what we validate (and, potentially, what we publish). Maintainers re-land fork-style contributions by pushing the change to an in-repo branch after review.</p>
-    <p style="margin-bottom: 0;">If you don't have push access to <code>bcgov/agent-skills</code>, file an issue describing what you'd like to add. See <a href="architecture.html#pr-workflow">Pipeline → PR workflow</a> for the full rationale.</p>
-</div>
-
-<h2 id="why-signed-commits">Why are signed commits required?</h2>
-
-<div class="card">
-    <p>The <code>main</code> branch ruleset requires it. Signed commits give us a verifiable chain of who actually authored each change in the history. That's useful for audit, for catching compromised credentials, and for keeping the catalogue traceable back to a real contributor.</p>
-    <p style="margin-bottom: 0;">SSH commit signing is the simplest path on a developer laptop. See <a href="https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification" target="_blank" rel="noopener">GitHub's signing docs</a>.</p>
-</div>
-
-<h2 id="meta-skills">What are "meta-skills"?</h2>
-
-<div class="card">
-    <p>Skills that operate on this repository itself: scaffolding a new skill and validating the spec. They live under <code>.github/skills/</code> and are validated against the same <a href="spec.html">SKILL.md spec</a> as the public catalogue, but they aren't part of it. They ship with the repo so agents working in a checkout can use them.</p>
-    <p style="margin-bottom: 0;">Listed on the <a href="catalog.html#meta-skills">catalogue</a>.</p>
-</div>
-
-<h2 id="when-not-here">My situation isn't BC Gov–specific. Where should I look?</h2>
-
-<div class="card">
-    <p>Start with the upstream catalogues; they cover most general agent workflows:</p>
-    <ul>
-        <li><a href="https://microsoft.github.io/skills/#agents" target="_blank" rel="noopener">Microsoft Agent Skills</a>: Azure, Microsoft Foundry, M365, cross-cutting workflows.</li>
-        <li><a href="https://github.com/anthropics/skills" target="_blank" rel="noopener">anthropics/skills</a>: reference skills and the SKILL.md format.</li>
-        <li><a href="https://github.com/github/awesome-copilot" target="_blank" rel="noopener">awesome-copilot</a>: community-curated index of skills, prompts, and agents.</li>
-    </ul>
-    <p style="margin-bottom: 0;">If something close exists but isn't quite right, an issue or PR upstream benefits the widest audience. See <a href="contribute.html#upstream-catalogs">Contribute → Upstream catalogues</a>.</p>
-</div>
+<h2>How is a package quarantined?</h2>
+<p>Maintainers set its lifecycle to <code>quarantined</code>, regenerate, and publish through review. The finder excludes it from default results. Support then identifies affected receipts or declared dependencies and publishes update or removal guidance.</p>

@@ -3,124 +3,48 @@
 
 <h1>Pipeline &amp; Governance</h1>
 
-<p>How a change moves from a pull request into the live catalogue, and the controls that keep that path safe.</p>
+<p>The marketplace is repository-backed and statically generated. Publication is a protected GitHub merge, not an application deployment or registry push.</p>
 
-<h2 id="overview">Lifecycle at a glance</h2>
+<h2>Publication path</h2>
 
-<div class="card">
-    <pre><code>open PR  →  fork-gate  →  lint-tests  →  skills  →  results  →  ✅ mergeable
-                                                          │
-                                            merge to main │
-                                                          ▼
-                                          npx skills add bcgov/agent-skills
-                                          reads the new content directly
-                                          from the repo — no publish step,
-                                          no registry, no auth token.</code></pre>
-</div>
+<pre><code>signed in-repo branch
+        │
+        ▼
+fork gate → lint/tests → portable skill validation
+        │
+        └──────────────→ metadata + deterministic policy scan
+                              │
+                              ▼
+                    catalog and docs drift check
+                              │
+                              ▼
+                  CODEOWNER + domain review
+                              │
+                              ▼
+                    protected merge to main
+                              │
+                              ▼
+                    atomic static-site publish</code></pre>
 
-<h2 id="pr-workflow">PR workflow: <code>.github/workflows/pr.yml</code></h2>
+<p>The single required <code>results</code> job aggregates every PR gate. Validation reads contributed package files as data and never executes their scripts.</p>
 
-<p>Runs on every pull request with least-privilege permissions (<code>contents: read</code>). Four jobs across three phases; the fourth aggregates the result.</p>
+<h2>Generated record</h2>
 
-<div class="grid grid-2">
-    <div class="card">
-        <h3 style="margin-top:0;">1. <code>fork-gate</code></h3>
-        <p>Always runs. Fails the PR if it was opened from a fork. We never spend CI minutes on (or grant any token to) untrusted code. Maintainers re-land fork PRs from an in-repo branch after review. Produces a real failure (not a neutral "skipped") so branch protection can require it.</p>
-    </div>
-    <div class="card">
-        <h3 style="margin-top:0;">2. <code>lint-tests</code></h3>
-        <p>Needs <code>fork-gate</code>. Validates the codebase that produces skills: <code>ruff format --check</code>, <code>ruff check</code>, <code>pytest -q</code>. If the generator/validator itself is broken, validating the skill output is meaningless, so this runs first.</p>
-    </div>
-    <div class="card">
-        <h3 style="margin-top:0;">3. <code>skills</code></h3>
-        <p>Needs <code>lint-tests</code>. Runs the validator against only the skills the PR touched, diffed against the base branch: <code>uv run python scripts/validate_skill.py --base "origin/${{ github.base_ref }}"</code>. This is what enforces the <a href="spec.html">SKILL.md spec</a>.</p>
-    </div>
-    <div class="card card-gold">
-        <h3 style="margin-top:0;">4. <code>results</code> <span class="badge badge-gold">required</span></h3>
-        <p>Always runs (<code>if: always()</code>), needs every other job, and fails if any of them failed or was cancelled. <strong>This is the single required status check on <code>main</code></strong>, so jobs can be added or renamed in the workflow file without touching branch protection. <code>skipped</code> counts as a pass on purpose, so future <code>if:</code>-filtered jobs don't false-fail the gate.</p>
-    </div>
-</div>
+<p><code>scripts/marketplace.py</code> validates the closed manifest, scans package bytes, inventories every file, calculates a package-tree SHA-256 digest, and produces both <code>catalog/catalog.json</code> and escaped website cards. Centrally controlled source, review evidence, and approved third-party discovery sources are added during generation; authors cannot provide them.</p>
 
-<h2 id="distribution">Distribution: how a merged change becomes installable</h2>
+<h2>Federated intake</h2>
 
-<p>There is no publish step. Once a PR merges to <code>main</code>, the new content is the released content. Consumers install it (or pick up the update) with:</p>
+<p>The finder registers one issue fingerprinted by repository, full commit SHA, and package path. The issue workflow independently downloads that immutable candidate, computes its digest, and scans it as data. Unapproved sources, malformed intake, a supplied digest mismatch, or blocking policy findings fail closed. Human review remains asynchronous and only published records enter default discovery.</p>
 
-<div class="card">
-<pre style="margin: 0;"><code>npx skills add bcgov/agent-skills              # all public skills
-npx skills add bcgov/agent-skills --skill X    # just one</code></pre>
-</div>
+<h2>Control boundaries</h2>
 
-<p>The <a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener"><code>skills</code> CLI</a> reads the repo directly (no registry, no token), walks every <code>SKILL.md</code>, and copies the containing folder into the right place for the chosen agent. See <a href="consume.html">Consume a Skill</a> for the full flow, including pinning to a specific commit.</p>
+<table><thead><tr><th>Actor</th><th>May do</th><th>May not do</th></tr></thead><tbody>
+<tr><td>Finder</td><td>Search, refine, inspect, confirm, install, register</td><td>Install silently, override blockers, confer review</td></tr>
+<tr><td>Creator</td><td>Author, validate, preview, sign, push, open draft PR</td><td>Approve, merge, assign review fields</td></tr>
+<tr><td>CI</td><td>Validate bytes, reproduce digests, generate projections</td><td>Execute contributed scripts or grant human status</td></tr>
+<tr><td>Reviewers</td><td>Approve exact revisions and capabilities</td><td>Transfer evidence to changed bytes</td></tr>
+</tbody></table>
 
-<div class="alert alert-info">
-    <div class="alert-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-    </div>
-    <div>
-        <strong>No version metadata to maintain.</strong> The merge-to-<code>main</code> state of the repo is the release; nothing in the repo carries a version number, and there is no "publish failed because the version wasn't bumped" failure mode.
-    </div>
-</div>
+<h2>Operations</h2>
 
-<h2 id="dependabot">Dependabot auto-merge</h2>
-
-<p>Dependabot opens grouped upgrade PRs <strong>daily</strong> with Conventional Commit prefixes (<code>deps(actions)</code> for GitHub Actions, <code>deps(uv)</code> for Python). Cadence and ecosystems are configured in <a href="https://github.com/bcgov/agent-skills/blob/main/.github/dependabot.yml" target="_blank" rel="noopener"><code>.github/dependabot.yml</code></a>. When the PR's author is <code>dependabot[bot]</code>, an in-repo workflow approves it and turns on auto-merge, so it squash-merges itself the moment the same <code>results</code> check goes green. If the upgrade breaks something, <code>results</code> stays red and the PR sits there until a human looks at it.</p>
-
-<div class="card">
-    <p style="margin: 0;">The auto-merge workflow lives alongside the rest of CI under <a href="https://github.com/bcgov/agent-skills/tree/main/.github/workflows" target="_blank" rel="noopener"><code>.github/workflows/</code></a>. The merge gate it has to clear is exactly the one humans clear: there is no special path around <code>results</code>, and the workflow itself only acts on PRs Dependabot opened.</p>
-</div>
-
-<h2 id="branch-protection">Branch protection: <code>main</code> ruleset 17296594</h2>
-
-<p>The rules that keep <code>main</code> safe:</p>
-
-<table>
-    <thead><tr><th>Control</th><th>Setting</th></tr></thead>
-    <tbody>
-        <tr><td>Pull request required</td><td>Yes (no approval count enforced; reviewers weigh in by convention)</td></tr>
-        <tr><td>Required status check</td><td><code>results</code>, strict (branch must be up to date with <code>main</code>)</td></tr>
-        <tr><td>Signed commits</td><td>Required</td></tr>
-        <tr><td>Code scanning</td><td>CodeQL via GitHub's default code-scanning setup (fails on <code>high</code> or above). Configured in <em>Settings &rarr; Code security</em>; no <code>codeql.yml</code> in <code>.github/workflows/</code>.</td></tr>
-        <tr><td>Force-push to <code>main</code></td><td>Blocked</td></tr>
-        <tr><td>Delete <code>main</code></td><td>Blocked</td></tr>
-        <tr><td>Bypass actors</td><td>None</td></tr>
-    </tbody>
-</table>
-
-<p>Because the only required check is <code>results</code>, the PR workflow can add, rename, or restructure jobs over time without anyone having to update the protection ruleset.</p>
-
-<h2 id="action-pinning">Action pinning policy</h2>
-
-<p>The policy is below; what's actually pinned right now lives in the workflows under <a href="https://github.com/bcgov/agent-skills/tree/main/.github/workflows" target="_blank" rel="noopener"><code>.github/workflows/</code></a>.</p>
-
-<div class="grid grid-2">
-    <div class="card">
-        <h3 style="margin-top:0;">First-party (<code>actions/*</code>)</h3>
-        <p>Pinned to a major-version tag. GitHub guarantees those tags forward-only, so a major-tag pin is safe to read. Dependabot still bumps majors.</p>
-        <pre style="margin-bottom: 0;"><code>uses: actions/checkout@v&lt;major&gt;
-uses: actions/setup-node@v&lt;major&gt;</code></pre>
-    </div>
-    <div class="card">
-        <h3 style="margin-top:0;">Third-party</h3>
-        <p>Pinned to an <strong>immutable commit SHA</strong>, with the human-readable version in a trailing comment. Defends against tag-hijack / supply-chain attacks. Dependabot bumps these too.</p>
-        <pre style="margin-bottom: 0;"><code>uses: &lt;owner&gt;/&lt;action&gt;@&lt;40-char-sha&gt; # v&lt;version&gt;</code></pre>
-    </div>
-</div>
-
-<h2 id="permissions-model">Permissions model</h2>
-
-<div class="card">
-    <ul>
-        <li><strong>PR workflow:</strong> top-level <code>permissions: contents: read</code>. Every job is read-only; nothing here needs to write back to the repo.</li>
-        <li><strong>Dependabot auto-merge:</strong> <code>contents: write</code> + <code>pull-requests: write</code>. Required to approve and auto-merge, but the merge itself still has to clear the <code>results</code> gate.</li>
-    </ul>
-    <p style="margin-bottom: 0;">There is no publish workflow and no <code>packages: write</code> token anywhere in this repo &mdash; distribution happens client-side via <code>npx skills add</code> reading the repo directly.</p>
-</div>
-
-<h2 id="references">References in the repo</h2>
-
-<p>Everything described above lives in two directories. Trust the directories themselves rather than the file names inside them, so this page doesn't go stale every time a file is added, renamed, or split:</p>
-
-<ul>
-    <li><a href="https://github.com/bcgov/agent-skills/tree/main/.github/workflows" target="_blank" rel="noopener"><code>.github/workflows/</code></a>: PR validation, Dependabot auto-merge, docs deploy.</li>
-    <li><a href="https://github.com/bcgov/agent-skills/tree/main/scripts" target="_blank" rel="noopener"><code>scripts/</code></a>: the Python validator and its tests.</li>
-</ul>
+<p>Marketplace owners can quarantine or remove a record by lifecycle state, regenerate projections, publish receipt-based removal guidance, and roll back to a previously reviewed immutable revision. See the <a href="https://github.com/bcgov/agent-marketplace/blob/main/docs/MARKETPLACE_RUNBOOK.md">operations runbook</a> and <a href="https://github.com/bcgov/agent-marketplace/blob/main/SECURITY.md">private reporting route</a>.</p>

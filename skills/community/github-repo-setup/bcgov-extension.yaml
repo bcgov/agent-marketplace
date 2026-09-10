@@ -1,0 +1,31 @@
+schema-version: bcgov-extension/v1alpha1
+id: bcgov-public/github-repo-setup
+display-name: GitHub Repository Setup
+summary: Assess a GitHub repository against BC Gov DevOps and security standards and produce an evidence-based maturity report.
+publisher: Province of British Columbia
+maintainers:
+  - "@mishraomp"
+  - "@DerekRoberts"
+support: https://github.com/bcgov/agent-marketplace/issues
+license: Apache-2.0
+lifecycle: active
+prerequisites:
+  - GitHub CLI authenticated for the repository being assessed
+capabilities:
+  filesystem:
+    read:
+      - workspace source and configuration
+    write:
+      - MATURITY_REPORT.md after confirmation
+  network:
+    - api.github.com
+    - github.com
+    - www.first.org
+  commands:
+    - gh
+    - npm
+  environment-variables:
+    - "*"
+  secret-names: []
+  data-classes:
+    - INTERNAL

@@ -1,0 +1,49 @@
+name: Federated candidate rescan
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions: {}
+
+concurrency:
+  group: federated-candidate-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  rescan:
+    if: startsWith(github.event.issue.title, 'Federated candidate:')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout trusted marketplace policy
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.11.19"
+          enable-cache: true
+
+      - name: Fetch and rescan immutable candidate
+        id: rescan
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          set +e
+          uv run python scripts/rescan_candidate.py --output candidate-report.md
+          exit_code=$?
+          echo "exit_code=$exit_code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Publish independent evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: gh issue comment "$ISSUE_URL" --body-file candidate-report.md
+
+      - name: Block mismatched or policy-failing candidate
+        if: steps.rescan.outputs.exit_code != '0'
+        run: exit 1

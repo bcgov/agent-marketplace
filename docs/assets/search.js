@@ -1,5 +1,5 @@
 /**
- * search.js – client-side full-text search for AI Services Hub docs.
+ * search.js – client-side full-text search for BC Gov Agent Marketplace docs.
  *
  * Features
  * --------

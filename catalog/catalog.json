@@ -1,0 +1,805 @@
+{
+  "approved-discovery-sources": [
+    {
+      "catalog": "https://skills.sh/",
+      "extension-types": [
+        "skill"
+      ],
+      "id": "vercel-agent-skills",
+      "name": "Agent Skills Directory",
+      "repository": "https://github.com/vercel-labs/skills",
+      "status": "active"
+    },
+    {
+      "catalog": "https://microsoft.github.io/skills/",
+      "extension-types": [
+        "skill"
+      ],
+      "id": "microsoft-agent-skills",
+      "name": "Microsoft Agent Skills",
+      "repository": "https://github.com/microsoft/skills",
+      "status": "active"
+    },
+    {
+      "catalog": "https://github.com/anthropics/skills",
+      "extension-types": [
+        "skill"
+      ],
+      "id": "anthropic-skills",
+      "name": "Anthropic Skills",
+      "repository": "https://github.com/anthropics/skills",
+      "status": "active"
+    },
+    {
+      "catalog": "https://github.com/github/awesome-copilot",
+      "extension-types": [
+        "skill",
+        "prompt",
+        "instructions",
+        "agent"
+      ],
+      "id": "awesome-copilot",
+      "name": "Awesome Copilot",
+      "repository": "https://github.com/github/awesome-copilot",
+      "status": "active"
+    }
+  ],
+  "count": 7,
+  "extensions": [
+    {
+      "capabilities": {
+        "commands": [
+          "az",
+          "terraform",
+          "bicep"
+        ],
+        "data-classes": [
+          "INTERNAL"
+        ],
+        "environment-variables": [],
+        "filesystem": {
+          "read": [
+            "workspace infrastructure files"
+          ],
+          "write": [
+            "workspace infrastructure files after confirmation"
+          ]
+        },
+        "network": [
+          "raw.githubusercontent.com",
+          "learn.microsoft.com",
+          "citz-do.atlassian.net"
+        ],
+        "secret-names": []
+      },
+      "content-digest": "sha256:bbfa9c9bc082d1e009f9b30f0d4ec28df225d588b54c1809922f4ae8c577ae8c",
+      "display-name": "Azure Networking",
+      "files": [
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "79364182944900aa550c4590ebd87c4d6c326f048cc17fd6d852d13c4473ce9f",
+          "size": 856
+        },
+        {
+          "path": "references/REFERENCE.md",
+          "sha256": "99e86e81f37a71e88ea1e21b99b4e27315a2d32a3f9f1ff2b105eb5673dd7e58",
+          "size": 16159
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "c7d1309d4e405063b1c2464227965ac450d65739c63d12c5c8ea70b5672ba604",
+          "size": 14187
+        }
+      ],
+      "id": "bcgov-public/azure-networking",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@mishraomp",
+        "@DerekRoberts"
+      ],
+      "policy": {
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": "bcgov-marketplace-policy/1.0"
+      },
+      "prerequisites": [
+        "Access to the target BC Gov Azure Landing Zone project"
+      ],
+      "publisher": "Province of British Columbia",
+      "review": {
+        "reviewers": [
+          "@mishraomp",
+          "@DerekRoberts"
+        ],
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53",
+        "status": "marketplace-reviewed"
+      },
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "skills/community/azure-networking",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53"
+      },
+      "specialty": "community",
+      "summary": "Design BC Gov Azure Landing Zone subnets, network security groups, service delegations, and private endpoints.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "skill"
+    },
+    {
+      "capabilities": {
+        "commands": [
+          "act",
+          "actionlint",
+          "make",
+          "shellcheck",
+          "yamllint"
+        ],
+        "data-classes": [
+          "INTERNAL"
+        ],
+        "environment-variables": [
+          "*"
+        ],
+        "filesystem": {
+          "read": [
+            "workspace GitHub configuration"
+          ],
+          "write": [
+            "workspace GitHub configuration after confirmation"
+          ]
+        },
+        "network": [
+          "docs.github.com",
+          "npm.pkg.github.com"
+        ],
+        "secret-names": [
+          "GITHUB_TOKEN"
+        ]
+      },
+      "content-digest": "sha256:0c072d12707da74da8f073d3894fb676a0299289dd1463b2a28ad25d720da21a",
+      "display-name": "GitHub Actions",
+      "files": [
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "c2224b634c542a76fb7cf9a59a34f3037268d6bccc5d01e643008284b315047e",
+          "size": 862
+        },
+        {
+          "path": "references/REFERENCE.md",
+          "sha256": "75bfbe56ba2bddd085b2878c261197d85e60d298f0dd0129647769f463fbe566",
+          "size": 36595
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "bd6fafa0602fdd49ac76492c86757b9a0e3d3d7efb20d2da3ca035d156151f66",
+          "size": 23743
+        }
+      ],
+      "id": "bcgov-public/github-actions",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@mishraomp",
+        "@DerekRoberts"
+      ],
+      "policy": {
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": "bcgov-marketplace-policy/1.0"
+      },
+      "prerequisites": [
+        "A GitHub repository with Actions enabled"
+      ],
+      "publisher": "Province of British Columbia",
+      "review": {
+        "reviewers": [
+          "@mishraomp",
+          "@DerekRoberts"
+        ],
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53",
+        "status": "marketplace-reviewed"
+      },
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "skills/community/github-actions",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53"
+      },
+      "specialty": "community",
+      "summary": "Author and review GitHub Actions workflows using BC Gov permissions, pinning, fork-gate, and required-check patterns.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "skill"
+    },
+    {
+      "capabilities": {
+        "commands": [
+          "gh",
+          "npm"
+        ],
+        "data-classes": [
+          "INTERNAL"
+        ],
+        "environment-variables": [
+          "*"
+        ],
+        "filesystem": {
+          "read": [
+            "workspace source and configuration"
+          ],
+          "write": [
+            "MATURITY_REPORT.md after confirmation"
+          ]
+        },
+        "network": [
+          "api.github.com",
+          "github.com",
+          "www.first.org"
+        ],
+        "secret-names": []
+      },
+      "content-digest": "sha256:39c052747fa7d319576fdca00b44e1ad8b825dcbd9a1cb7abba3b6467828db1c",
+      "display-name": "GitHub Repository Setup",
+      "files": [
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "936b6a0f59745563c350978a4d29d6fa064e6c9b6f5f6ac22b574ccb1ae5d122",
+          "size": 829
+        },
+        {
+          "path": "references/REFERENCE.md",
+          "sha256": "2574212bffc18a5c97516a47198505d112e40cf57fa81a9b90737f22d4f8b91a",
+          "size": 22545
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "a1797814f8767977644b57638de213b9ba99ad6b4812abe50c6fa2d32c5c46a2",
+          "size": 8323
+        }
+      ],
+      "id": "bcgov-public/github-repo-setup",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@mishraomp",
+        "@DerekRoberts"
+      ],
+      "policy": {
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": "bcgov-marketplace-policy/1.0"
+      },
+      "prerequisites": [
+        "GitHub CLI authenticated for the repository being assessed"
+      ],
+      "publisher": "Province of British Columbia",
+      "review": {
+        "reviewers": [
+          "@mishraomp",
+          "@DerekRoberts"
+        ],
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53",
+        "status": "marketplace-reviewed"
+      },
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "skills/community/github-repo-setup",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53"
+      },
+      "specialty": "community",
+      "summary": "Assess a GitHub repository against BC Gov DevOps and security standards and produce an evidence-based maturity report.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "skill"
+    },
+    {
+      "capabilities": {
+        "commands": [
+          "doc_links.py",
+          "parser.py",
+          "rb_commands.py",
+          "rb_config.py",
+          "rb_log.py",
+          "rb_markdown.py",
+          "rb_model.py",
+          "rb_reconstruct.py",
+          "rb_seal.py"
+        ],
+        "data-classes": [
+          "INTERNAL"
+        ],
+        "environment-variables": [
+          "*"
+        ],
+        "filesystem": {
+          "read": [
+            "configured runbooks and workspace parser configuration"
+          ],
+          "write": [
+            "generated snippets and parser state after confirmation"
+          ]
+        },
+        "network": [
+          "github.com",
+          "raw.githubusercontent.com",
+          "img.shields.io"
+        ],
+        "secret-names": []
+      },
+      "content-digest": "sha256:bf8b38eb8f53a9341d19b1844320c02212e18f402312c5387a2add1d35189e6e",
+      "display-name": "n8n Runbook Parser",
+      "files": [
+        {
+          "path": "assets/config.template.yaml",
+          "sha256": "90b8d4db07afc3dedbd56df63697bd087c2ee490c9133b610357f59a851d1169",
+          "size": 2038
+        },
+        {
+          "path": "assets/doc-url-shim-template.sh",
+          "sha256": "ae5f50ff81d86f83bade9ade0400e99725a08136eb5ad5fabaf258517195e4f9",
+          "size": 2157
+        },
+        {
+          "path": "assets/report-template.md",
+          "sha256": "4fad09ff34170df489286f60a3d888067df660a71ba1dcb35c480f17ce08d7ae",
+          "size": 2878
+        },
+        {
+          "path": "assets/snippet-template.sh",
+          "sha256": "e2293974a4666c1a1a4e584ea48c6e4931dd21d4aba85f2c7d5b286c1105e87d",
+          "size": 655
+        },
+        {
+          "path": "assets/validator-template.sh",
+          "sha256": "11060681874b6099afe7d145999296cdeb349cb80b23d3ad845e5a47fb3fc456",
+          "size": 3378
+        },
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "b6a194db4c263a0391e24e30573f26ce3ab7c63d778555b74edbf1668ef78094",
+          "size": 1054
+        },
+        {
+          "path": "references/BACKPORT.md",
+          "sha256": "2d2c21f96902eace4ce830e7dee8980a42520bf41114cce96dd77cc53528f320",
+          "size": 2941
+        },
+        {
+          "path": "references/CLEANING.md",
+          "sha256": "8851ce2ae702fe98f2c139e7fe68797fe1024ffd35517bffb0f35021733aef4a",
+          "size": 13421
+        },
+        {
+          "path": "references/CONFIG.md",
+          "sha256": "8b745e92b010f38dfc45c9ee14b1a55b75aeb0ac071e1a32ccb02a6733adfd1f",
+          "size": 5326
+        },
+        {
+          "path": "references/PARSER_USAGE.md",
+          "sha256": "6223f3168800b6f81a9082ad6709647347b1410ab822f0a10cb8746f256d0e42",
+          "size": 6718
+        },
+        {
+          "path": "references/SKILL_SPEC.md",
+          "sha256": "5f00070c4701851d642faf666386a4c3b996233c9d3d77f02cac21dd45bf2fd4",
+          "size": 5856
+        },
+        {
+          "path": "scripts/doc_links.py",
+          "sha256": "7ff0f6ffd0b00904b905255edfbe60e76a7f2e943e5f08895a80628ce8097633",
+          "size": 6228
+        },
+        {
+          "path": "scripts/parser.py",
+          "sha256": "3ec73fd0fc859e27e06bb68c112928417a37123b28d1a58c7b56e3bd634d3289",
+          "size": 4013
+        },
+        {
+          "path": "scripts/rb_commands.py",
+          "sha256": "f721baf0eaf4d57bd19d1475d8e6dafdff819c1c32bb02216358d7f79ebe00a6",
+          "size": 18974
+        },
+        {
+          "path": "scripts/rb_config.py",
+          "sha256": "55e0246c546717c68bb7cd8a2fcfc778d1bc5ee5225bd549d6b3050d1101f397",
+          "size": 5734
+        },
+        {
+          "path": "scripts/rb_log.py",
+          "sha256": "325ceb51d62d73c9be0eddd6c460f7cb12ba940ded554ca41af540fa0e76d1af",
+          "size": 1107
+        },
+        {
+          "path": "scripts/rb_markdown.py",
+          "sha256": "f86f664508a35e6a85d0dd6fe65330645e3cb78893fddd5926b57fa154d3511a",
+          "size": 4064
+        },
+        {
+          "path": "scripts/rb_model.py",
+          "sha256": "bb3a86a4565841d5fd0c5ec3cdfde1710be75600fc2979d48aff3367f2298de6",
+          "size": 3805
+        },
+        {
+          "path": "scripts/rb_reconstruct.py",
+          "sha256": "008e89fd7a296e6cd67076b5323bcf62c6c50d75d3d27bb613310499f5411f16",
+          "size": 3473
+        },
+        {
+          "path": "scripts/rb_seal.py",
+          "sha256": "d06aae9375fcaaf614ae7b3f82f5eb8b3932c0d47537b7aed8d6576b4cda9f8f",
+          "size": 4995
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "da9de9df68f2621e6f64b9b6ef0e45d6b4ca4d5178479e302ad6fefe83b09eaf",
+          "size": 12213
+        }
+      ],
+      "id": "bcgov-public/n8n-runbook-parser",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@mishraomp",
+        "@DerekRoberts"
+      ],
+      "policy": {
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": "bcgov-marketplace-policy/1.0"
+      },
+      "prerequisites": [
+        "Python 3.12 or newer",
+        "Read access to each configured source document"
+      ],
+      "publisher": "Province of British Columbia",
+      "review": {
+        "reviewers": [
+          "@mishraomp",
+          "@DerekRoberts"
+        ],
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53",
+        "status": "marketplace-reviewed"
+      },
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "skills/community/n8n-runbook-parser",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53"
+      },
+      "specialty": "community",
+      "summary": "Extract code from prose runbooks into version-controlled snippets, detect drift, and backport reviewed fixes to source documentation.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "skill"
+    },
+    {
+      "capabilities": {
+        "commands": [
+          "merge.sh",
+          "n8n-entrypoint.sh",
+          "pull.sh",
+          "push.sh",
+          "render.sh",
+          "report.sh",
+          "sync.sh",
+          "utils.sh",
+          "view.sh"
+        ],
+        "data-classes": [
+          "INTERNAL",
+          "CONFIDENTIAL"
+        ],
+        "environment-variables": [
+          "*"
+        ],
+        "filesystem": {
+          "read": [
+            "tools/n8n and selected cleaned snippets"
+          ],
+          "write": [
+            "tools/n8n generated workflows after confirmation"
+          ]
+        },
+        "network": [
+          "localhost",
+          "cdn.jsdelivr.net",
+          "img.shields.io"
+        ],
+        "secret-names": [
+          "N8N_API_KEY"
+        ]
+      },
+      "content-digest": "sha256:84146ec685ef4d17931f60c5d03f5dbdae320ff4274e501a35f0d22f144368e0",
+      "display-name": "n8n Workflow Builder",
+      "files": [
+        {
+          "path": "assets/local-workflow.sh",
+          "sha256": "2e6d0dba30dd6ba11f6b49878e8a4dc7ba3cedb7e5c88bd210552ade95c5b8fb",
+          "size": 3803
+        },
+        {
+          "path": "assets/skeleton.json",
+          "sha256": "158fb190a40cc003a207ba4ec6fbe5f0abc04d5512e1590b7651d574230d855b",
+          "size": 4473
+        },
+        {
+          "path": "assets/sticky-note.md",
+          "sha256": "99b5a001f0a3ffe30643c704c2b7682fe71dff55295aceba51accb1a648dcbe1",
+          "size": 776
+        },
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "8adbb3be15c6c87a59c9df0ebb6d3f917d99647b199da356355ad69f8aff91ae",
+          "size": 1018
+        },
+        {
+          "path": "references/API_SCHEMA.md",
+          "sha256": "52fc5413b069feb2133a5f27d52b75dbaf35e027c31e885802405b13c97c27fb",
+          "size": 2638
+        },
+        {
+          "path": "references/LOCAL_WORKFLOW.md",
+          "sha256": "002382aca8bafe3557647a0fe8244b69c1c8f132467d037883fb474bbbb2fb7b",
+          "size": 3298
+        },
+        {
+          "path": "references/N8N_NODES.md",
+          "sha256": "955c1d87fb44a396e6ce54e7cd6f44f0e96f52d3c35b0acbbfdea5e6a4d4dfa6",
+          "size": 7030
+        },
+        {
+          "path": "scripts/merge.sh",
+          "sha256": "8b24453f56c83f3eaa0d4a69dd6dad5b91fbc3548da30bbf90278b870192183f",
+          "size": 2078
+        },
+        {
+          "path": "scripts/n8n-entrypoint.sh",
+          "sha256": "9e3391068b26cbeb1c24b42d55965d3766517edf926996268f74b898f3c8d67b",
+          "size": 1199
+        },
+        {
+          "path": "scripts/pull.sh",
+          "sha256": "167ba1397d6cc8d778962bf6c7e187dfba8e6decac2613d92c107b0d57001360",
+          "size": 7064
+        },
+        {
+          "path": "scripts/push.sh",
+          "sha256": "d2310fcfa644e2c0b0a49e61ff44fc306e14ead60c22f4a959af88906730ba0d",
+          "size": 9160
+        },
+        {
+          "path": "scripts/render.sh",
+          "sha256": "f1baf99e6a0d7ef48c7f053a672212f270c4d31b72a49875306011dd27c04e32",
+          "size": 8306
+        },
+        {
+          "path": "scripts/report.sh",
+          "sha256": "b0f8b430e9537132e19d226f2b7514b4fd7ff276feb67fedd12e27d1706cf097",
+          "size": 1641
+        },
+        {
+          "path": "scripts/sync.sh",
+          "sha256": "d96493f8b6081007e9964b64716db3dffcc4abb2d24a03d32e9dff18dca731c2",
+          "size": 3628
+        },
+        {
+          "path": "scripts/utils.sh",
+          "sha256": "12c45014d4d94eeb2c462c762dce11409e5dacb5926241d4a486f075ae6804eb",
+          "size": 1122
+        },
+        {
+          "path": "scripts/view.sh",
+          "sha256": "ad40563b039b4b91bf019169ddc103e39380373dce1e076dc113e24ae23210fa",
+          "size": 2315
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "a32a1e725f6d90cafd99171ed23e8c40a7c9a3a4b6988c935c241a91773ca942",
+          "size": 13729
+        }
+      ],
+      "id": "bcgov-public/n8n-workflow-builder",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@mishraomp",
+        "@DerekRoberts"
+      ],
+      "policy": {
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": "bcgov-marketplace-policy/1.0"
+      },
+      "prerequisites": [
+        "Bash and jq",
+        "n8n access is required only for pull and push operations"
+      ],
+      "publisher": "Province of British Columbia",
+      "review": {
+        "reviewers": [
+          "@mishraomp",
+          "@DerekRoberts"
+        ],
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53",
+        "status": "marketplace-reviewed"
+      },
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "skills/community/n8n-workflow-builder",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53"
+      },
+      "specialty": "community",
+      "summary": "Compose reviewed runbook snippets into local and n8n operational triage workflows with explicit API publication steps.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "skill"
+    },
+    {
+      "capabilities": {
+        "commands": [
+          "kubectl",
+          "oc"
+        ],
+        "data-classes": [
+          "INTERNAL"
+        ],
+        "environment-variables": [
+          "S6_OVERLAY_VERSION"
+        ],
+        "filesystem": {
+          "read": [
+            "workspace Kubernetes and OpenShift manifests"
+          ],
+          "write": [
+            "workspace Kubernetes and OpenShift manifests after confirmation"
+          ]
+        },
+        "network": [
+          "developer.gov.bc.ca",
+          "docs.openshift.com",
+          "github.com",
+          "kubernetes.io",
+          "registry.developer.gov.bc.ca"
+        ],
+        "secret-names": []
+      },
+      "content-digest": "sha256:55fd1005c185c8e5210051568f7dcac7987171eeb8e8b6e3b1da17a31225060f",
+      "display-name": "OpenShift Deployment",
+      "files": [
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "9d845500e2be0d687cabe6db2839b6fb1a07137423bdce4dd566413063d204c7",
+          "size": 971
+        },
+        {
+          "path": "references/REFERENCE.md",
+          "sha256": "331430ddc0819ba7bce912be98674f2d86db5a2e633921e31a69f49f4da6fd00",
+          "size": 24276
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "3f23ff8fb6ce97442080318a3f05678040d407ed3f899b26c281de1720efc5e4",
+          "size": 32927
+        }
+      ],
+      "id": "bcgov-public/openshift-deployment",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@mishraomp",
+        "@DerekRoberts"
+      ],
+      "policy": {
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": "bcgov-marketplace-policy/1.0"
+      },
+      "prerequisites": [
+        "Access to a BC Gov Private Cloud project for live validation"
+      ],
+      "publisher": "Province of British Columbia",
+      "review": {
+        "reviewers": [
+          "@mishraomp",
+          "@DerekRoberts"
+        ],
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53",
+        "status": "marketplace-reviewed"
+      },
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "skills/community/openshift-deployment",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53"
+      },
+      "specialty": "community",
+      "summary": "Design BC Gov Private Cloud workload manifests with appropriate controllers, resources, probes, disruption budgets, and security contexts.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "skill"
+    },
+    {
+      "capabilities": {
+        "commands": [
+          "git",
+          "gh"
+        ],
+        "data-classes": [
+          "INTERNAL"
+        ],
+        "environment-variables": [
+          "GH_TOKEN"
+        ],
+        "filesystem": {
+          "read": [
+            "repository configuration files",
+            "GitHub Actions and workflow metadata"
+          ],
+          "write": [
+            "local draft hardening plan after confirmation"
+          ]
+        },
+        "network": [
+          "github.com",
+          "docs.github.com"
+        ],
+        "secret-names": [
+          "GITHUB_TOKEN"
+        ]
+      },
+      "content-digest": "sha256:9fd010749fc81d20119daa1b504c89aa10ebde34f172d8277992720201d16355",
+      "display-name": "Repo Hardening",
+      "files": [
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "b3122bc25b9af22faebfd2e773fb554624208f7dd2e2bf811136f2df2ce550a9",
+          "size": 916
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "c3c157b17673a8bd2bdd2fd53cf85d95103bbbc445a245f1e6adfe35020e8f4c",
+          "size": 2589
+        }
+      ],
+      "id": "bcgov-public/repo-hardening",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@mishraomp",
+        "@DerekRoberts"
+      ],
+      "policy": {
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": "bcgov-marketplace-policy/1.0"
+      },
+      "prerequisites": [
+        "GitHub repository with branch protection enabled",
+        "Access to repo settings and CI permissions"
+      ],
+      "publisher": "Province of British Columbia",
+      "review": {
+        "reviewers": [
+          "@mishraomp",
+          "@DerekRoberts"
+        ],
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53",
+        "status": "marketplace-reviewed"
+      },
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "skills/security/repo-hardening",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53"
+      },
+      "specialty": "security",
+      "summary": "Apply a baseline repository hardening recipe for branch protection, secret handling, review gates, and deterministic validation.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "skill"
+    }
+  ],
+  "installer-version": "1.5.23",
+  "policy-version": "bcgov-marketplace-policy/1.0",
+  "release-state": "development",
+  "repository": "https://github.com/bcgov/agent-marketplace",
+  "revision": "842241b962849ad239e1e9c90589b6bc9c881e53",
+  "schema-version": "bcgov-marketplace-catalog/v1alpha1"
+}

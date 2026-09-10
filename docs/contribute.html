@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contribute a Skill | BC Gov Agent Skills</title>
+    <title>Create a Skill | BC Gov Agent Marketplace</title>
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <style>
         :root {
@@ -226,6 +226,37 @@
             margin: 0 auto;
         }
 
+        .hero-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 0.7rem 1.1rem;
+            border: 2px solid var(--bc-blue);
+            border-radius: 4px;
+            background: var(--bc-blue);
+            color: var(--white);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .hero-action:hover {
+            background: var(--bc-blue-light);
+            border-color: var(--bc-blue-light);
+        }
+
+        .hero .hero-action.primary {
+            background: var(--bc-gold);
+            border-color: var(--bc-gold);
+            color: var(--bc-blue);
+        }
+
+        .hero .hero-action.secondary {
+            background: transparent;
+            border-color: var(--white);
+            color: var(--white);
+        }
+
         /* Typography */
         h1 {
             color: var(--bc-blue);
@@ -260,6 +291,11 @@
 
         p {
             margin-bottom: 1rem;
+        }
+
+        :not(pre) > code {
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         /* Cards - Enhanced */
@@ -508,6 +544,66 @@
         .badge-blue {
             background: var(--bc-blue);
             color: var(--white);
+        }
+
+        .shell-switch {
+            display: inline-flex;
+            border: 1px solid #9aa7b5;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0.5rem 0 1rem;
+        }
+
+        .shell-option,
+        .copy-command {
+            border: 0;
+            background: var(--white);
+            color: var(--bc-blue);
+            font: inherit;
+            font-weight: 600;
+            padding: 0.65rem 1rem;
+            cursor: pointer;
+        }
+
+        .shell-option + .shell-option {
+            border-left: 1px solid #9aa7b5;
+        }
+
+        .shell-option.active,
+        .copy-command {
+            background: var(--bc-blue);
+            color: var(--white);
+        }
+
+        .copy-command {
+            border-radius: 4px;
+            margin: 0 0 1.5rem;
+        }
+
+        .release-facts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1px;
+            background: #c8d0d8;
+            border: 1px solid #c8d0d8;
+            margin: 1rem 0 2rem;
+        }
+
+        .release-facts > div {
+            background: var(--white);
+            padding: 1rem;
+            min-width: 0;
+        }
+
+        .release-facts dt {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .release-facts dd {
+            overflow-wrap: anywhere;
         }
 
         /* Accordion / Collapsible */
@@ -984,19 +1080,20 @@
         <a href="index.html" class="bc-header-brand">
             <img src="assets/bc_citz_logo.jpg" alt="BC Government" class="bc-header-logo">
             <div>
-                <div class="bc-header-title">BC Gov Agent Skills</div>
+                <div class="bc-header-title">BC Gov Agent Marketplace</div>
                 <div class="bc-header-subtitle">A shared catalogue of agent skill profiles</div>
             </div>
         </a>
         <nav class="bc-nav">
             <a href="index.html" class="">Home</a>
+            <a href="getting-started.html" class="">Get Started</a>
             <a href="catalog.html" class="">Catalogue</a>
             <a href="consume.html" class="">Consume</a>
             <a href="contribute.html" class="active">Contribute</a>
             <a href="spec.html" class="">Spec</a>
             <a href="architecture.html" class="">Pipeline</a>
             <a href="faq.html" class="">FAQ</a>
-            <a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener" class="">GitHub ↗</a>
+            <a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener" class="">GitHub</a>
 
             <!-- Search button -->
             <button class="search-btn" id="search-btn" type="button" aria-label="Search documentation">
@@ -1035,127 +1132,69 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
+<h1 id="create-a-skill">Create a Skill</h1>
 
-<h1 id="contribute-a-skill">Contribute a Skill</h1>
+<p>The creation companion owns the path from an idea in any workspace to a review-ready draft pull request. The contributor does not need a marketplace checkout, Python, or <code>uv</code>.</p>
 
-<p>This repository is community-maintained, and new skills and improvements to existing ones are all welcome. The canonical guide lives in <a href="https://github.com/bcgov/agent-skills/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a>; this page summarises it for browsing.</p>
+<pre><code>Turn this workflow idea into a BC Gov Agent Skill and prepare a draft pull request.</code></pre>
 
-<h2 id="prerequisites">Before you start</h2>
+<h2 id="what-it-does">What it does</h2>
 
-<div class="card">
-    <p><strong>Branch in this repo, not a fork.</strong> The PR workflow has a <code>fork-gate</code> job that fails any pull request opened from a fork; that failure cascades to the <code>results</code> aggregator, which is the gate on merge. If you can't push a branch to <code>bcgov/agent-skills</code>, you don't have the access you need. Sort that out first.</p>
-    <p style="margin-bottom: 0;"><strong>Commits must be signed.</strong> The <code>main</code> branch ruleset requires signed commits, so the merge will be blocked otherwise. Set up SSH or GPG commit signing once per machine; see <a href="https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification" target="_blank" rel="noopener">GitHub's docs</a>.</p>
-</div>
+<ol>
+    <li>Searches the BC Gov catalog and every approved upstream source for equivalents.</li>
+    <li>Asks which local files may become public and excludes sensitive or unselected material.</li>
+    <li>Creates the portable skill and closed marketplace metadata in an isolated staging directory using the hosted specification and schema.</li>
+    <li>Inventories public files and capabilities and performs a local content inspection without executing package scripts.</li>
+    <li>Shows one preview containing upstream evidence, public files, capabilities, destination, known findings, and checks deferred to CI.</li>
+    <li>After confirmation, uses an available GitHub integration or temporary checkout to open a draft pull request.</li>
+    <li>Uses protected-branch CI as the authoritative schema, policy, test, and generated-output validation loop.</li>
+</ol>
 
-<h2 id="upstream-catalogs">Check upstream catalogues first</h2>
+<p><a href="getting-started.html" class="hero-action primary">Install bcgov-create-extension</a></p>
 
-<p>This repository is for <strong>BC Gov–specific</strong> skills. Before adding a new skill, confirm it isn't already published in an upstream catalogue. Duplicating an upstream skill fragments the ecosystem, doubles the maintenance burden, and makes it ambiguous which one consumers should install.</p>
+<h2 id="package-contract">Package contract</h2>
 
-<div class="grid grid-4">
-    <div class="card">
-        <h3 id="the-agent-skills-directory" style="margin-top:0;">The Agent Skills Directory</h3>
-        <p style="font-size: 0.9rem;">A vendor-neutral directory of agent skills aggregated across publishers. Good first stop for a broad sweep before drilling into the publisher-specific catalogues below.</p>
-        <p style="margin-bottom: 0;"><a href="https://www.skills.sh/" target="_blank" rel="noopener">skills.sh →</a></p>
-    </div>
-    <div class="card">
-        <h3 id="microsoft-agent-skills" style="margin-top:0;">Microsoft Agent Skills</h3>
-        <p style="font-size: 0.9rem;">A large catalogue covering Azure SDKs, Microsoft Foundry, M365, Entra, Azure Resource Manager, plus cross-cutting workflows like <code>azure-prepare</code>, <code>azure-deploy</code>, <code>azure-validate</code>, <code>azure-cost</code>, <code>microsoft-docs</code>, <code>kql</code>, <code>mcp-builder</code>, <code>cloud-solution-architect</code>.</p>
-        <p style="margin-bottom: 0;"><a href="https://microsoft.github.io/skills/#agents" target="_blank" rel="noopener">microsoft.github.io/skills →</a></p>
-    </div>
-    <div class="card">
-        <h3 id="anthropic-anthropicsskills" style="margin-top:0;">Anthropic <code>anthropics/skills</code></h3>
-        <p style="font-size: 0.9rem;">Reference skills for document work (<code>pdf</code>, <code>docx</code>, <code>xlsx</code>, <code>pptx</code>) and other patterns, plus material on the SKILL.md format this repo follows. See also <a href="https://agentskills.io" target="_blank" rel="noopener">agentskills.io</a>.</p>
-        <p style="margin-bottom: 0;"><a href="https://github.com/anthropics/skills" target="_blank" rel="noopener">github.com/anthropics/skills →</a></p>
-    </div>
-    <div class="card">
-        <h3 id="awesome-copilot" style="margin-top:0;">awesome-copilot</h3>
-        <p style="font-size: 0.9rem;">Community-curated index of skills, prompts, custom agents, and hooks. Also distributes vendor plugin catalogues (M365 Agents Toolkit, Power BI, Oracle-to-PostgreSQL, Spark, WorkIQ, and others), so one check covers them.</p>
-        <p style="margin-bottom: 0;"><a href="https://github.com/github/awesome-copilot" target="_blank" rel="noopener">github.com/github/awesome-copilot →</a></p>
-    </div>
-</div>
+<pre><code>skills/&lt;name&gt;/
+├── SKILL.md
+├── bcgov-extension.yaml
+├── scripts/       optional, flat files only
+├── references/    optional, flat files only
+└── assets/        optional, flat files only</code></pre>
 
-<div class="alert alert-warning">
-    <div class="alert-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    </div>
-    <div>
-        <strong>If an upstream skill already covers your use case</strong>, don't re-publish it here. If it's close but not quite right, open an issue or PR upstream so the fix benefits the widest audience. Only add a new skill here if it is genuinely BC Gov–specific; for instance, it encodes BC Gov policies, conventions, internal services, regulatory requirements, or organisation-specific workflows. <strong>Include the result of this check in your PR description.</strong>
-    </div>
-</div>
+<p>Hosted packages use Apache-2.0 and IDs of the form <code>bcgov-public/&lt;name&gt;</code>. Metadata declares prerequisites and all filesystem, network, command, environment-variable, secret-name, and data-class capabilities. Authors cannot set review fields.</p>
 
-<h2 id="how-contributions-work">How contributions work</h2>
+<h2 id="publication-boundary">Publication boundary</h2>
 
-<div class="card">
-    <ol>
-        <li><strong>Branch.</strong> Create a feature branch in this repo for your change.</li>
-        <li><strong>Add or update a skill.</strong> For a new skill, follow <a href="spec.html">the spec</a> and copy an existing skill's <code>SKILL.md</code> as a starting point (e.g. <a href="https://github.com/bcgov/agent-skills/blob/main/skills/azure-networking/SKILL.md" target="_blank" rel="noopener"><code>skills/azure-networking/SKILL.md</code></a>).</li>
-        <li><strong>Validate locally:</strong> <code>uv run python scripts/validate_skill.py skills/&lt;name&gt;/SKILL.md</code>.</li>
-        <li><strong>Open a pull request.</strong> Describe what the skill does and why it's useful.</li>
-        <li><strong>Pass the checks.</strong> The PR workflow validates the skills your branch changed (diffed against the base branch).</li>
-        <li><strong>Merge.</strong> Once <code>results</code> is green and your branch is up to date with <code>main</code>, the PR can be merged. Consumers pick up the change the next time they run <code>npx skills add bcgov/agent-skills</code>.</li>
-    </ol>
-</div>
+<div class="alert alert-warning"><div class="alert-icon" aria-hidden="true">!</div><div>The companion cannot approve, merge, assign human review evidence, or transfer evidence to changed bytes. CI and required reviewers decide publication for the exact pull-request revision.</div></div>
 
-<h2 id="skill-structure">Skill structure</h2>
+<p>If GitHub integration, branch access, or commit signing is unavailable, staged work is preserved and the companion provides the access or recovery action. Forks are not used for submission.</p>
 
-<p>Each skill lives in its own directory. The whole directory is what consumers install with <code>npx skills add</code>, so put everything the skill needs alongside its manifest:</p>
+<h2 id="manual-contribution">Manual contribution</h2>
 
-<pre><code>skills/&lt;skill-name&gt;/
-├── SKILL.md        # required: the manifest
-├── scripts/        # optional: executable helpers
-├── references/     # optional: heavy detail
-└── assets/         # optional: examples &amp; resources</code></pre>
+<p>Marketplace maintainers working directly in this repository follow <a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>. This optional local path uses the repository's Python and <code>uv</code> toolchain:</p>
 
-<div class="card">
-    <h3 id="skillmd" style="margin-top:0;"><code>SKILL.md</code></h3>
-    <p>Mandatory <code>name</code> + <code>description</code> frontmatter, then a body with an H1 title and the seven required sections (<em>Use When</em>, <em>Don't Use When</em>, <em>Workflow</em>, <em>Rules</em>, <em>Examples</em>, <em>Edge Cases</em>, <em>References</em>).</p>
-    <p style="margin-bottom: 0;"><code>name</code> must be kebab-case (≤64 chars) and match the skill's directory name; <code>description</code> must be ≤1024 chars with no angle brackets. Keep the manifest under 500 lines; any <code>scripts/</code>, <code>references/</code>, or <code>assets/</code> directory must be flat (one level deep).</p>
-</div>
-
-<p>See <a href="spec.html">the spec</a> for the full definition of every required field and what the validator checks.</p>
-
-<h2 id="tooling">Tooling</h2>
-
-<p>This project uses <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener">uv</a>, so there is no <code>requirements.txt</code>. Dependencies are declared in <code>pyproject.toml</code> and installed on demand by <code>uv run</code>. Common commands:</p>
-
-<pre><code>make format     # auto-format Python (2-space indent, double quotes)
-make lint       # lint Python with ruff + workflow YAML with yamllint
-make test       # run the validator unit tests
-make validate   # validate every skill</code></pre>
-
-<p>Python is formatted and linted with <a href="https://docs.astral.sh/ruff/" target="_blank" rel="noopener">ruff</a> (2-space indentation, double quotes, docstrings required on every function). Workflow YAML under <code>.github/workflows/</code> is linted with <a href="https://yamllint.readthedocs.io/" target="_blank" rel="noopener">yamllint</a>. Run <code>make format</code> before pushing.</p>
-
-<h2 id="review-expectations">Review expectations</h2>
-
-<div class="card">
-    <ul>
-        <li>Keep skills focused: one clear purpose per skill.</li>
-        <li>Write descriptions that make it obvious <em>when</em> a skill should fire.</li>
-        <li>Prefer clarity over cleverness; these are shared across many teams.</li>
-        <li>Be responsive to review feedback; most PRs need a small iteration or two.</li>
-    </ul>
-</div>
-
-<p>The ruleset doesn't enforce an approval count, so reviewers weigh in by convention rather than by gate. A green <code>results</code> check, on the other hand, is mandatory. See <a href="architecture.html">Pipeline &amp; governance</a> for the full PR, publish, and branch-protection picture.</p>
-    </main>
+<pre><code>make generate
+make verify</code></pre>
+</main>
     <footer class="site-footer">
         <div class="footer-content">
             <div class="footer-brand">
-                <h4>BC Gov Agent Skills</h4>
-                <p>A shared catalogue of agent skill profiles, validated in CI and installed with <code>npx skills add</code>.</p>
+                <h4>BC Gov Agent Marketplace</h4>
+                <p>Reviewed Agent Skills with immutable sources, declared capabilities, and deterministic policy evidence.</p>
             </div>
             <div class="footer-links">
                 <h4>Repository</h4>
                 <ul>
-                    <li><a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener">GitHub Repository</a></li>
-                    <li><a href="https://github.com/bcgov/agent-skills/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener">SKILL.md Spec (source)</a></li>
-                    <li><a href="https://github.com/bcgov/agent-skills/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener">GitHub Repository</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener">SKILL.md Spec (source)</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a></li>
                 </ul>
             </div>
             <div class="footer-links">
                 <h4>Documentation</h4>
                 <ul>
                     <li><a href="catalog.html">Skill Catalogue</a></li>
+                    <li><a href="getting-started.html">Getting Started</a></li>
                     <li><a href="consume.html">Consume a Skill</a></li>
                     <li><a href="contribute.html">Contribute a Skill</a></li>
                     <li><a href="spec.html">SKILL.md Spec</a></li>
@@ -1173,7 +1212,7 @@ make validate   # validate every skill</code></pre>
             </div>
             <div class="footer-copyright">
                 <p>&copy; 2026 Province of British Columbia</p>
-                <p class="footer-meta">Built with a zero-dependency Bash + Node template engine</p>
+                <p class="footer-meta">Built with dependency-free Node.js tooling</p>
             </div>
         </div>
     </footer>

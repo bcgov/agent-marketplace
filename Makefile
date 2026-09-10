@@ -1,4 +1,4 @@
-.PHONY: setup validate validate-one test format lint
+.PHONY: setup validate validate-one marketplace generate test docs format lint verify
 
 # One-time (or after pulling new deps): install the Python tooling declared in
 # pyproject.toml into a uv-managed virtualenv. Running `uv run` also does this
@@ -15,9 +15,21 @@ validate-one:
 	@test -n "$(SKILL)" || (echo 'Usage: make validate-one SKILL=skills/<name>/SKILL.md' >&2; exit 2)
 	uv run python scripts/validate_skill.py $(SKILL)
 
+# Validate metadata, package policy, and checked-in generated projections.
+marketplace:
+	uv run python scripts/marketplace.py validate
+
+# Regenerate machine-readable and escaped website catalog projections.
+generate:
+	uv run python scripts/marketplace.py generate
+
 # Run the validator unit tests.
 test:
 	uv run pytest -q
+
+# Build the static site and client-side search index.
+docs:
+	bash docs/build.sh
 
 # Auto-format all Python to the repo style (2-space indent, double quotes).
 format:
@@ -29,3 +41,14 @@ format:
 lint:
 	uv run ruff check .
 	uv run yamllint .github/workflows
+
+# One launch gate: formatting, lint, tests, portable and marketplace
+# validation, generated catalog drift, Getting Started contracts, and docs.
+verify:
+	uv run ruff format --check .
+	uv run ruff check .
+	uv run yamllint .github/workflows
+	uv run pytest -q
+	uv run python scripts/validate_skill.py --all
+	uv run python scripts/marketplace.py validate
+	bash docs/build.sh

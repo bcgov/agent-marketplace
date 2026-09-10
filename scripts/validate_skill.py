@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate SKILL.md files against the agent-skills spec.
+"""Validate SKILL.md files against the agent-marketplace portable skill spec.
 
 Usage:
   validate_skill.py path/to/SKILL.md [more ...]  # validate specific files
@@ -62,7 +62,7 @@ MAX_DESCRIPTION_LEN = 1024
 
 # A SKILL.md must stay skimmable: it is loaded into the agent's context up front,
 # so deep detail belongs in references/ that the agent pulls on demand. This is
-# the agent-skills standard cap on the whole manifest.
+# the portable skill specification cap on the whole manifest.
 MAX_SKILL_LINES = 500
 
 # Section headings (## ...) that every skill body must contain, in spec order.
@@ -418,43 +418,58 @@ def validate_file(path: str) -> list:
 def _manifest_for(path: str):
   """Return the SKILL.md manifest path a changed file belongs to, if any.
 
-  Args:
-    path: A repository-relative path from a git diff (forward-slash separated).
-
-  Returns:
-    The ``<root>/<skill>/SKILL.md`` path when ``path`` sits inside a skill
-    directory under one of :data:`SKILL_ROOTS`, otherwise ``None``. Paths use
-    forward slashes on every platform so they compare cleanly in sets and round
-    trip through ``open()`` (which accepts ``/`` on Windows).
+  Canonical package locations are ``skills/community/<name>/`` and
+  ``skills/security/<name>/``. Repo-local meta-skills under
+  ``.github/skills/<name>/`` remain valid, while legacy flat skills are
+  intentionally ignored.
   """
   parts = path.strip().split("/")
   for root in SKILL_ROOTS:
-    depth = root.count("/") + 1  # path components in the root prefix
+    depth = root.count("/") + 1
     prefix = parts[:depth]
-    if prefix == root.split("/") and len(parts) >= depth + 1:
-      return f"{root}/{parts[depth]}/SKILL.md"
+    if prefix != root.split("/"):
+      continue
+
+    if root == ".github/skills":
+      if len(parts) >= depth + 1:
+        candidate = f"{root}/{parts[depth]}/SKILL.md"
+        if os.path.isfile(candidate):
+          return candidate
+      continue
+
+    if len(parts) >= depth + 2:
+      bucket = parts[depth]
+      if bucket not in {"community", "security"}:
+        continue
+      candidate = f"{root}/{bucket}/{parts[depth + 1]}/SKILL.md"
+      if os.path.isfile(candidate):
+        return candidate
   return None
 
 
 def discover_all() -> list:
-  """Find every skill manifest in the repository.
+  """Find every canonical skill manifest in the repository.
 
-  The spec fixes the layout at ``<root>/<skill>/SKILL.md`` (e.g.
-  ``skills/azure-networking/SKILL.md``), so the glob is intentionally
-  depth-one. A recursive glob would also pick up stray ``SKILL.md`` files
-  inside a skill's own ``references/`` or ``scripts/`` directory and treat
-  them as additional skills, which they aren't.
-
-  Returns:
-    A sorted list of ``SKILL.md`` paths found under every root in
-    :data:`SKILL_ROOTS`. Paths use forward slashes on every platform so that
-    callers see identical strings on Linux, macOS, and Windows.
+  Supported package roots are .github/skills for repo-local skills and
+  skills/community or skills/security for published skills. Flat legacy paths are
+  ignored intentionally.
   """
   found = []
   for root in SKILL_ROOTS:
-    matches = glob.glob(f"{root}/*/SKILL.md")
-    found.extend(m.replace(os.sep, "/") for m in matches)
-  return sorted(found)
+    patterns = [f"{root}/*/SKILL.md"]
+    if root == "skills":
+      patterns = [
+        f"{root}/community/*/SKILL.md",
+        f"{root}/security/*/SKILL.md",
+      ]
+    for pattern in patterns:
+      matches = glob.glob(pattern)
+      for match in matches:
+        rel = match.replace(os.sep, "/")
+        if "/references/" in rel or "/scripts/" in rel or "/assets/" in rel:
+          continue
+        found.append(rel)
+  return sorted(set(found))
 
 
 def changed_modules(base: str) -> list:
@@ -496,7 +511,7 @@ def changed_modules(base: str) -> list:
     return []
   modules = set()
   for line in res.stdout.splitlines():
-    manifest = _manifest_for(line)
+    manifest = _manifest_for(line.strip())
     if manifest:
       modules.add(manifest)
   return sorted(m for m in modules if os.path.isfile(m))

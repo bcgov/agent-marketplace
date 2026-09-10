@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consume a Skill | BC Gov Agent Skills</title>
+    <title>Install an Extension | BC Gov Agent Marketplace</title>
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <style>
         :root {
@@ -226,6 +226,37 @@
             margin: 0 auto;
         }
 
+        .hero-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 0.7rem 1.1rem;
+            border: 2px solid var(--bc-blue);
+            border-radius: 4px;
+            background: var(--bc-blue);
+            color: var(--white);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .hero-action:hover {
+            background: var(--bc-blue-light);
+            border-color: var(--bc-blue-light);
+        }
+
+        .hero .hero-action.primary {
+            background: var(--bc-gold);
+            border-color: var(--bc-gold);
+            color: var(--bc-blue);
+        }
+
+        .hero .hero-action.secondary {
+            background: transparent;
+            border-color: var(--white);
+            color: var(--white);
+        }
+
         /* Typography */
         h1 {
             color: var(--bc-blue);
@@ -260,6 +291,11 @@
 
         p {
             margin-bottom: 1rem;
+        }
+
+        :not(pre) > code {
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         /* Cards - Enhanced */
@@ -508,6 +544,66 @@
         .badge-blue {
             background: var(--bc-blue);
             color: var(--white);
+        }
+
+        .shell-switch {
+            display: inline-flex;
+            border: 1px solid #9aa7b5;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0.5rem 0 1rem;
+        }
+
+        .shell-option,
+        .copy-command {
+            border: 0;
+            background: var(--white);
+            color: var(--bc-blue);
+            font: inherit;
+            font-weight: 600;
+            padding: 0.65rem 1rem;
+            cursor: pointer;
+        }
+
+        .shell-option + .shell-option {
+            border-left: 1px solid #9aa7b5;
+        }
+
+        .shell-option.active,
+        .copy-command {
+            background: var(--bc-blue);
+            color: var(--white);
+        }
+
+        .copy-command {
+            border-radius: 4px;
+            margin: 0 0 1.5rem;
+        }
+
+        .release-facts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1px;
+            background: #c8d0d8;
+            border: 1px solid #c8d0d8;
+            margin: 1rem 0 2rem;
+        }
+
+        .release-facts > div {
+            background: var(--white);
+            padding: 1rem;
+            min-width: 0;
+        }
+
+        .release-facts dt {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .release-facts dd {
+            overflow-wrap: anywhere;
         }
 
         /* Accordion / Collapsible */
@@ -984,19 +1080,20 @@
         <a href="index.html" class="bc-header-brand">
             <img src="assets/bc_citz_logo.jpg" alt="BC Government" class="bc-header-logo">
             <div>
-                <div class="bc-header-title">BC Gov Agent Skills</div>
+                <div class="bc-header-title">BC Gov Agent Marketplace</div>
                 <div class="bc-header-subtitle">A shared catalogue of agent skill profiles</div>
             </div>
         </a>
         <nav class="bc-nav">
             <a href="index.html" class="">Home</a>
+            <a href="getting-started.html" class="">Get Started</a>
             <a href="catalog.html" class="">Catalogue</a>
             <a href="consume.html" class="active">Consume</a>
             <a href="contribute.html" class="">Contribute</a>
             <a href="spec.html" class="">Spec</a>
             <a href="architecture.html" class="">Pipeline</a>
             <a href="faq.html" class="">FAQ</a>
-            <a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener" class="">GitHub ↗</a>
+            <a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener" class="">GitHub</a>
 
             <!-- Search button -->
             <button class="search-btn" id="search-btn" type="button" aria-label="Search documentation">
@@ -1035,132 +1132,69 @@
     <main>
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
+<h1 id="install-an-extension">Install an Extension</h1>
 
-<h1 id="consume-a-skill">Consume a Skill</h1>
+<p>The supported path starts with the two marketplace companions. They make reviewed discovery, capability presentation, immutable source inspection, installation locks, and third-party registration available inside ordinary GitHub Copilot requests.</p>
 
-<p>Skills install with the <a href="https://skills.sh" target="_blank" rel="noopener"><code>skills</code> CLI</a> (from <a href="https://github.com/vercel-labs/skills" target="_blank" rel="noopener">vercel-labs/skills</a>). It clones this repo, finds every <code>SKILL.md</code>, and copies the matching skill folders &mdash; plus their <code>scripts/</code>, <code>references/</code>, and <code>assets/</code> &mdash; into the right location for your agent. No registry, no auth token, no version pinning to maintain.</p>
+<p><a href="getting-started.html" class="hero-action primary">Install the marketplace companions</a></p>
 
-<div class="alert alert-info">
-    <div class="alert-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-    </div>
-    <div>
-        The <code>skills</code> CLI implements the <a href="https://agentskills.io" target="_blank" rel="noopener">agentskills.io</a> open standard. GitHub Copilot and Claude Code load <code>SKILL.md</code> natively; for Codex CLI, Cursor, Cline, Continue.dev, and others, the CLI knows where to drop the folder so the tool you already use picks it up.
-    </div>
-</div>
+<h2 id="reviewed-bc-gov-skill">Reviewed BC Gov skill</h2>
 
-<h2 id="prerequisites">Prerequisites</h2>
+<ol>
+    <li>Ask Copilot to find a skill for the task.</li>
+    <li>Compare at most three deterministic matches. Each includes why it matched, owner, capabilities, review evidence, full source revision, and digest.</li>
+    <li>Select project scope and inspect the exact destination, source revision, digest, and material capabilities.</li>
+    <li>Confirm the install. The finder prefers APM and reports <code>apm.lock.yaml</code>; when APM is unavailable it uses the catalog-pinned <code>npx skills</code> fallback and reports <code>skills-lock.json</code> when created.</li>
+</ol>
 
-<div class="card">
-    <p>You need <code>npx</code> on your <code>PATH</code>. Any recent Node.js LTS provides it; <code>npx --version</code> should print a version number.</p>
-    <p style="margin-bottom:0;">No GitHub CLI, personal access token, or <code>.npmrc</code> setup is required.</p>
-</div>
+<pre><code>Find me a reviewed BC Gov skill for hardening GitHub Actions.</code></pre>
 
-<h2 id="install">Install</h2>
+<h2 id="third-party-candidate">Third-party candidate</h2>
 
-<div class="card">
-    <p>Pick a skill from <a href="catalog.html">the catalogue</a>, then run:</p>
-<pre><code># Interactive: pick the target agent (Copilot, Claude Code, Cursor, etc.) and
-# choose which of the bcgov/agent-skills skills to install.
-npx skills add bcgov/agent-skills
+<p>When no BC Gov result fits, the finder searches every approved discovery source. A selected result is resolved to a canonical GitHub repository, full commit SHA, and package path before it enters isolated staging.</p>
 
-# Install just one skill, non-interactively, into GitHub Copilot for this project.
-npx skills add bcgov/agent-skills --skill azure-networking --agent github-copilot --yes
+<div class="alert alert-info"><div class="alert-icon" aria-hidden="true">i</div><div>Candidate files are treated as untrusted data during inspection. The scanner does not load their instructions into Copilot and does not execute contributed scripts.</div></div>
 
-# Install one skill globally for an agent (available across all that agent's projects).
-npx skills add bcgov/agent-skills --skill azure-networking --agent claude-code --global
+<ol>
+    <li>Review the candidate's source, package contents, and structured capability evidence.</li>
+    <li>Confirm public marketplace registration. The finder creates or links one deduplicated issue labeled <strong>Unreviewed candidate</strong>.</li>
+    <li>Trusted CI fetches the immutable source, computes its digest, and scans it without executing package scripts.</li>
+    <li>Install only after reviewers publish the exact revision and digest in the BC Gov catalog.</li>
+</ol>
 
-# List the skills available in this catalogue without installing anything.
-npx skills add bcgov/agent-skills --list</code></pre>
-    <p style="margin-bottom: 0;">The CLI walks the cloned repo for <code>SKILL.md</code> files and copies each matching skill's whole folder (manifest plus <code>scripts/</code>, <code>references/</code>, <code>assets/</code>) into the destination it picked for your agent. Re-run any time to install another skill or pick up newer versions &mdash; the CLI re-copies the latest <code>main</code>.</p>
-</div>
+<h2 id="locks-receipts-and-recovery">Locks, receipts, and recovery</h2>
 
-<h2 id="pinning">Pinning to a specific commit</h2>
+<p>APM records installs in <code>apm.yml</code> and <code>apm.lock.yaml</code>; the fallback installer may write <code>skills-lock.json</code>. Registration evidence includes source, full revision, path, CI-computed digest, policy findings, capabilities, and issue result.</p>
 
-<p>The default form installs from <code>main</code>, which is mutable. For CI, scripted setup, or any environment where reproducibility matters, install from a GitHub URL that includes a 40-char commit SHA you have audited &mdash; pick the latest green commit from <a href="https://github.com/bcgov/agent-skills/commits/main" target="_blank" rel="noopener">bcgov/agent-skills/commits/main</a>:</p>
+<p>Ask Copilot to verify installed marketplace skills against the installer lock and selected catalog evidence. A registration failure does not remove or relabel a local installation; retry registration independently.</p>
 
-<pre><code>npx skills add https://github.com/bcgov/agent-skills/tree/&lt;SHA&gt; --skill azure-networking</code></pre>
+<h2 id="direct-install">Direct install</h2>
 
-<p>This is the same advice our own <a href="https://github.com/bcgov/agent-skills/blob/main/skills/github-actions/SKILL.md" target="_blank" rel="noopener">github-actions</a> skill gives for third-party Actions.</p>
+<pre><code>apm install \
+    bcgov/agent-marketplace/skills/&lt;specialty&gt;/&lt;skill-name&gt;#&lt;full-commit-sha&gt; \
+    --target copilot</code></pre>
 
-<h2 id="agents">Supported agents</h2>
-
-<div class="card">
-    <p>The CLI knows the install location for each agent it supports. The full list is in the <a href="https://github.com/vercel-labs/skills#supported-agents" target="_blank" rel="noopener">skills CLI README</a>; common values for <code>--agent</code> include:</p>
-    <ul>
-        <li><code>github-copilot</code> &mdash; project-scope drops under <code>.github/skills/</code>; <code>--global</code> drops under <code>~/.copilot/skills/</code>.</li>
-        <li><code>claude-code</code> &mdash; project-scope drops under <code>.claude/skills/</code>; <code>--global</code> drops under <code>~/.claude/skills/</code>.</li>
-        <li><code>codex</code>, <code>cursor</code>, <code>cline</code>, <code>continue</code>, and others &mdash; the CLI symlinks into the folder each tool already scans.</li>
-    </ul>
-    <p style="margin-bottom: 0;">Run <code>npx skills add bcgov/agent-skills</code> with no <code>--agent</code> flag to see the interactive picker, which auto-detects which agents are installed and offers them as choices.</p>
-</div>
-
-<h2 id="manual">Manual install (no CLI)</h2>
-
-<p>Every skill is a self-contained folder under <a href="https://github.com/bcgov/agent-skills/tree/main/skills" target="_blank" rel="noopener">skills/</a>. If you'd rather not use the CLI, clone the repo (or download a release archive) and copy the skill's folder into whichever location your agent scans:</p>
-
-<pre><code>git clone https://github.com/bcgov/agent-skills.git
-cp -r agent-skills/skills/azure-networking .github/skills/azure-networking</code></pre>
-
-<p>The folder name must match the manifest's <code>name</code> field exactly, which it already does for every skill in this repo.</p>
-
-<h2 id="upgrade">Upgrading</h2>
-
-<p>Re-run the same <code>npx skills add</code> command. The CLI re-clones the source and re-copies the latest content, so the skill on disk matches whatever's currently on <code>main</code> (or the SHA you pinned to). There is no version metadata to maintain &mdash; the merge-to-<code>main</code> state of this repo <em>is</em> the released state.</p>
-
-<h2 id="troubleshooting">Troubleshooting</h2>
-
-<div class="accordion-group">
-    <details>
-        <summary><code>npx: command not found</code></summary>
-        <div class="accordion-content">
-            <p>Install Node.js (any current LTS). <code>npx</code> ships with <code>npm</code>, so once <code>node --version</code> works <code>npx --version</code> will too.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>The CLI ran but my agent doesn't see the skill</summary>
-        <div class="accordion-content">
-            <p>Reload the agent (close and reopen VS Code, restart your Claude Code session, etc.) so it re-scans its skills folder. If the skill still isn't picked up, double-check that the destination folder on disk matches what your agent expects &mdash; in VS Code Copilot run <em>Chat: Open Customizations</em> and check the Skills tab; in Claude Code run <code>/skills</code>.</p>
-            <p style="margin-bottom: 0;">Both agents require the on-disk folder name to match the <code>name</code> field in <code>SKILL.md</code> exactly. The CLI preserves the original folder name, so this matches automatically as long as you didn't rename anything by hand.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>I want to install from a private fork or branch</summary>
-        <div class="accordion-content">
-            <p>Replace <code>bcgov/agent-skills</code> with the GitHub URL of your fork or branch:</p>
-<pre><code>npx skills add https://github.com/&lt;org&gt;/agent-skills/tree/&lt;branch-or-sha&gt;</code></pre>
-            <p style="margin-bottom: 0;">For private repositories, the CLI uses your existing Git credentials (SSH keys or <code>gh auth</code>), so make sure <code>git clone &lt;url&gt;</code> works first.</p>
-        </div>
-    </details>
-
-    <details>
-        <summary>Can I opt out of the CLI's telemetry?</summary>
-        <div class="accordion-content">
-            <p>Yes. Set <code>DISABLE_TELEMETRY=1</code> in your environment before running <code>npx skills add</code>. See the <a href="https://github.com/vercel-labs/skills#telemetry" target="_blank" rel="noopener">skills CLI README</a> for details.</p>
-        </div>
-    </details>
-</div>
-    </main>
+<p>Use the exact package path and revision from the catalog. If APM is unavailable, the finder constructs an immutable GitHub tree URL for <code>npx skills</code> and recommends APM for future installs. Direct installation does not submit a third-party candidate for marketplace review.</p>
+</main>
     <footer class="site-footer">
         <div class="footer-content">
             <div class="footer-brand">
-                <h4>BC Gov Agent Skills</h4>
-                <p>A shared catalogue of agent skill profiles, validated in CI and installed with <code>npx skills add</code>.</p>
+                <h4>BC Gov Agent Marketplace</h4>
+                <p>Reviewed Agent Skills with immutable sources, declared capabilities, and deterministic policy evidence.</p>
             </div>
             <div class="footer-links">
                 <h4>Repository</h4>
                 <ul>
-                    <li><a href="https://github.com/bcgov/agent-skills" target="_blank" rel="noopener">GitHub Repository</a></li>
-                    <li><a href="https://github.com/bcgov/agent-skills/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener">SKILL.md Spec (source)</a></li>
-                    <li><a href="https://github.com/bcgov/agent-skills/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener">GitHub Repository</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener">SKILL.md Spec (source)</a></li>
+                    <li><a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">CONTRIBUTING.md</a></li>
                 </ul>
             </div>
             <div class="footer-links">
                 <h4>Documentation</h4>
                 <ul>
                     <li><a href="catalog.html">Skill Catalogue</a></li>
+                    <li><a href="getting-started.html">Getting Started</a></li>
                     <li><a href="consume.html">Consume a Skill</a></li>
                     <li><a href="contribute.html">Contribute a Skill</a></li>
                     <li><a href="spec.html">SKILL.md Spec</a></li>
@@ -1178,7 +1212,7 @@ cp -r agent-skills/skills/azure-networking .github/skills/azure-networking</code
             </div>
             <div class="footer-copyright">
                 <p>&copy; 2026 Province of British Columbia</p>
-                <p class="footer-meta">Built with a zero-dependency Bash + Node template engine</p>
+                <p class="footer-meta">Built with dependency-free Node.js tooling</p>
             </div>
         </div>
     </footer>
