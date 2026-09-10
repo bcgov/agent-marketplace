@@ -225,6 +225,7 @@ node_modules/
 .DS_Store
 *.swp
 .copilot-memory
+.codegraph/
 
 
 working/
