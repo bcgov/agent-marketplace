@@ -37,7 +37,8 @@ def analyze_fixture(name: str) -> dict:
     shutil.copytree(fixture, package, dirs_exist_ok=True)
     manifest_path = package / marketplace.MANIFEST_NAME
     manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-    manifest["id"] = f"bcgov-public/{package.name}"
+    package_id = package.name.replace("_", "-")
+    manifest["id"] = f"bcgov-public/{package_id}"
     manifest_path.write_text(
       yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
     )
