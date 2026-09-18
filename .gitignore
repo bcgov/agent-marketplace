@@ -157,6 +157,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Local-only Copilot skills; published companions live under skills/community/.
+.github/skills/
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -226,5 +229,7 @@ node_modules/
 *.swp
 .copilot-memory
 .codegraph/
+.mcp.json
+.agents/skills
 
 working/

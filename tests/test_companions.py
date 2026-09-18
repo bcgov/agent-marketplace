@@ -39,7 +39,7 @@ candidate = _load("rescan_candidate", ROOT / "scripts" / "rescan_candidate.py")
 
 def test_repo_local_marketplace_skills_replace_legacy_meta_skills():
   """Phase 3 exposes marketplace workflows instead of generic authoring helpers."""
-  skill_root = ROOT / ".github" / "skills"
+  skill_root = ROOT / "skills" / "community"
   names = {path.name for path in skill_root.iterdir() if path.is_dir()}
   assert {"bcgov-find-extension", "bcgov-create-extension"} <= names
   assert {"skill-author", "skill-validator"}.isdisjoint(names)
@@ -54,7 +54,7 @@ def test_companion_packages_contain_no_runtime_python():
 
 def test_companion_guidance_is_self_contained_and_progressively_disclosed():
   """Installed skills load only references shipped inside their own package."""
-  skill_root = ROOT / ".github" / "skills"
+  skill_root = ROOT / "skills" / "community"
   creator_references = {
     path.name
     for path in (skill_root / "bcgov-create-extension" / "references").iterdir()
@@ -87,7 +87,7 @@ def test_companion_relative_links_stay_inside_installed_package():
   import re
 
   for name in ["bcgov-find-extension", "bcgov-create-extension"]:
-    package = (ROOT / ".github" / "skills" / name).resolve()
+    package = (ROOT / "skills" / "community" / name).resolve()
     for document in package.rglob("*.md"):
       content = document.read_text(encoding="utf-8")
       for target in re.findall(r"\[[^]]+\]\(([^)]+)\)", content):
@@ -100,7 +100,7 @@ def test_companion_relative_links_stay_inside_installed_package():
 
 def test_finder_uses_catalog_sources_and_prefers_apm():
   """Discovery policy stays remote while installation prefers a lockfile."""
-  references = ROOT / ".github" / "skills" / "bcgov-find-extension" / "references"
+  references = ROOT / "skills" / "community" / "bcgov-find-extension" / "references"
   discovery = (references / "THIRD_PARTY.md").read_text(encoding="utf-8")
   installation = (references / "INSTALLATION.md").read_text(encoding="utf-8")
   assert "approved-discovery-sources" in discovery
@@ -549,7 +549,7 @@ def test_getting_started_describes_portable_marketplace_workflows():
   page = (ROOT / "docs" / "_pages" / "getting-started.html").read_text(encoding="utf-8")
   assert "bcgov-find-extension" in page
   assert "bcgov-create-extension" in page
-  assert ".github/skills/" in page
+  assert "skills/community/" in page
   assert "apm install" in page
   assert "npx skills@" in page
   assert "do not require a marketplace checkout" in page

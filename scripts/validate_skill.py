@@ -79,9 +79,8 @@ REQUIRED_SECTIONS = [
 # Bundled resources live in these flat subdirectories, exactly one level deep.
 RESOURCE_DIRS = ("scripts", "references", "assets")
 
-# Skills live under two roots: contributed skills in skills/, and the repo's own
-# operational meta-skills in .github/skills/. Both are validated identically.
-SKILL_ROOTS = ("skills", ".github/skills")
+# Published skills, including the marketplace companions, live under skills/.
+SKILL_ROOTS = ("skills",)
 
 
 # --- Frontmatter parsing ----------------------------------------------------
@@ -419,22 +418,13 @@ def _manifest_for(path: str):
   """Return the SKILL.md manifest path a changed file belongs to, if any.
 
   Canonical package locations are ``skills/community/<name>/`` and
-  ``skills/security/<name>/``. Repo-local meta-skills under
-  ``.github/skills/<name>/`` remain valid, while legacy flat skills are
-  intentionally ignored.
+  ``skills/security/<name>/``. Legacy flat skills are intentionally ignored.
   """
   parts = path.strip().split("/")
   for root in SKILL_ROOTS:
     depth = root.count("/") + 1
     prefix = parts[:depth]
     if prefix != root.split("/"):
-      continue
-
-    if root == ".github/skills":
-      if len(parts) >= depth + 1:
-        candidate = f"{root}/{parts[depth]}/SKILL.md"
-        if os.path.isfile(candidate):
-          return candidate
       continue
 
     if len(parts) >= depth + 2:
@@ -450,18 +440,15 @@ def _manifest_for(path: str):
 def discover_all() -> list:
   """Find every canonical skill manifest in the repository.
 
-  Supported package roots are .github/skills for repo-local skills and
-  skills/community or skills/security for published skills. Flat legacy paths are
-  ignored intentionally.
+  Supported package roots are skills/community and skills/security. Flat legacy
+  paths and ignored .github/skills content are intentionally excluded.
   """
   found = []
   for root in SKILL_ROOTS:
-    patterns = [f"{root}/*/SKILL.md"]
-    if root == "skills":
-      patterns = [
-        f"{root}/community/*/SKILL.md",
-        f"{root}/security/*/SKILL.md",
-      ]
+    patterns = [
+      f"{root}/community/*/SKILL.md",
+      f"{root}/security/*/SKILL.md",
+    ]
     for pattern in patterns:
       matches = glob.glob(pattern)
       for match in matches:

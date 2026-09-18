@@ -66,10 +66,20 @@ make docs       # assemble the pages and search index
 make serve      # http://localhost:8000/ — Ctrl+C to stop
 ```
 
-Community onboarding demos live in
-[docs/demos/README.md](docs/demos/README.md). They cover discovery,
-installation guidance, authoring, submission analysis, the GUI, trust and
-digest evidence, and the no-match path without executing contributed content.
+## Documentation map
+
+The authoritative repository documents are intentionally small and explicit:
+
+- [README.md](README.md) — repo overview, release state, installation and validation commands, and the local workflow.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — contributor workflow, package authoring requirements, and PR expectations.
+- [spec/SKILL_SPEC.md](spec/SKILL_SPEC.md) — the authoritative contract for every `SKILL.md` file.
+- [config/marketplace.yaml](config/marketplace.yaml) — release metadata and approved discovery sources.
+- [docs/MARKETPLACE_RUNBOOK.md](docs/MARKETPLACE_RUNBOOK.md) — release, quarantine, removal, rollback, and incident-response operations.
+- [SECURITY.md](SECURITY.md) — the private vulnerability reporting route.
+- [docs/README.md](docs/README.md) — the generated static-site workflow and build caveats.
+- [docs/_pages/](docs/_pages/) and [docs/_partials/](docs/_partials/) — source pages and shared chrome for the static website.
+
+The checked-in repo does not include a companion `projects/marketplace/` tree. This marketplace checkout keeps the source contract, validation fixtures, and generated publication artifacts needed for repository operations and CI, while consumer-facing walkthroughs live outside this checkout.
 
 Pass `PORT` when 8000 is taken, for example `make serve PORT=8080`. The server
 reads whatever is already built, so after editing anything in `docs/_pages/`,

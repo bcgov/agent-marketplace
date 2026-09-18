@@ -44,7 +44,7 @@
       "status": "active"
     }
   ],
-  "count": 7,
+  "count": 9,
   "extensions": [
     {
       "capabilities": {
@@ -128,6 +128,185 @@
     },
     {
       "capabilities": {
+        "commands": [],
+        "data-classes": [
+          "PUBLIC"
+        ],
+        "environment-variables": [],
+        "filesystem": {
+          "read": [
+            "explicitly selected workspace files"
+          ],
+          "write": [
+            "staged extension draft after confirmation"
+          ]
+        },
+        "network": [
+          "raw.githubusercontent.com",
+          "github.com"
+        ],
+        "secret-names": []
+      },
+      "content-digest": "sha256:22545e020f12f15e388edb85b346115820940f6d09bb0ac006266a469a51f22d",
+      "display-name": "BC Gov Create Extension",
+      "files": [
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "e5899cc0cb31c201c771414c2bc0a10a969c635b074a3605f13d54c38639bbb6",
+          "size": 741
+        },
+        {
+          "path": "references/SUBMISSION.md",
+          "sha256": "42e6aa6f5cc9118fe66a9fde59d401b54517de662f2ff77317efd5eb3e1d13b7",
+          "size": 2262
+        },
+        {
+          "path": "references/writing-agents.md",
+          "sha256": "bf369ad1cea753b64a50509c8d85fd207cfa00e6959ed4c03d311be4e12affb1",
+          "size": 1478
+        },
+        {
+          "path": "references/writing-instructions.md",
+          "sha256": "2626b1495e95c747cad3b689e965fd6808c0a023abec9fece907d1ce102fb987",
+          "size": 1618
+        },
+        {
+          "path": "references/writing-prompts.md",
+          "sha256": "8cde9c8935dd4337152e3b6d17b64566617b626e94ec35b198e0219d8f9e5d78",
+          "size": 1390
+        },
+        {
+          "path": "references/writing-skills.md",
+          "sha256": "0ddfbc0d0ff23a9231ad0fdeb3f371f8e4d017c9cac19cc39d5aba1a8b0fa5dc",
+          "size": 3284
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "0ad2d9120a52c3305a96cee70ce619578857d366df11395dfc8b9997d1615671",
+          "size": 5195
+        }
+      ],
+      "id": "bcgov-public/bcgov-create-extension",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@mishraomp",
+        "@DerekRoberts"
+      ],
+      "policy": {
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": "bcgov-marketplace-policy/1.0"
+      },
+      "prerequisites": [
+        "GitHub Copilot with Agent Skills support"
+      ],
+      "publisher": "Province of British Columbia",
+      "review": {
+        "reviewers": [
+          "@mishraomp",
+          "@DerekRoberts"
+        ],
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53",
+        "status": "marketplace-reviewed"
+      },
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "skills/community/bcgov-create-extension",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53"
+      },
+      "specialty": "community",
+      "summary": "Author, validate, preview, and submit BC Gov agent extension candidates.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "skill"
+    },
+    {
+      "capabilities": {
+        "commands": [],
+        "data-classes": [
+          "PUBLIC"
+        ],
+        "environment-variables": [],
+        "filesystem": {
+          "read": [],
+          "write": []
+        },
+        "network": [
+          "raw.githubusercontent.com",
+          "github.com"
+        ],
+        "secret-names": []
+      },
+      "content-digest": "sha256:10e2500eddae9e3ee13ffb5dc1d480ac94ba1e9372b2bb7e66be37574a9057e0",
+      "display-name": "BC Gov Find Extension",
+      "files": [
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "6ae7aafd3cb3cda47373cb62951c0dcae2dd6c4480f24eebbac280815837b98a",
+          "size": 648
+        },
+        {
+          "path": "references/INSTALLATION.md",
+          "sha256": "6b634a230404732256970d7901c6331cb27be93456792cd4eee7252b3856849f",
+          "size": 2035
+        },
+        {
+          "path": "references/THIRD_PARTY.md",
+          "sha256": "380128eb33b54a987e7347569210ce5ada797b32c563b38312de408fa50c0807",
+          "size": 4129
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "9379ff913e86b54cb11de4cce76c8ee88d48a0b79dce32442c4764dbf691af78",
+          "size": 5393
+        }
+      ],
+      "id": "bcgov-public/bcgov-find-extension",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@mishraomp",
+        "@DerekRoberts"
+      ],
+      "policy": {
+        "findings": [
+          {
+            "code": "unsupported-trust-claim",
+            "line": 67,
+            "message": "instruction requires human review",
+            "path": "references/THIRD_PARTY.md",
+            "severity": "advisory"
+          }
+        ],
+        "outcome": "passed",
+        "policy-version": "bcgov-marketplace-policy/1.0"
+      },
+      "prerequisites": [
+        "GitHub Copilot with Agent Skills support"
+      ],
+      "publisher": "Province of British Columbia",
+      "review": {
+        "reviewers": [
+          "@mishraomp",
+          "@DerekRoberts"
+        ],
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53",
+        "status": "marketplace-reviewed"
+      },
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "skills/community/bcgov-find-extension",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "842241b962849ad239e1e9c90589b6bc9c881e53"
+      },
+      "specialty": "community",
+      "summary": "Discover, inspect, and confirm installation of BC Gov agent extensions.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "skill"
+    },
+    {
+      "capabilities": {
         "commands": [
           "act",
           "actionlint",
@@ -157,7 +336,7 @@
           "GITHUB_TOKEN"
         ]
       },
-      "content-digest": "sha256:0c072d12707da74da8f073d3894fb676a0299289dd1463b2a28ad25d720da21a",
+      "content-digest": "sha256:ec33a9388c3b50a32fda77d8b0ef51194168dce7744927b5a3695fb0b05227d5",
       "display-name": "GitHub Actions",
       "files": [
         {
@@ -172,8 +351,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "bd6fafa0602fdd49ac76492c86757b9a0e3d3d7efb20d2da3ca035d156151f66",
-          "size": 23743
+          "sha256": "db4c7c33bcca1413b8cc1fdbd49612ef706c2eb67acf007b1daa79239353a4b3",
+          "size": 23745
         }
       ],
       "id": "bcgov-public/github-actions",
@@ -326,7 +505,7 @@
         ],
         "secret-names": []
       },
-      "content-digest": "sha256:bf8b38eb8f53a9341d19b1844320c02212e18f402312c5387a2add1d35189e6e",
+      "content-digest": "sha256:58310909cad7d5d52455fa78c40f81dd397e561f7f8f6cffc949dc3d6d0d5800",
       "display-name": "n8n Runbook Parser",
       "files": [
         {
@@ -381,8 +560,8 @@
         },
         {
           "path": "references/SKILL_SPEC.md",
-          "sha256": "5f00070c4701851d642faf666386a4c3b996233c9d3d77f02cac21dd45bf2fd4",
-          "size": 5856
+          "sha256": "9f8801b0e840256f05a4866f6f440ba45e3011298c8cf80b51ea81df5ce6bf34",
+          "size": 5771
         },
         {
           "path": "scripts/doc_links.py",

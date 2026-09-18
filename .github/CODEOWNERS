@@ -1,20 +1,7 @@
-# Matched against repo root (asterisk)
-*                         @mishraomp @DerekRoberts
+# Marketplace maintainers own the repository by default.
+* @bcgov/agent-marketplace-maintainers
 
-# Marketplace trust and publication controls require named owner review.
-/schemas/                 @mishraomp @DerekRoberts
-/config/marketplace.yaml  @mishraomp @DerekRoberts
-/scripts/marketplace.py   @mishraomp @DerekRoberts
-/scripts/rescan_candidate.py @mishraomp @DerekRoberts
-/catalog/                 @mishraomp @DerekRoberts
-/docs/_generated/         @mishraomp @DerekRoberts
-/.github/ISSUE_TEMPLATE/federated-candidate.yml @mishraomp @DerekRoberts
-/.github/workflows/       @mishraomp @DerekRoberts
-/.github/skills/bcgov-find-extension/ @mishraomp @DerekRoberts
-/.github/skills/bcgov-create-extension/ @mishraomp @DerekRoberts
-/skills/security/         @mishraomp @DerekRoberts
-/skills/community/bcgov-find-extension/ @mishraomp @DerekRoberts
-/skills/community/bcgov-create-extension/ @mishraomp @DerekRoberts
-/SECURITY.md              @mishraomp @DerekRoberts
+# Specialty ownership overrides the repository-wide default.
+/skills/security/ @bcgov/security
 
 # See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners

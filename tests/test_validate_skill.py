@@ -338,13 +338,11 @@ def test_validate_file_valid_skill():
 # --- discover_all -----------------------------------------------------------
 
 
-def test_discover_all_finds_manifests_under_both_roots():
-  """SKILL.md files under both skills/ and .github/skills/ are discovered."""
+def test_discover_all_excludes_ignored_github_skills():
+  """Only tracked canonical skills are discovered."""
   with tempfile.TemporaryDirectory() as root:
     os.makedirs(os.path.join(root, "skills", "community", "demo"))
     open(os.path.join(root, "skills", "community", "demo", "SKILL.md"), "w").close()
-    os.makedirs(os.path.join(root, ".github", "skills", "meta"))
-    open(os.path.join(root, ".github", "skills", "meta", "SKILL.md"), "w").close()
     cwd = os.getcwd()
     try:
       os.chdir(root)
@@ -352,10 +350,7 @@ def test_discover_all_finds_manifests_under_both_roots():
     finally:
       os.chdir(cwd)
     # Paths are normalized to forward slashes on every platform.
-    assert found == [
-      ".github/skills/meta/SKILL.md",
-      "skills/community/demo/SKILL.md",
-    ]
+    assert found == ["skills/community/demo/SKILL.md"]
 
 
 def test_discover_all_finds_canonical_layouts():
@@ -398,23 +393,16 @@ def test_discover_all_ignores_legacy_flat_layout():
 # --- changed_modules --------------------------------------------------------
 
 
-def test_changed_modules_maps_changed_files_to_manifests():
-  """Changed files under either root map to their manifest; others are ignored."""
+def test_changed_modules_maps_canonical_skill_files_to_manifests():
+  """Changed files under the canonical root map to their manifest."""
 
   class _FakeProc:
     returncode = 0
-    stdout = (
-      "skills/community/demo/SKILL.md\n"
-      ".github/skills/meta/SKILL.md\n"
-      "README.md\n"
-      "scripts/validate_skill.py\n"
-    )
+    stdout = "skills/community/demo/SKILL.md\nREADME.md\nscripts/validate_skill.py\n"
 
   with tempfile.TemporaryDirectory() as root:
     os.makedirs(os.path.join(root, "skills", "community", "demo"))
     open(os.path.join(root, "skills", "community", "demo", "SKILL.md"), "w").close()
-    os.makedirs(os.path.join(root, ".github", "skills", "meta"))
-    open(os.path.join(root, ".github", "skills", "meta", "SKILL.md"), "w").close()
     orig_run = v.subprocess.run
     cwd = os.getcwd()
     try:
@@ -425,10 +413,7 @@ def test_changed_modules_maps_changed_files_to_manifests():
       os.chdir(cwd)
       v.subprocess.run = orig_run
     # Manifest paths use forward slashes on every platform.
-    assert mods == [
-      ".github/skills/meta/SKILL.md",
-      "skills/community/demo/SKILL.md",
-    ]
+    assert mods == ["skills/community/demo/SKILL.md"]
 
 
 def test_changed_modules_returns_empty_when_git_missing():

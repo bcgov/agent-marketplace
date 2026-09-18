@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -27,18 +28,20 @@ def _fixture_path(name: str) -> Path:
 def analyze_fixture(name: str) -> dict:
   """Analyze a fixture in an isolated canonical package path."""
   fixture = _fixture_path(name)
-  package = Path(
+  temporary_package = Path(
     tempfile.mkdtemp(
       prefix="demo-submission-",
       dir=ROOT / "skills" / "community",
     )
   )
+  package_name = re.sub(r"-+", "-", temporary_package.name.replace("_", "-")).strip("-")
+  package = temporary_package.with_name(package_name)
+  temporary_package.rename(package)
   try:
     shutil.copytree(fixture, package, dirs_exist_ok=True)
     manifest_path = package / marketplace.MANIFEST_NAME
     manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-    package_id = package.name.replace("_", "-")
-    manifest["id"] = f"bcgov-public/{package_id}"
+    manifest["id"] = f"bcgov-public/{package.name}"
     manifest_path.write_text(
       yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
     )

@@ -94,4 +94,4 @@ For broader topics that live elsewhere, prefer these upstream skills / docs inst
 - Generic GitHub Actions syntax, triggers, expressions → [GitHub Actions docs](https://docs.github.com/actions)
 - Hardening guidance from GitHub itself → [Security hardening for GitHub Actions](https://docs.github.com/actions/security-guides/security-hardening-for-github-actions)
 - OIDC-to-Azure federation for keyless deploys → upstream Microsoft `azure-prepare` / `azure-deploy` skills (if installed)
-- Authoring the skill profile this workflow ships -> `.github/skills/bcgov-create-extension`
+- Authoring the skill profile this workflow ships -> `skills/community/bcgov-create-extension`

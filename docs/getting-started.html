@@ -1627,7 +1627,7 @@
 <dl class="release-facts">
     <div><dt>Finder</dt><dd><code>bcgov-find-extension</code> searches generated catalog records and presents installation evidence.</dd></div>
     <div><dt>Creator</dt><dd><code>bcgov-create-extension</code> routes extension types, scaffolds active candidates, analyzes, previews, and submits after confirmation.</dd></div>
-    <div><dt>Source</dt><dd>Immutable companion folders under <code>.github/skills/</code> in the hosted marketplace repository.</dd></div>
+    <div><dt>Source</dt><dd>Immutable companion packages under <code>skills/community/</code> in the hosted marketplace repository.</dd></div>
 </dl>
 
 <h2 id="install-the-companions">Install the companions</h2>
@@ -1635,8 +1635,8 @@
 <p>Use the published marketplace revision. APM is preferred because it records a manifest and lockfile:</p>
 
 <pre><code>apm install \
-    bcgov/agent-marketplace/.github/skills/bcgov-find-extension#&lt;published-commit-sha&gt; \
-    bcgov/agent-marketplace/.github/skills/bcgov-create-extension#&lt;published-commit-sha&gt; \
+    bcgov/agent-marketplace/skills/community/bcgov-find-extension#&lt;published-commit-sha&gt; \
+    bcgov/agent-marketplace/skills/community/bcgov-create-extension#&lt;published-commit-sha&gt; \
     --target copilot</code></pre>
 
 <p>If APM is unavailable, use the catalog-pinned Skills CLI:</p>

@@ -3,13 +3,12 @@
 Every skill profile in this repository is described by a `SKILL.md` manifest,
 validated by the PR check.
 
-A skill lives in its own directory under one of two roots — `skills/` for
-contributed skills, or `.github/skills/` for the repo's own operational
-meta-skills. Both are validated against this spec the same way:
+A skill lives in its own directory under `skills/<specialty>/`. Local-only
+Copilot skills under `.github/skills/` are ignored and are not part of the
+marketplace:
 
 ```
-skills/<skill-name>/            # contributed skills
-.github/skills/<skill-name>/    # the repo's own meta-skills
+skills/community/<skill-name>/  # community skills and marketplace companions
 └── SKILL.md        # manifest (this spec)
 ```
 
