@@ -4,6 +4,13 @@ The static site for [`bcgov/agent-marketplace`](https://github.com/bcgov/agent-m
 
 This directory contains the published website and the source files that generate it. For repository-level rules, contributor workflow, and operational guidance, see [../README.md](../README.md), [../CONTRIBUTING.md](../CONTRIBUTING.md), [../docs/MARKETPLACE_RUNBOOK.md](MARKETPLACE_RUNBOOK.md), and [../spec/SKILL_SPEC.md](../spec/SKILL_SPEC.md).
 
+The deeper Diátaxis documentation sits alongside the generated site and follows a progressive-disclosure flow:
+
+- [what-is-the-agent-marketplace.md](what-is-the-agent-marketplace.md) — explains the marketplace, its trust model, and the broader extension vision.
+- [getting-started.md](getting-started.md) — a tutorial for a first successful use of the catalog and companion workflows.
+- [how-to-use-the-marketplace.md](how-to-use-the-marketplace.md) — task-oriented how-to guidance for common workflows.
+- [marketplace-reference.md](marketplace-reference.md) — a technical reference for repo structure, lifecycle, validation, and security controls.
+
 ```bash
 make generate
 make docs

@@ -77,6 +77,10 @@ The authoritative repository documents are intentionally small and explicit:
 - [docs/MARKETPLACE_RUNBOOK.md](docs/MARKETPLACE_RUNBOOK.md) — release, quarantine, removal, rollback, and incident-response operations.
 - [SECURITY.md](SECURITY.md) — the private vulnerability reporting route.
 - [docs/README.md](docs/README.md) — the generated static-site workflow and build caveats.
+- [docs/what-is-the-agent-marketplace.md](docs/what-is-the-agent-marketplace.md) — explanation-oriented overview of the marketplace, its goals, and its broader extension model.
+- [docs/getting-started.md](docs/getting-started.md) — tutorial for a first successful discovery and installation flow.
+- [docs/how-to-use-the-marketplace.md](docs/how-to-use-the-marketplace.md) — how-to recipes for common operational tasks.
+- [docs/marketplace-reference.md](docs/marketplace-reference.md) — technical reference for repo structure, lifecycle, trust model, and validation mechanics.
 - [docs/_pages/](docs/_pages/) and [docs/_partials/](docs/_partials/) — source pages and shared chrome for the static website.
 
 The checked-in repo does not include a companion `projects/marketplace/` tree. This marketplace checkout keeps the source contract, validation fixtures, and generated publication artifacts needed for repository operations and CI, while consumer-facing walkthroughs live outside this checkout.
