@@ -1619,7 +1619,7 @@
 
 <div class="alert alert-info">
     <div class="alert-icon" aria-hidden="true">i</div>
-    <div>The companion skills do not require a marketplace checkout, Python, or <code>uv</code>. Those tools are used by marketplace maintainers and trusted CI.</div>
+    <div>The companion skills do not require a marketplace checkout.</div>
 </div>
 
 <h2 id="available-workflows">Available workflows</h2>
@@ -1632,26 +1632,45 @@
 
 <h2 id="install-the-companions">Install the companions</h2>
 
-<p>Use the published marketplace revision. APM is preferred because it records a manifest and lockfile:</p>
+<div class="alert alert-info">
+    <div class="alert-icon" aria-hidden="true">i</div>
+    <div><strong>Development preview.</strong> The companion install command below installs immutable bytes from a pinned pre-release revision (<code>d00c5470891a7c04ceda598c0e7004f9383183b6</code>). Content is validated, but this release is not final.</div>
+</div>
 
-<pre><code>apm install \
-    bcgov/agent-marketplace/skills/community/bcgov-find-extension#&lt;published-commit-sha&gt; \
-    bcgov/agent-marketplace/skills/community/bcgov-create-extension#&lt;published-commit-sha&gt; \
+<p>Install the two companions once per device with the <code>-g</code> (global) flag so they are available in every workspace, not just the current project. They install immutable bytes pinned to the published marketplace revision. APM is preferred because it records a manifest and lockfile:</p>
+
+<pre><code>apm install -g \
+    bcgov/agent-marketplace/skills/community/bcgov-find-extension#d00c5470891a7c04ceda598c0e7004f9383183b6 \
+    bcgov/agent-marketplace/skills/community/bcgov-create-extension#d00c5470891a7c04ceda598c0e7004f9383183b6 \
     --target copilot</code></pre>
 
-<p>If APM is unavailable, use the catalog-pinned Skills CLI:</p>
+<p>The <code>-g</code> flag installs to your user scope (<code>~/.apm/</code>) instead of the current project, so you run this once rather than in every repository. If APM is unavailable, use the catalog-pinned Skills CLI:</p>
 
-<pre><code>npx skills@&lt;catalog-installer-version&gt; add \
-    https://github.com/bcgov/agent-marketplace/tree/&lt;published-commit-sha&gt; \
+<pre><code>npx skills@1.5.23 add \
+    https://github.com/bcgov/agent-marketplace/tree/d00c5470891a7c04ceda598c0e7004f9383183b6 \
     --skill bcgov-find-extension --skill bcgov-create-extension \
     --agent github-copilot -y</code></pre>
+
+<h2 id="verify-the-install">Verify the install</h2>
+
+<p>Two checks confirm the companions are present and intact:</p>
+
+<ol>
+    <li><strong>Integrity:</strong> run <code>apm audit</code>. It scans installed primitives for drift, hidden Unicode, and lockfile or policy violations, and reports any file that no longer matches its locked bytes.</li>
+    <li><strong>Availability:</strong> in any workspace, ask GitHub Copilot to “Use bcgov-find-extension to search for a repository hardening skill.” If it runs the finder, the companion is installed. If nothing happens, re-run the install command above.</li>
+</ol>
+
+<div class="alert alert-info">
+    <div class="alert-icon" aria-hidden="true">i</div>
+    <div><code>apm list</code> only shows scripts in the current project, so it does not confirm a global companion install. Use the two checks above instead.</div>
+</div>
 
 <h2 id="use-the-workflows">Use the workflows</h2>
 
 <p>From any workspace, ask GitHub Copilot:</p>
 
 <ul>
-    <li><strong>Finder:</strong> “Find me a reviewed BC Gov extension for hardening GitHub Actions.”</li>
+    <li><strong>Finder:</strong> “Find me a BC Gov extension for hardening GitHub Actions.”</li>
     <li><strong>Creator:</strong> “Turn this workflow idea into a BC Gov extension and prepare a draft pull request.”</li>
 </ul>
 

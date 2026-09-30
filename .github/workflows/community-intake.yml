@@ -1,0 +1,144 @@
+name: Community intake
+
+# Anti-abuse gate for the open skills/community/** namespace. Community skills
+# are not human-reviewed, so this workflow is what stops a new or compromised
+# account from flooding the marketplace. It resolves the author's tenure, org
+# membership, and open-submission count, then asks the tested decision function
+# in scripts/marketplace.py whether each changed community package may
+# auto-publish. It never publishes anything itself: it labels and, when a
+# submission must wait for a maintainer, fails so branch protection can hold the
+# merge.
+#
+# The decision logic lives in Python (marketplace.py intake) and is unit-tested.
+# This workflow only gathers the live GitHub signals the decision needs.
+
+on:
+  pull_request:
+    paths:
+      - "skills/community/**"
+
+# Deny-all baseline. The single job opts in to the narrow tokens it needs.
+permissions: {}
+
+concurrency:
+  group: community-intake-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  intake:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      AUTHOR: ${{ github.event.pull_request.user.login }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      ORG: bcgov
+      # A token that can read org membership and search the author's open PRs.
+      # Falls back to the default job token, which cannot read private org
+      # membership; when membership cannot be confirmed the author is treated as
+      # untrusted and the submission is held (fail-safe).
+      GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Resolve author trust and velocity signals
+        id: signals
+        run: |
+          set -euo pipefail
+
+          # Read the thresholds straight from the single source of truth.
+          read_cfg() {
+            uv run --project . python - "$1" <<'PY'
+          import re, sys
+          key = sys.argv[1]
+          text = open("config/marketplace.yaml").read()
+          m = re.search(rf"^\s*{re.escape(key)}:\s*(\S+)\s*$", text, re.M)
+          print(m.group(1).strip('"\'') if m else "")
+          PY
+          }
+          MIN_AGE="$(read_cfg min-account-age-days)"
+          REQUIRE_ORG="$(read_cfg require-verified-org-membership)"
+          MAX_OPEN="$(read_cfg max-open-submissions-per-author)"
+
+          # Account age is measured from account creation (the public API does not
+          # expose org-join date). This is a documented proxy in
+          # docs/COMMUNITY_INTAKE_POLICY.md.
+          CREATED_AT="$(gh api "users/${AUTHOR}" --jq .created_at)"
+          AGE_DAYS=$(( ( $(date -u +%s) - $(date -u -d "$CREATED_AT" +%s) ) / 86400 ))
+
+          # Org membership: 204 => member. Any other status (including a token
+          # that cannot read membership) => not confirmed.
+          ORG_MEMBER=no
+          if gh api "orgs/${ORG}/members/${AUTHOR}" --silent 2>/dev/null; then
+            ORG_MEMBER=yes
+          fi
+
+          # Open community submissions by this author (velocity signal).
+          OPEN_PRS="$(gh api -X GET search/issues \
+            -f q="repo:${GITHUB_REPOSITORY} is:pr is:open author:${AUTHOR}" \
+            --jq .total_count)"
+
+          TRUST=yes
+          if [ "$AGE_DAYS" -lt "$MIN_AGE" ]; then TRUST=no; fi
+          if [ "$REQUIRE_ORG" = "true" ] && [ "$ORG_MEMBER" != "yes" ]; then TRUST=no; fi
+
+          VELOCITY=ok
+          if [ "$OPEN_PRS" -gt "$MAX_OPEN" ]; then VELOCITY=exceeded; fi
+
+          echo "trust=$TRUST" >> "$GITHUB_OUTPUT"
+          echo "velocity=$VELOCITY" >> "$GITHUB_OUTPUT"
+          echo "Author=$AUTHOR age=${AGE_DAYS}d org_member=$ORG_MEMBER open_prs=$OPEN_PRS -> trust=$TRUST velocity=$VELOCITY"
+
+      - name: Decide intake for each changed community package
+        id: decide
+        run: |
+          set -euo pipefail
+          TRUST="${{ steps.signals.outputs.trust }}"
+          VELOCITY="${{ steps.signals.outputs.velocity }}"
+
+          # Changed community package directories (one bcgov-extension.yaml each).
+          mapfile -t PKGS < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA" \
+            | grep -E '^skills/community/[^/]+/bcgov-extension\.yaml$' \
+            | xargs -r -n1 dirname | sort -u)
+
+          if [ "${#PKGS[@]}" -eq 0 ]; then
+            echo "No community package manifests changed."
+            exit 0
+          fi
+
+          HELD=0
+          {
+            echo "## Community intake"
+            echo ""
+            echo "| Package | Risk | Scan | Decision |"
+            echo "|---------|------|------|----------|"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for pkg in "${PKGS[@]}"; do
+            OUT="$(uv run --project . python scripts/marketplace.py intake "$pkg" \
+              --author-trust "$TRUST" --velocity "$VELOCITY")"
+            ID="$(echo "$OUT" | uv run --project . python -c 'import json,sys;print(json.load(sys.stdin)["id"])')"
+            RISK="$(echo "$OUT" | uv run --project . python -c 'import json,sys;print(json.load(sys.stdin)["risk"])')"
+            SCAN="$(echo "$OUT" | uv run --project . python -c 'import json,sys;print(json.load(sys.stdin)["scan-outcome"])')"
+            DECISION="$(echo "$OUT" | uv run --project . python -c 'import json,sys;print(json.load(sys.stdin)["intake"]["decision"])')"
+            echo "| \`$ID\` | $RISK | $SCAN | **$DECISION** |" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$DECISION" != "auto-publish" ]; then HELD=1; fi
+          done
+
+          if [ "$HELD" -eq 1 ]; then
+            gh pr edit "${{ github.event.pull_request.number }}" \
+              --add-label "community-intake:hold" || true
+            echo "One or more community packages must wait for a maintainer." >&2
+            exit 1
+          fi
+
+          gh pr edit "${{ github.event.pull_request.number }}" \
+            --remove-label "community-intake:hold" || true
+          echo "All changed community packages are eligible to auto-publish."
