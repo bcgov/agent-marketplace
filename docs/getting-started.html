@@ -1637,17 +1637,17 @@
     <div><strong>Development preview.</strong> The companion install command below installs immutable bytes from a pinned pre-release revision (<code>d00c5470891a7c04ceda598c0e7004f9383183b6</code>). Content is validated, but this release is not final.</div>
 </div>
 
-<p>Install the two companions once per device with the <code>-g</code> (global) flag so they are available in every workspace, not just the current project. They install immutable bytes pinned to the published marketplace revision. APM is preferred because it records a manifest and lockfile:</p>
+<p>Install the two companions once per device with the <code>-g</code> (global) flag so they are available in every workspace, not just the current project. They install immutable bytes pinned to the published release tag; the exact commit revision and each package content-digest are recorded in the install lockfile, which is what the installer verifies. APM is preferred because it records a manifest and lockfile:</p>
 
 <pre><code>apm install -g \
-    bcgov/agent-marketplace/skills/community/bcgov-find-extension#d00c5470891a7c04ceda598c0e7004f9383183b6 \
-    bcgov/agent-marketplace/skills/community/bcgov-create-extension#d00c5470891a7c04ceda598c0e7004f9383183b6 \
+    bcgov/agent-marketplace/skills/community/bcgov-find-extension#catalog-2026.10.01 \
+    bcgov/agent-marketplace/skills/community/bcgov-create-extension#catalog-2026.10.01 \
     --target copilot</code></pre>
 
 <p>The <code>-g</code> flag installs to your user scope (<code>~/.apm/</code>) instead of the current project, so you run this once rather than in every repository. If APM is unavailable, use the catalog-pinned Skills CLI:</p>
 
 <pre><code>npx skills@1.5.23 add \
-    https://github.com/bcgov/agent-marketplace/tree/d00c5470891a7c04ceda598c0e7004f9383183b6 \
+    https://github.com/bcgov/agent-marketplace/tree/catalog-2026.10.01 \
     --skill bcgov-find-extension --skill bcgov-create-extension \
     --agent github-copilot -y</code></pre>
 

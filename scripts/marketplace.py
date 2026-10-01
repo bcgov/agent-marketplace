@@ -673,6 +673,7 @@ def load_marketplace_config(root: Path) -> dict:
     "release-state",
     "repository",
     "revision",
+    "version",
     "installer-version",
     "reviewers",
     "reviews",
@@ -692,6 +693,9 @@ def load_marketplace_config(root: Path) -> dict:
     raise MarketplaceError(f"{path}: release-state must be development or published")
   if not re.fullmatch(r"[0-9a-f]{40}", str(config["revision"])):
     raise MarketplaceError(f"{path}: revision must be a full lowercase commit SHA")
+  version = str(config["version"])
+  if not re.fullmatch(r"catalog-\d{4}\.\d{2}\.\d{2}(?:\.\d+)?", version):
+    raise MarketplaceError(f"{path}: version must be a catalog-YYYY.MM.DD release tag")
   if config["repository"] != "https://github.com/bcgov/agent-marketplace":
     raise MarketplaceError(f"{path}: repository must use the canonical post-clone name")
   sources = config.get("approved-discovery-sources", [])
@@ -881,6 +885,21 @@ def _review_status(
   }
 
 
+def namespace_of(relative_path: str) -> str:
+  """Return the namespace (community or a specialty) for a package path.
+
+  The namespace is the second path segment for any supported extension type, so
+  ``agents/security/<name>`` is the ``security`` specialty just as
+  ``skills/security/<name>`` is. Only the ``community`` namespace publishes on
+  the automated scan; every other namespace is a specialty that requires its
+  owning team's review before merge.
+  """
+  parts = relative_path.split("/")
+  if len(parts) > 2 and parts[0] in TYPE_DIRECTORIES:
+    return parts[1]
+  return "community"
+
+
 def build_catalog(root: Path) -> tuple[dict, str]:
   """Build machine-readable and escaped HTML catalog projections."""
   schema = load_schema(root)
@@ -895,7 +914,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     package_dir = path.parent
     relative_path = package_dir.relative_to(root).as_posix()
     parts = relative_path.split("/")
-    specialty = parts[1] if len(parts) > 1 and parts[0] == "skills" else "community"
+    specialty = namespace_of(relative_path)
     record = {
       **manifest,
       "type": TYPE_DIRECTORIES.get(parts[0], "skill"),
@@ -942,6 +961,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     "release-state": config["release-state"],
     "repository": config["repository"],
     "revision": config["revision"],
+    "version": config["version"],
     "installer-version": str(config["installer-version"]),
     "policy-version": POLICY_VERSION,
     "approved-discovery-sources": config.get("approved-discovery-sources", []),

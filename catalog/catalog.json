@@ -1018,5 +1018,6 @@
   "release-state": "development",
   "repository": "https://github.com/bcgov/agent-marketplace",
   "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6",
-  "schema-version": "bcgov-marketplace-catalog/v1alpha1"
+  "schema-version": "bcgov-marketplace-catalog/v1alpha1",
+  "version": "catalog-2026.10.01"
 }

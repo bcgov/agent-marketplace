@@ -1,7 +1,27 @@
-# Marketplace maintainers own the repository by default.
+# Marketplace maintainers own tooling, config, workflows, schemas, and docs by
+# default - anything not matched by a more specific rule below.
 * @bcgov/agent-marketplace-maintainers
 
-# Specialty ownership overrides the repository-wide default.
+# Community namespaces are intentionally ownerless (a path listed with no owner
+# removes the default owner). Eligible community submissions publish on the
+# automated intake gate (.github/workflows/community-intake.yml), not human
+# review, so they must not require a CODEOWNERS approval. This covers every
+# supported extension type.
+/skills/community/
+/prompts/community/
+/instructions/community/
+/agents/community/
+/hooks/community/
+/mcp/community/
+
+# Specialty namespaces require the owning team's review before merge - for ANY
+# extension type. The namespace is the second path segment
+# (<type>/<specialty>/<name>/). Add a line per specialty as it comes online.
 /skills/security/ @bcgov/security
+/prompts/security/ @bcgov/security
+/instructions/security/ @bcgov/security
+/agents/security/ @bcgov/security
+/hooks/security/ @bcgov/security
+/mcp/security/ @bcgov/security
 
 # See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners

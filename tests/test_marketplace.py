@@ -58,6 +58,7 @@ def _root(tmp_path: Path) -> Path:
     "release-state": "published",
     "repository": "https://github.com/bcgov/agent-marketplace",
     "revision": "a" * 40,
+    "version": "catalog-2026.01.01",
     "installer-version": "1.0.0",
     "reviewers": ["@bcgov/platform-services"],
     "approved-discovery-sources": [],
@@ -529,3 +530,53 @@ def test_config_rejects_unknown_intake_key(tmp_path):
   config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
   with pytest.raises(m.MarketplaceError, match="unexpected keys"):
     m.load_marketplace_config(root)
+
+
+def test_config_requires_release_version(tmp_path):
+  """The release tag is a required field; a config without it fails closed."""
+  root = _root(tmp_path)
+  config_path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+  del config["version"]
+  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  with pytest.raises(m.MarketplaceError, match="missing keys"):
+    m.load_marketplace_config(root)
+
+
+def test_config_rejects_non_calver_version(tmp_path):
+  """The version must be a catalog-YYYY.MM.DD release tag, not a free string."""
+  root = _root(tmp_path)
+  config_path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+  config["version"] = "v1.2.3"
+  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  with pytest.raises(m.MarketplaceError, match="catalog-YYYY.MM.DD"):
+    m.load_marketplace_config(root)
+
+
+def test_config_accepts_dated_rerelease_suffix(tmp_path):
+  """A second release on the same day carries a numeric .N suffix."""
+  root = _root(tmp_path)
+  config_path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+  config["version"] = "catalog-2026.10.01.2"
+  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  assert m.load_marketplace_config(root)["version"] == "catalog-2026.10.01.2"
+
+
+def test_catalog_exposes_release_version(tmp_path):
+  """The generated catalog carries the release tag at the top level."""
+  root = _root(tmp_path)
+  _package(root)
+  catalog, _ = m.build_catalog(root)
+  assert catalog["version"] == "catalog-2026.01.01"
+
+
+def test_namespace_of_detects_specialty_for_every_type(tmp_path):
+  """Specialty namespaces are detected for every extension type, not just skills."""
+  assert m.namespace_of("skills/community/demo") == "community"
+  assert m.namespace_of("prompts/community/demo") == "community"
+  assert m.namespace_of("skills/security/hardening") == "security"
+  assert m.namespace_of("agents/security/triage") == "security"
+  assert m.namespace_of("mcp/security/broker") == "security"
+  assert m.namespace_of("instructions/privacy/redact") == "privacy"

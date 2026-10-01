@@ -2,6 +2,11 @@ schema-version: bcgov-marketplace/v1alpha1
 release-state: development
 repository: https://github.com/bcgov/agent-marketplace
 revision: d00c5470891a7c04ceda598c0e7004f9383183b6
+# Current published release tag (CalVer). The release workflow cuts an immutable
+# catalog-YYYY.MM.DD tag on every merge that changes catalog content and
+# rewrites this field. People install by this tag; the exact revision above and
+# each package content-digest are what the installer actually verifies.
+version: catalog-2026.10.01
 installer-version: 1.5.23
 reviewers:
   - "@mishraomp"
