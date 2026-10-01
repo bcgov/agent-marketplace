@@ -58,6 +58,7 @@ def _root(tmp_path: Path) -> Path:
     "release-state": "published",
     "repository": "https://github.com/bcgov/agent-marketplace",
     "revision": "a" * 40,
+    "version": "catalog-2026.01.01",
     "installer-version": "1.0.0",
     "reviewers": ["@bcgov/platform-services"],
     "approved-discovery-sources": [],
@@ -393,3 +394,189 @@ def test_generation_is_deterministic_and_escaped(tmp_path):
   assert catalog["extensions"][0]["source"]["revision"] == "a" * 40
   assert "Demo &lt;script&gt;" in cards
   assert "Demo <script>" not in cards
+
+
+def test_capability_risk_bands():
+  """Risk is a pure function of declared capabilities across the three bands."""
+  low = _manifest()
+  low["capabilities"]["data-classes"] = ["PUBLIC"]
+  assert m.capability_risk(low) == "low"
+  elevated = _manifest()
+  elevated["capabilities"]["commands"] = ["git"]
+  assert m.capability_risk(elevated) == "elevated"
+  high = _manifest()
+  high["capabilities"]["commands"] = ["git"]
+  high["capabilities"]["secret-names"] = ["GITHUB_TOKEN"]
+  assert m.capability_risk(high) == "high"
+
+
+def test_wildcard_capability_is_flagged_but_not_blocking(tmp_path):
+  """A wildcard capability is advisory and high risk, but still publishes."""
+  root = _root(tmp_path)
+  manifest = _manifest()
+  manifest["capabilities"]["environment-variables"] = ["*"]
+  package = _package(root, manifest=manifest)
+  result = m.scan_package(package, manifest)
+  assert result["outcome"] == "passed"
+  assert any(item["code"] == "wildcard-capability" for item in result["findings"])
+  assert m.capability_risk(manifest) == "high"
+
+
+def test_community_package_is_auto_scanned(tmp_path):
+  """Community packages carry the automated tier, never a human-review claim."""
+  root = _root(tmp_path)
+  _package(root)
+  catalog, _ = m.build_catalog(root)
+  review = catalog["extensions"][0]["review"]
+  assert review["status"] == "auto-scanned"
+  assert review["reviewers"] == []
+  assert review["method"] == "automated-policy-scan"
+  assert review["risk"] == "low"
+
+
+def test_human_review_pins_to_content_digest(tmp_path):
+  """A human review only applies while the reviewed content-digest still matches."""
+  root = _root(tmp_path)
+  package = root / "skills" / "security" / "repo-hardening"
+  package.mkdir(parents=True)
+  (package / "SKILL.md").write_text("# Hardening\n", encoding="utf-8")
+  manifest = _manifest("repo-hardening")
+  (package / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+  )
+  digest = m.package_digest(m.package_inventory(package))
+  config_path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+  config["reviews"] = [
+    {
+      "id": "bcgov-public/repo-hardening",
+      "status": "domain-reviewed",
+      "team": "@bcgov/security",
+      "content-digest": digest,
+    }
+  ]
+  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  catalog, _ = m.build_catalog(root)
+  assert catalog["extensions"][0]["review"]["status"] == "domain-reviewed"
+  (package / "SKILL.md").write_text("# Hardening changed\n", encoding="utf-8")
+  catalog, _ = m.build_catalog(root)
+  assert catalog["extensions"][0]["review"]["status"] == "unreviewed"
+
+
+def test_intake_decision_matrix():
+  """The gate rejects blocked scans and holds anything not fully cleared."""
+  config = {"community-intake": {"auto-publish-risk-ceiling": "elevated"}}
+  reject = m.intake_decision(
+    scan_outcome="blocked",
+    risk="low",
+    author_trusted=True,
+    within_velocity=True,
+    config=config,
+  )
+  assert reject["decision"] == "reject"
+  high = m.intake_decision(
+    scan_outcome="passed",
+    risk="high",
+    author_trusted=True,
+    within_velocity=True,
+    config=config,
+  )
+  assert high["decision"] == "hold-for-review"
+  untrusted = m.intake_decision(
+    scan_outcome="passed",
+    risk="low",
+    author_trusted=False,
+    within_velocity=True,
+    config=config,
+  )
+  assert untrusted["decision"] == "hold-for-review"
+  unknown = m.intake_decision(
+    scan_outcome="passed",
+    risk="low",
+    author_trusted=None,
+    within_velocity=None,
+    config=config,
+  )
+  assert unknown["decision"] == "hold-for-review"
+  clear = m.intake_decision(
+    scan_outcome="passed",
+    risk="elevated",
+    author_trusted=True,
+    within_velocity=True,
+    config=config,
+  )
+  assert clear["decision"] == "auto-publish"
+
+
+def test_config_rejects_review_without_content_digest(tmp_path):
+  """A human review must pin to the exact content it vouched for."""
+  root = _root(tmp_path)
+  config_path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+  config["reviews"] = [
+    {"id": "bcgov-public/x", "status": "domain-reviewed", "team": "@bcgov/security"}
+  ]
+  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  with pytest.raises(m.MarketplaceError, match="review missing keys"):
+    m.load_marketplace_config(root)
+
+
+def test_config_rejects_unknown_intake_key(tmp_path):
+  """The intake block cannot smuggle in unrecognised knobs."""
+  root = _root(tmp_path)
+  config_path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+  config["community-intake"] = {"allow-everything": True}
+  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  with pytest.raises(m.MarketplaceError, match="unexpected keys"):
+    m.load_marketplace_config(root)
+
+
+def test_config_requires_release_version(tmp_path):
+  """The release tag is a required field; a config without it fails closed."""
+  root = _root(tmp_path)
+  config_path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+  del config["version"]
+  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  with pytest.raises(m.MarketplaceError, match="missing keys"):
+    m.load_marketplace_config(root)
+
+
+def test_config_rejects_non_calver_version(tmp_path):
+  """The version must be a catalog-YYYY.MM.DD release tag, not a free string."""
+  root = _root(tmp_path)
+  config_path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+  config["version"] = "v1.2.3"
+  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  with pytest.raises(m.MarketplaceError, match="catalog-YYYY.MM.DD"):
+    m.load_marketplace_config(root)
+
+
+def test_config_accepts_dated_rerelease_suffix(tmp_path):
+  """A second release on the same day carries a numeric .N suffix."""
+  root = _root(tmp_path)
+  config_path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+  config["version"] = "catalog-2026.10.01.2"
+  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  assert m.load_marketplace_config(root)["version"] == "catalog-2026.10.01.2"
+
+
+def test_catalog_exposes_release_version(tmp_path):
+  """The generated catalog carries the release tag at the top level."""
+  root = _root(tmp_path)
+  _package(root)
+  catalog, _ = m.build_catalog(root)
+  assert catalog["version"] == "catalog-2026.01.01"
+
+
+def test_namespace_of_detects_specialty_for_every_type(tmp_path):
+  """Specialty namespaces are detected for every extension type, not just skills."""
+  assert m.namespace_of("skills/community/demo") == "community"
+  assert m.namespace_of("prompts/community/demo") == "community"
+  assert m.namespace_of("skills/security/hardening") == "security"
+  assert m.namespace_of("agents/security/triage") == "security"
+  assert m.namespace_of("mcp/security/broker") == "security"
+  assert m.namespace_of("instructions/privacy/redact") == "privacy"

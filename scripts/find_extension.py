@@ -22,7 +22,7 @@ from pathlib import Path, PurePosixPath
 import yaml
 
 POLICY_VERSION = "bcgov-finder-policy/1.0"
-MARKETPLACE_REVISION = "842241b962849ad239e1e9c90589b6bc9c881e53"
+MARKETPLACE_REVISION = "d00c5470891a7c04ceda598c0e7004f9383183b6"
 DEFAULT_CATALOG = (
   "https://raw.githubusercontent.com/bcgov/agent-marketplace/main/catalog/catalog.json"
 )
@@ -35,6 +35,12 @@ MAX_DOWNLOAD_BYTES = 25 * 1024 * 1024
 MAX_PACKAGE_BYTES = 2 * 1024 * 1024
 MAX_FILE_BYTES = 512 * 1024
 MAX_FILES = 100
+# A candidate must clear this score before it is offered as a match. The scorer
+# awards 100 for an exact name, 12 per matching name token, 4 per summary token,
+# and 1 per prerequisite token, so this floor requires at least one name-token
+# hit or two summary-token hits. It stops unrelated skills being presented as
+# weak matches for a request the marketplace does not actually serve.
+MIN_MATCH_SCORE = 8
 ACTIVE_EXTENSION_TYPES = {"skill"}
 KNOWN_EXTENSION_TYPES = {"skill", "prompt", "instructions", "agent", "hook", "mcp"}
 ROOT_FILES = {"SKILL.md"}
@@ -154,7 +160,7 @@ def _tokens(value: str) -> set[str]:
 
 
 def search(catalog: dict, query: str, extension_type: str | None = None) -> list[dict]:
-  """Return at most three active records in deterministic rank order."""
+  """Return at most three active records that clear the relevance floor."""
   if extension_type is not None and extension_type not in KNOWN_EXTENSION_TYPES:
     raise FinderError(f"unsupported extension type: {extension_type}")
   query_tokens = _tokens(query)
@@ -179,7 +185,7 @@ def search(catalog: dict, query: str, extension_type: str | None = None) -> list
       + 4 * len(query_tokens & summary_tokens)
       + len(query_tokens & prerequisite_tokens)
     )
-    if score:
+    if score >= MIN_MATCH_SCORE:
       why = sorted(query_tokens & (name_tokens | summary_tokens | prerequisite_tokens))
       ranked.append((score, record["id"], why, record))
   ranked.sort(key=lambda item: (-item[0], item[1]))

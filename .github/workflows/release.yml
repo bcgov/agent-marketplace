@@ -1,0 +1,136 @@
+name: Release catalog
+
+# Cuts an immutable CalVer catalog tag on every merge to main that changes
+# catalog content (a skill/extension, the config, the schema, or the generator).
+# The tag is the human-facing handle shown in the install command; the exact
+# commit revision and each package content-digest are what the installer
+# verifies. Tagging does NOT flip release-state to "published" - going live
+# stays a deliberate, separate manual change.
+#
+# Why this is safe: it only snapshots content that already passed the required
+# PR checks (fork gate, lint/tests, skill validation, and either CODEOWNERS
+# review for specialty namespaces or the automated community-intake gate for
+# community ones). It reviews and publishes nothing itself; it just labels what
+# main already holds.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/**"
+      - "prompts/**"
+      - "instructions/**"
+      - "agents/**"
+      - "hooks/**"
+      - "mcp/**"
+      - "config/marketplace.yaml"
+      - "schemas/**"
+      - "scripts/marketplace.py"
+
+# Deny-all baseline at the workflow scope; the job opts into the minimum it
+# needs: contents:write to commit the regenerated catalog and push the tag,
+# actions:write to trigger the Pages deploy for the new release.
+permissions: {}
+
+# One release at a time so two quick merges can't race for the same CalVer tag.
+# Don't cancel an in-flight release - a half-pushed tag is worse than waiting.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Never react to the release commit this workflow pushes itself. Pushes made
+    # with GITHUB_TOKEN don't retrigger workflows, so this is belt-and-braces.
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.11.19"
+          enable-cache: true
+
+      - name: Compute next CalVer release tag
+        id: tag
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          BASE="catalog-$(date -u +%Y.%m.%d)"
+          TAG="$BASE"
+          N=2
+          while git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; do
+            TAG="$BASE.$N"
+            N=$((N + 1))
+          done
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $TAG"
+
+      - name: Stamp version and revision, regenerate, verify
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # Rewrite only the top-level version/revision fields in place.
+          # ^version: can't match schema-version:/installer-version:, and
+          # ^revision: is the single fetch coordinate line.
+          sed -i -E "s|^version:.*|version: ${TAG}|" config/marketplace.yaml
+          sed -i -E "s|^revision:.*|revision: ${SHA}|" config/marketplace.yaml
+          uv run python scripts/marketplace.py generate
+          bash docs/build.sh
+          # Sanity: the regenerated catalog must match the stamped config with
+          # no residual drift before we tag it.
+          uv run python scripts/marketplace.py validate
+
+      - name: Write digest manifest
+        run: |
+          set -euo pipefail
+          jq -r '
+            "# " + .version + "  revision " + .revision,
+            (.extensions[] | .["content-digest"] + "  " + .id)
+          ' catalog/catalog.json > digests.txt
+          cat digests.txt
+
+      - name: Commit release, tag, and push
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore(release): ${TAG}"
+          git tag -a "${TAG}" -m "Catalog release ${TAG}"
+          git push origin HEAD:main
+          git push origin "refs/tags/${TAG}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release create "${TAG}" \
+            --title "${TAG}" \
+            --notes "Immutable catalog snapshot. Install by this tag; the exact revision and per-package content-digests are in digests.txt and the install lockfile." \
+            catalog/catalog.json digests.txt
+
+      - name: Deploy the published site for this release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main

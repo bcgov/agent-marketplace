@@ -343,10 +343,112 @@ def _scan_text(relative: str, text: str, manifest: dict) -> list[dict]:
   return findings
 
 
+WILDCARD_CAPABILITY_FIELDS = (
+  "network",
+  "commands",
+  "environment-variables",
+  "secret-names",
+)
+
+
+def capability_wildcards(capabilities: dict) -> list[str]:
+  """Return capability fields that grant unenumerated access with a '*'."""
+  found = []
+  for field in WILDCARD_CAPABILITY_FIELDS:
+    values = capabilities.get(field) or []
+    if isinstance(values, list) and "*" in values:
+      found.append(field)
+  return found
+
+
+def capability_risk(manifest: dict) -> str:
+  """Rank a package by the blast radius its declared capabilities allow.
+
+  The band is a pure function of the declared capabilities so the same manifest
+  always lands in the same band. It drives the community intake gate: only
+  packages at or below the configured ceiling can auto-publish without a human.
+  """
+  capabilities = manifest.get("capabilities", {}) or {}
+  filesystem = capabilities.get("filesystem") or {}
+  writes = filesystem.get("write") or []
+  commands = capabilities.get("commands") or []
+  network = capabilities.get("network") or []
+  secrets = capabilities.get("secret-names") or []
+  environment = capabilities.get("environment-variables") or []
+  data_classes = set(capabilities.get("data-classes") or [])
+  if capability_wildcards(capabilities):
+    return "high"
+  if "RESTRICTED" in data_classes:
+    return "high"
+  if secrets and (commands or network):
+    return "high"
+  if (
+    commands
+    or network
+    or writes
+    or secrets
+    or environment
+    or "CONFIDENTIAL" in data_classes
+  ):
+    return "elevated"
+  return "low"
+
+
+def intake_decision(
+  *,
+  scan_outcome: str,
+  risk: str,
+  author_trusted: bool | None,
+  within_velocity: bool | None,
+  config: dict,
+) -> dict:
+  """Decide whether a community submission can auto-publish or needs a human.
+
+  ``author_trusted`` and ``within_velocity`` are ``None`` until the intake
+  workflow resolves them from live GitHub account data. When either is unknown
+  the submission is held, so the gate fails safe rather than open.
+  """
+  policy = config.get("community-intake") or {}
+  ceiling = policy.get("auto-publish-risk-ceiling", "elevated")
+  if scan_outcome == "blocked":
+    return {
+      "decision": "reject",
+      "reasons": ["package failed the automated policy scan"],
+    }
+  reasons = []
+  if RISK_ORDER.get(risk, len(RISK_BANDS)) > RISK_ORDER.get(ceiling, 1):
+    reasons.append(
+      f"capability risk '{risk}' exceeds the auto-publish ceiling '{ceiling}'"
+    )
+  if author_trusted is False:
+    reasons.append("author does not meet the account-tenure or org-membership bar")
+  if within_velocity is False:
+    reasons.append("author exceeds the submission-velocity limit")
+  if author_trusted is None or within_velocity is None:
+    reasons.append("author tenure and velocity must be verified at intake")
+  if reasons:
+    return {"decision": "hold-for-review", "reasons": reasons}
+  return {
+    "decision": "auto-publish",
+    "reasons": [
+      "scan passed, capability risk within ceiling, author trusted, within velocity"
+    ],
+  }
+
+
 def scan_package(package_dir: Path, manifest: dict) -> dict:
   """Scan package bytes without importing or executing contributed content."""
   files, findings = _regular_files(package_dir)
   declared_commands = set(manifest.get("capabilities", {}).get("commands", []))
+  for field in capability_wildcards(manifest.get("capabilities", {}) or {}):
+    findings.append(
+      _finding(
+        "advisory",
+        "wildcard-capability",
+        ".",
+        f"capability '{field}' uses a wildcard '*' that grants unenumerated access",
+      )
+    )
   total_bytes = 0
   if len(files) > MAX_FILES:
     findings.append(
@@ -507,15 +609,58 @@ def analyze_submission(root: Path, package_dir: Path) -> dict:
   scan = scan_package(package_dir, manifest)
   files, structural_findings = _regular_files(package_dir)
   inventory = _inventory_regular_files(package_dir, files)
+  config = load_marketplace_config(root)
+  risk = capability_risk(manifest)
   return {
     "classification": "blocked" if scan["outcome"] == "blocked" else "needs-review",
     "prospective-path": prospective_path,
     "specialty": parts[1],
-    "reviewers": load_marketplace_config(root)["reviewers"],
+    "reviewers": config["reviewers"],
+    "risk": risk,
+    "intake": intake_decision(
+      scan_outcome=scan["outcome"],
+      risk=risk,
+      author_trusted=None,
+      within_velocity=None,
+      config=config,
+    ),
     "package-tree-digest": package_digest(inventory),
     "files": inventory,
     "inventory-complete": not structural_findings,
     "scan": scan,
+  }
+
+
+def intake_submission(
+  root: Path,
+  package_dir: Path,
+  author_trusted: bool | None,
+  within_velocity: bool | None,
+) -> dict:
+  """Return the auto-publish decision for one community submission.
+
+  The scan and capability risk are computed here from package content. The
+  author-trust and velocity signals are resolved from live GitHub data by the
+  intake workflow and passed in, so this stays a deterministic, testable gate.
+  """
+  package_dir = package_dir.resolve()
+  manifest, errors = validate_manifest(package_dir / MANIFEST_NAME, load_schema(root))
+  if errors or manifest is None:
+    raise MarketplaceError("\n".join(errors))
+  config = load_marketplace_config(root)
+  scan = scan_package(package_dir, manifest)
+  risk = capability_risk(manifest)
+  return {
+    "id": manifest["id"],
+    "risk": risk,
+    "scan-outcome": scan["outcome"],
+    "intake": intake_decision(
+      scan_outcome=scan["outcome"],
+      risk=risk,
+      author_trusted=author_trusted,
+      within_velocity=within_velocity,
+      config=config,
+    ),
   }
 
 
@@ -528,14 +673,17 @@ def load_marketplace_config(root: Path) -> dict:
     "release-state",
     "repository",
     "revision",
+    "version",
     "installer-version",
     "reviewers",
+    "reviews",
+    "community-intake",
     "approved-discovery-sources",
   }
   unexpected = sorted(set(config) - allowed)
   if unexpected:
     raise MarketplaceError(f"{path}: unexpected keys: {', '.join(unexpected)}")
-  required = allowed - {"approved-discovery-sources"}
+  required = allowed - {"approved-discovery-sources", "reviews", "community-intake"}
   missing = sorted(required - set(config))
   if missing:
     raise MarketplaceError(f"{path}: missing keys: {', '.join(missing)}")
@@ -545,6 +693,9 @@ def load_marketplace_config(root: Path) -> dict:
     raise MarketplaceError(f"{path}: release-state must be development or published")
   if not re.fullmatch(r"[0-9a-f]{40}", str(config["revision"])):
     raise MarketplaceError(f"{path}: revision must be a full lowercase commit SHA")
+  version = str(config["version"])
+  if not re.fullmatch(r"catalog-\d{4}\.\d{2}\.\d{2}(?:\.\d+)?", version):
+    raise MarketplaceError(f"{path}: version must be a catalog-YYYY.MM.DD release tag")
   if config["repository"] != "https://github.com/bcgov/agent-marketplace":
     raise MarketplaceError(f"{path}: repository must use the canonical post-clone name")
   sources = config.get("approved-discovery-sources", [])
@@ -591,7 +742,87 @@ def load_marketplace_config(root: Path) -> dict:
         f"{path}: unknown discovery source types for {source_id}: "
         f"{', '.join(unknown_types)}"
       )
+  _validate_reviews(path, config.get("reviews", []))
+  _validate_community_intake(path, config.get("community-intake"))
   return config
+
+
+REVIEW_STATUSES = {"domain-reviewed", "marketplace-reviewed"}
+RISK_BANDS = ("low", "elevated", "high")
+RISK_ORDER = {band: index for index, band in enumerate(RISK_BANDS)}
+MAINTAINER_RE = re.compile(
+  r"^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9_.-]+)?$"
+)
+
+
+def _validate_reviews(path: Path, reviews: object) -> None:
+  """Validate the maintainer-controlled human-review pin list."""
+  if not isinstance(reviews, list):
+    raise MarketplaceError(f"{path}: reviews must be a list")
+  seen = set()
+  for review in reviews:
+    if not isinstance(review, dict):
+      raise MarketplaceError(f"{path}: each review must be a mapping")
+    missing = sorted({"id", "status", "team", "content-digest"} - set(review))
+    if missing:
+      raise MarketplaceError(f"{path}: review missing keys: {', '.join(missing)}")
+    extra = sorted(set(review) - {"id", "status", "team", "content-digest"})
+    if extra:
+      raise MarketplaceError(f"{path}: review has unexpected keys: {', '.join(extra)}")
+    review_id = review["id"]
+    if review_id in seen:
+      raise MarketplaceError(f"{path}: duplicate review id: {review_id}")
+    seen.add(review_id)
+    if review["status"] not in REVIEW_STATUSES:
+      raise MarketplaceError(
+        f"{path}: review status must be one of {sorted(REVIEW_STATUSES)}"
+      )
+    if not MAINTAINER_RE.match(str(review["team"])):
+      raise MarketplaceError(f"{path}: review team must be a @handle or @org/team")
+    if not re.fullmatch(r"sha256:[0-9a-f]{64}", str(review["content-digest"])):
+      raise MarketplaceError(f"{path}: review content-digest must be sha256:<64 hex>")
+
+
+def _validate_community_intake(path: Path, intake: object) -> None:
+  """Validate the optional anti-abuse intake thresholds."""
+  if intake is None:
+    return
+  if not isinstance(intake, dict):
+    raise MarketplaceError(f"{path}: community-intake must be a mapping")
+  allowed = {
+    "min-account-age-days",
+    "require-verified-org-membership",
+    "max-open-submissions-per-author",
+    "max-new-packages-per-window",
+    "window-days",
+    "auto-publish-risk-ceiling",
+  }
+  extra = sorted(set(intake) - allowed)
+  if extra:
+    raise MarketplaceError(
+      f"{path}: community-intake has unexpected keys: {', '.join(extra)}"
+    )
+  for key in (
+    "min-account-age-days",
+    "max-open-submissions-per-author",
+    "max-new-packages-per-window",
+    "window-days",
+  ):
+    if key in intake and (not isinstance(intake[key], int) or intake[key] < 0):
+      raise MarketplaceError(
+        f"{path}: community-intake {key} must be a non-negative integer"
+      )
+  if "require-verified-org-membership" in intake and not isinstance(
+    intake["require-verified-org-membership"], bool
+  ):
+    raise MarketplaceError(
+      f"{path}: community-intake require-verified-org-membership must be true or false"
+    )
+  ceiling = intake.get("auto-publish-risk-ceiling", "elevated")
+  if ceiling not in RISK_ORDER:
+    raise MarketplaceError(
+      f"{path}: community-intake auto-publish-risk-ceiling must be a risk band"
+    )
 
 
 TYPE_DIRECTORIES = {
@@ -610,6 +841,65 @@ TYPE_DIRECTORIES = {
 EXTENSION_TYPE_ORDER = ["skill", "prompt", "instruction", "agent", "hook", "mcp"]
 
 
+def _review_status(
+  config: dict,
+  package_id: str,
+  specialty: str,
+  content_digest: str,
+  risk: str,
+  advisory_count: int,
+) -> dict:
+  """Resolve the trust block for one package from central review policy.
+
+  A human review only counts when the reviewed content-digest still matches, so
+  editing a reviewed package silently drops it back to the automated tier until
+  a human signs off again. Community packages are never human-reviewed: they
+  carry the automated-scan result and their capability-risk band so a reader can
+  see exactly how far they were checked.
+  """
+  for review in config.get("reviews", []):
+    if review["id"] == package_id and review["content-digest"] == content_digest:
+      return {
+        "status": review["status"],
+        "reviewers": [review["team"]],
+        "revision": config["revision"],
+        "content-digest": content_digest,
+        "method": "human-review",
+        "risk": risk,
+      }
+  if specialty == "community":
+    return {
+      "status": "auto-scanned",
+      "reviewers": [],
+      "method": "automated-policy-scan",
+      "policy-version": POLICY_VERSION,
+      "content-digest": content_digest,
+      "risk": risk,
+      "advisories": advisory_count,
+    }
+  return {
+    "status": "unreviewed",
+    "reviewers": [],
+    "content-digest": content_digest,
+    "risk": risk,
+  }
+
+
+def namespace_of(relative_path: str) -> str:
+  """Return the namespace (community or a specialty) for a package path.
+
+  The namespace is the second path segment for any supported extension type, so
+  ``agents/security/<name>`` is the ``security`` specialty just as
+  ``skills/security/<name>`` is. Only the ``community`` namespace publishes on
+  the automated scan; every other namespace is a specialty that requires its
+  owning team's review before merge.
+  """
+  parts = relative_path.split("/")
+  if len(parts) > 2 and parts[0] in TYPE_DIRECTORIES:
+    return parts[1]
+  return "community"
+
+
 def build_catalog(root: Path) -> tuple[dict, str]:
   """Build machine-readable and escaped HTML catalog projections."""
   schema = load_schema(root)
@@ -624,7 +914,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     package_dir = path.parent
     relative_path = package_dir.relative_to(root).as_posix()
     parts = relative_path.split("/")
-    specialty = parts[1] if len(parts) > 1 and parts[0] == "skills" else "community"
+    specialty = namespace_of(relative_path)
     record = {
       **manifest,
       "type": TYPE_DIRECTORIES.get(parts[0], "skill"),
@@ -637,11 +927,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
       "content-digest": "",
       "files": [],
       "policy": {},
-      "review": {
-        "status": "marketplace-reviewed",
-        "reviewers": config["reviewers"],
-        "revision": config["revision"],
-      },
+      "review": {},
     }
     scan = scan_package(package_dir, manifest)
     blocking = [item for item in scan["findings"] if item["severity"] == "blocking"]
@@ -655,6 +941,15 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     record["content-digest"] = package_digest(inventory)
     record["files"] = inventory
     record["policy"] = scan
+    advisories = [item for item in scan["findings"] if item["severity"] == "advisory"]
+    record["review"] = _review_status(
+      config,
+      manifest["id"],
+      specialty,
+      record["content-digest"],
+      capability_risk(manifest),
+      len(advisories),
+    )
     records.append(record)
   if not records:
     errors.append("no hosted marketplace manifests found")
@@ -666,6 +961,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     "release-state": config["release-state"],
     "repository": config["repository"],
     "revision": config["revision"],
+    "version": config["version"],
     "installer-version": str(config["installer-version"]),
     "policy-version": POLICY_VERSION,
     "approved-discovery-sources": config.get("approved-discovery-sources", []),
@@ -695,8 +991,15 @@ def build_catalog(root: Path) -> tuple[dict, str]:
 TRUST_LABELS = {
   "marketplace-reviewed": "Reviewed",
   "domain-reviewed": "Domain reviewed",
+  "auto-scanned": "Auto-checked",
   "locally-scanned-not-bc-gov-reviewed": "Scanned only",
   "unreviewed": "Unreviewed",
+}
+
+RISK_LABELS = {
+  "low": "Low access",
+  "elevated": "Elevated access",
+  "high": "High access",
 }
 
 ACCESS_SIGNALS = (
@@ -723,6 +1026,8 @@ def _catalog_row(record: dict) -> str:
   active = [key for key, _label, _phrase in ACCESS_SIGNALS if signals[key]]
   status = (record.get("review") or {}).get("status") or "unreviewed"
   trust = TRUST_LABELS.get(status, "Unreviewed")
+  risk = (record.get("review") or {}).get("risk") or ""
+  risk_label = RISK_LABELS.get(risk, "")
   specialty = record.get("specialty") or "community"
 
   granted = [phrase for key, _label, phrase in ACCESS_SIGNALS if signals[key]]
@@ -764,6 +1069,7 @@ def _catalog_row(record: dict) -> str:
       f'  data-specialty="{html.escape(specialty, quote=True)}"',
       f'  data-lifecycle="{html.escape(record.get("lifecycle") or "", quote=True)}"',
       f'  data-status="{html.escape(status, quote=True)}"',
+      f'  data-risk="{html.escape(risk, quote=True)}"',
       f'  data-access="{html.escape(" ".join(active), quote=True)}"',
       f'  data-haystack="{html.escape(haystack, quote=True)}">',
       '  <div class="cat-row-id">',
@@ -776,7 +1082,14 @@ def _catalog_row(record: dict) -> str:
       *slots,
       "  </ul>",
       f'  <p class="cat-row-trust" data-status="{html.escape(status, quote=True)}">'
-      f"{html.escape(trust)}</p>",
+      f"{html.escape(trust)}"
+      + (
+        f'<span class="cat-row-risk" data-risk="{html.escape(risk, quote=True)}">'
+        f"{html.escape(risk_label)}</span>"
+        if risk in {"elevated", "high"}
+        else ""
+      )
+      + "</p>",
       "</article>",
     ]
   )
@@ -837,6 +1150,22 @@ def _parser() -> argparse.ArgumentParser:
     "analyze", help="analyze one submitted package and route it for review"
   )
   analyze_parser.add_argument("package", type=Path)
+  intake_parser = subparsers.add_parser(
+    "intake", help="decide whether a community submission can auto-publish"
+  )
+  intake_parser.add_argument("package", type=Path)
+  intake_parser.add_argument(
+    "--author-trust",
+    choices=["yes", "no", "unknown"],
+    default="unknown",
+    help="whether the author cleared the tenure and org-membership checks",
+  )
+  intake_parser.add_argument(
+    "--velocity",
+    choices=["ok", "exceeded", "unknown"],
+    default="unknown",
+    help="whether the author is within the submission-velocity limit",
+  )
   return parser
 
 
@@ -859,6 +1188,16 @@ def main(argv: list[str] | None = None) -> int:
       if errors or manifest is None:
         raise MarketplaceError("\n".join(errors))
       print(json.dumps(scan_package(args.package, manifest), indent=2, sort_keys=True))
+    elif args.command == "intake":
+      trust = {"yes": True, "no": False, "unknown": None}[args.author_trust]
+      velocity = {"ok": True, "exceeded": False, "unknown": None}[args.velocity]
+      print(
+        json.dumps(
+          intake_submission(root, args.package, trust, velocity),
+          indent=2,
+          sort_keys=True,
+        )
+      )
     else:
       print(
         json.dumps(analyze_submission(root, args.package), indent=2, sort_keys=True)

@@ -173,6 +173,28 @@ def test_search_can_filter_by_extension_type():
   ]
 
 
+def test_search_applies_relevance_floor():
+  """A weak, single-summary-token overlap is below the floor and returns nothing."""
+  catalog = {
+    "extensions": [
+      {
+        "id": "bcgov-public/openshift-deployment",
+        "display-name": "OpenShift deployment",
+        "summary": "Deploy workloads to OpenShift with manifests.",
+        "prerequisites": ["oc CLI"],
+        "lifecycle": "active",
+      }
+    ]
+  }
+  # "manifests" hits one summary token (score 4), under the floor, so the finder
+  # returns a genuine no-match instead of presenting an unrelated skill.
+  assert finder.search(catalog, "manifests") == []
+  # A name-token query clears the floor and still resolves.
+  assert [item["id"] for item in finder.search(catalog, "openshift")] == [
+    "bcgov-public/openshift-deployment"
+  ]
+
+
 def test_approved_sources_are_filtered_by_declared_type():
   """Only active sources explicitly allowing a type can be searched."""
   config = {

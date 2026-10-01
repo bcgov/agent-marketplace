@@ -1,11 +1,44 @@
 schema-version: bcgov-marketplace/v1alpha1
 release-state: development
 repository: https://github.com/bcgov/agent-marketplace
-revision: 842241b962849ad239e1e9c90589b6bc9c881e53
+revision: d00c5470891a7c04ceda598c0e7004f9383183b6
+# Current published release tag (CalVer). The release workflow cuts an immutable
+# catalog-YYYY.MM.DD tag on every merge that changes catalog content and
+# rewrites this field. People install by this tag; the exact revision above and
+# each package content-digest are what the installer actually verifies.
+version: catalog-2026.10.01
 installer-version: 1.5.23
 reviewers:
   - "@mishraomp"
   - "@DerekRoberts"
+# Human reviews are opt-in and pinned to the exact package content that was
+# reviewed. If a package's files change, its content-digest changes and the
+# review here stops applying, so the catalog falls back to "Auto-checked"
+# until a human signs off on the new content. Community packages are never
+# listed here: they publish on the automated scan alone.
+reviews:
+  - id: bcgov-public/repo-hardening
+    status: domain-reviewed
+    team: "@bcgov/security"
+    content-digest: "sha256:9fd010749fc81d20119daa1b504c89aa10ebde34f172d8277992720201d16355"
+# Anti-abuse gate for the open community namespace. Community submissions are
+# not human-reviewed, so these limits are what stop a new or compromised
+# account from flooding the marketplace. The values are enforced at intake
+# (pull-request) time by the community-intake workflow.
+community-intake:
+  # An author must have belonged to the GitHub org for at least this many days.
+  min-account-age-days: 30
+  # The author must be a verified member of the bcgov organisation.
+  require-verified-org-membership: true
+  # How many community submissions one author may have open at once.
+  max-open-submissions-per-author: 3
+  # How many brand-new packages one author may add within the window below.
+  max-new-packages-per-window: 5
+  window-days: 7
+  # Submissions at or below this capability-risk band can auto-publish once the
+  # scan passes and the author clears the tenure and velocity checks. Anything
+  # riskier (for example wildcard capabilities) always waits for a maintainer.
+  auto-publish-risk-ceiling: elevated
 approved-discovery-sources:
   - id: vercel-agent-skills
     name: Agent Skills Directory
