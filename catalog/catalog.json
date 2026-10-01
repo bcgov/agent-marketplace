@@ -120,7 +120,7 @@
       "source": {
         "path": "skills/community/azure-networking",
         "repository": "https://github.com/bcgov/agent-marketplace",
-        "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6"
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
       "summary": "Design BC Gov Azure Landing Zone subnets, network security groups, service delegations, and private endpoints.",
@@ -216,7 +216,7 @@
       "source": {
         "path": "skills/community/bcgov-create-extension",
         "repository": "https://github.com/bcgov/agent-marketplace",
-        "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6"
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
       "summary": "Author, validate, preview, and submit BC Gov agent extension candidates.",
@@ -301,7 +301,7 @@
       "source": {
         "path": "skills/community/bcgov-find-extension",
         "repository": "https://github.com/bcgov/agent-marketplace",
-        "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6"
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
       "summary": "Discover, inspect, and confirm installation of BC Gov agent extensions.",
@@ -394,7 +394,7 @@
       "source": {
         "path": "skills/community/github-actions",
         "repository": "https://github.com/bcgov/agent-marketplace",
-        "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6"
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
       "summary": "Author and review GitHub Actions workflows using BC Gov permissions, pinning, fork-gate, and required-check patterns.",
@@ -483,7 +483,7 @@
       "source": {
         "path": "skills/community/github-repo-setup",
         "repository": "https://github.com/bcgov/agent-marketplace",
-        "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6"
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
       "summary": "Assess a GitHub repository against BC Gov DevOps and security standards and produce an evidence-based maturity report.",
@@ -670,7 +670,7 @@
       "source": {
         "path": "skills/community/n8n-runbook-parser",
         "repository": "https://github.com/bcgov/agent-marketplace",
-        "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6"
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
       "summary": "Extract code from prose runbooks into version-controlled snippets, detect drift, and backport reviewed fixes to source documentation.",
@@ -840,7 +840,7 @@
       "source": {
         "path": "skills/community/n8n-workflow-builder",
         "repository": "https://github.com/bcgov/agent-marketplace",
-        "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6"
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
       "summary": "Compose reviewed runbook snippets into local and n8n operational triage workflows with explicit API publication steps.",
@@ -924,7 +924,7 @@
       "source": {
         "path": "skills/community/openshift-deployment",
         "repository": "https://github.com/bcgov/agent-marketplace",
-        "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6"
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
       "summary": "Design BC Gov Private Cloud workload manifests with appropriate controllers, resources, probes, disruption budgets, and security contexts.",
@@ -997,7 +997,7 @@
         "reviewers": [
           "@bcgov/security"
         ],
-        "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6",
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75",
         "risk": "high",
         "status": "domain-reviewed"
       },
@@ -1005,7 +1005,7 @@
       "source": {
         "path": "skills/security/repo-hardening",
         "repository": "https://github.com/bcgov/agent-marketplace",
-        "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6"
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "security",
       "summary": "Apply a baseline repository hardening recipe for branch protection, secret handling, review gates, and deterministic validation.",
@@ -1017,7 +1017,7 @@
   "policy-version": "bcgov-marketplace-policy/1.0",
   "release-state": "development",
   "repository": "https://github.com/bcgov/agent-marketplace",
-  "revision": "d00c5470891a7c04ceda598c0e7004f9383183b6",
+  "revision": "2046da7b0de0f673bf39208b35385c1516be4c75",
   "schema-version": "bcgov-marketplace-catalog/v1alpha1",
   "version": "catalog-2026.10.01"
 }
