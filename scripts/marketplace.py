@@ -1082,7 +1082,8 @@ def _catalog_row(record: dict) -> str:
       *slots,
       "  </ul>",
       f'  <p class="cat-row-trust" data-status="{html.escape(status, quote=True)}">'
-      f"{html.escape(trust)}"
+      f'<span class="trust-label" data-status="{html.escape(status, quote=True)}">'
+      f"{html.escape(trust)}</span>"
       + (
         f'<span class="cat-row-risk" data-risk="{html.escape(risk, quote=True)}">'
         f"{html.escape(risk_label)}</span>"

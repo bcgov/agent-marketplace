@@ -28,8 +28,9 @@ on:
       - "scripts/marketplace.py"
 
 # Deny-all baseline at the workflow scope; the job opts into the minimum it
-# needs: contents:write to commit the regenerated catalog and push the tag,
-# actions:write to trigger the Pages deploy for the new release.
+# needs: just contents:write for the GitHub Release (gh release create). The
+# commit and tag are pushed over SSH with the repo deploy key - not the job
+# token - and that push auto-triggers the Pages deploy, so no actions:write.
 permissions: {}
 
 # One release at a time so two quick merges can't race for the same CalVer tag.
@@ -40,19 +41,26 @@ concurrency:
 
 jobs:
   release:
-    # Never react to the release commit this workflow pushes itself. Pushes made
-    # with GITHUB_TOKEN don't retrigger workflows, so this is belt-and-braces.
+    # Never react to the release commit this workflow pushes itself. The push
+    # uses a deploy key over SSH, and deploy-key pushes DO retrigger workflows,
+    # so this guard is essential - it's what stops an infinite release loop.
     if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
     runs-on: ubuntu-24.04
+    # Only contents:write, and only for the GitHub Release API call below. The
+    # commit and tag reach protected main over SSH via the deploy key (a ruleset
+    # bypass actor), not this token.
     permissions:
       contents: write
-      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
           fetch-tags: true
+          # Deploy key (an allowed main-ruleset bypass actor) so the pushes
+          # below reach protected main. checkout points the remote at SSH and
+          # loads this key, persisting it for the later git push steps.
+          ssh-key: ${{ secrets.REPOSITORY_DEPLOY_KEY }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -130,7 +138,7 @@ jobs:
             --notes "Immutable catalog snapshot. Install by this tag; the exact revision and per-package content-digests are in digests.txt and the install lockfile." \
             catalog/catalog.json digests.txt
 
-      - name: Deploy the published site for this release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pages.yml --ref main
+      # No explicit Pages deploy step: the deploy-key push to main above changes
+      # catalog/** and config/marketplace.yaml, which auto-triggers pages.yml
+      # (deploy-key pushes retrigger workflows). A GITHUB_TOKEN push would not
+      # have, which is why the earlier design dispatched Pages by hand.

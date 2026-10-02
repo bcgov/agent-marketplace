@@ -39,8 +39,8 @@
 
 <h2>Direct install</h2>
 
-<pre><code>apm install \
-    bcgov/agent-marketplace/skills/&lt;specialty&gt;/&lt;skill-name&gt;#&lt;full-commit-sha&gt; \
-    --target copilot</code></pre>
+<p>Every catalogue record has its exact, pinned install command with a one-click copy button. <a href="catalog.html">Open the catalogue</a>, select a record, and copy the command from the evidence panel. For example:</p>
 
-<p>Use the exact package path and revision from the catalog. If APM is unavailable, the finder constructs an immutable GitHub tree URL for <code>npx skills</code> and recommends APM for future installs. Direct installation does not submit a third-party candidate for marketplace review.</p>
+<pre><code>apm install bcgov/agent-marketplace/skills/security/repo-hardening#{{PUBLISHED_REVISION}} --target copilot</code></pre>
+
+<p>If APM is unavailable, the panel offers an equivalent pinned <code>npx skills@{{INSTALLER_VERSION}}</code> command against the immutable GitHub tree. Direct installation does not submit a third-party candidate for marketplace review.</p>

@@ -13,6 +13,15 @@
 
 {{RELEASE_BANNER}}
 
+<h2>Quick start</h2>
+
+<p>Install the two marketplace companions once per device with <a href="https://github.com/microsoft/apm" target="_blank" rel="noopener">APM</a>, then ask Copilot to find or create skills from any workspace. <a href="getting-started.html">Other install options and verification</a>.</p>
+
+<pre><code>apm install -g \
+    bcgov/agent-marketplace/skills/community/bcgov-find-extension#{{RELEASE_TAG}} \
+    bcgov/agent-marketplace/skills/community/bcgov-create-extension#{{RELEASE_TAG}} \
+    --target copilot</code></pre>
+
 <h2>Use the marketplace</h2>
 
 <div class="grid grid-3">
@@ -23,9 +32,12 @@
 
 <h2>Trust is attached to bytes</h2>
 
-<div class="grid grid-3">
-    <div class="card"><h3>Approved discovery source</h3><p>The finder may search the catalog. An individual result receives no trust status from discovery alone.</p></div>
-    <div class="card"><h3>Unreviewed candidate</h3><p>An immutable source is awaiting trusted CI scanning and human review.</p></div>
+<p>Every record shows how far its exact revision and digest were checked. Editing a package drops it back to the automated tier until a human signs off again.</p>
+
+<div class="grid grid-4">
+    <div class="card" style="border-left-color: #8a4715;"><h3>Unreviewed candidate</h3><p>An immutable third-party source awaiting trusted CI scanning and human review. Not shown in the catalogue.</p></div>
+    <div class="card" style="border-left-color: #3d5a73;"><h3>Auto-checked</h3><p>Community packages whose exact bytes passed automated policy and content scanning. No human review is claimed.</p></div>
+    <div class="card"><h3>Domain reviewed</h3><p>A specialty owner, such as security, reviewed the exact revision and digest.</p></div>
     <div class="card card-gold"><h3>Marketplace reviewed</h3><p>Named reviewers assessed the exact published commit, package digest, and declared capabilities.</p></div>
 </div>
 

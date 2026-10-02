@@ -50,8 +50,12 @@
 <p>Two checks confirm the companions are present and intact:</p>
 
 <ol>
-    <li><strong>Integrity:</strong> run <code>apm audit</code>. It scans installed primitives for drift, hidden Unicode, and lockfile or policy violations, and reports any file that no longer matches its locked bytes.</li>
-    <li><strong>Availability:</strong> in any workspace, ask GitHub Copilot to “Use bcgov-find-extension to search for a repository hardening skill.” If it runs the finder, the companion is installed. If nothing happens, re-run the install command above.</li>
+    <li><strong>Integrity:</strong> run <code>apm audit</code>. It scans installed primitives for drift, hidden Unicode, and lockfile or policy violations, and reports any file that no longer matches its locked bytes.
+        <pre><code>apm audit</code></pre>
+    </li>
+    <li><strong>Availability:</strong> in any workspace, ask GitHub Copilot the prompt below. If it runs the finder, the companion is installed. If nothing happens, re-run the install command above.
+        <pre><code>Use bcgov-find-extension to search for a repository hardening skill.</code></pre>
+    </li>
 </ol>
 
 <div class="alert alert-info">
@@ -63,10 +67,11 @@
 
 <p>From any workspace, ask GitHub Copilot:</p>
 
-<ul>
-    <li><strong>Finder:</strong> “Find me a BC Gov extension for hardening GitHub Actions.”</li>
-    <li><strong>Creator:</strong> “Turn this workflow idea into a BC Gov extension and prepare a draft pull request.”</li>
-</ul>
+<h3>Finder</h3>
+<pre><code>Find me a BC Gov extension for hardening GitHub Actions.</code></pre>
+
+<h3>Creator</h3>
+<pre><code>Turn this workflow idea into a BC Gov extension and prepare a draft pull request.</code></pre>
 
 <div class="alert alert-warning">
     <div class="alert-icon" aria-hidden="true">!</div>
