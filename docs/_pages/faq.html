@@ -3,32 +3,59 @@
 
 <h1>Frequently Asked Questions</h1>
 
-<h2>What is published here?</h2>
-<p>Agent Skills only: portable <code>SKILL.md</code> instructions plus optional flat resources and closed marketplace metadata. Hooks, MCP servers, custom agents, and automatically executable extension types are not supported by this MVP.</p>
+<div class="accordion-group">
+<details id="what-is-published">
+<summary>What is published here?</summary>
+<div class="accordion-content"><p>Agent Skills only: portable <code>SKILL.md</code> instructions plus optional flat resources and closed marketplace metadata. Hooks, MCP servers, custom agents, and automatically executable extension types are not supported by this MVP.</p></div>
+</details>
 
-<h2>Does “Marketplace reviewed” mean safe?</h2>
-<p>No. It means named reviewers assessed the exact published revision, digest, declared capabilities, and available evidence. The marketplace does not use “safe” or “verified secure” claims.</p>
+<details id="reviewed-means-safe">
+<summary>Does “Marketplace reviewed” mean safe?</summary>
+<div class="accordion-content"><p>No. It means named reviewers assessed the exact published revision, digest, declared capabilities, and available evidence. The marketplace does not use “safe” or “verified secure” claims.</p></div>
+</details>
 
-<h2>What does “Unreviewed candidate” mean?</h2>
-<p>An immutable third-party source was submitted for review. Trusted CI still needs to compute its digest and run deterministic policy checks, and BC Gov reviewers have not approved it.</p>
+<details id="auto-checked">
+<summary>What does “Auto-checked” mean?</summary>
+<div class="accordion-content"><p>The exact package bytes passed the automated policy and content scan at the published revision. Community packages publish at this tier; no human review is claimed. Each record also shows an access level derived from its declared capabilities.</p></div>
+</details>
 
-<h2>Why is the source a full commit SHA?</h2>
-<p>A branch or tag can move. A full commit SHA plus package-tree digest binds discovery, scan, review, install, and receipt evidence to the same bytes.</p>
+<details id="unreviewed-candidate">
+<summary>What does “Unreviewed candidate” mean?</summary>
+<div class="accordion-content"><p>An immutable third-party source was submitted for review. Trusted CI still needs to compute its digest and run deterministic policy checks, and BC Gov reviewers have not approved it.</p></div>
+</details>
 
-<h2>Why are there two companion skills?</h2>
-<p><code>bcgov-find-extension</code> handles discovery, controlled installation, and third-party candidate registration. <code>bcgov-create-extension</code> handles authoring and hosted submission. Keeping the entry points separate loads only the workflow needed for the request.</p>
+<details id="full-commit-sha">
+<summary>Why is the source a full commit SHA?</summary>
+<div class="accordion-content"><p>A branch or tag can move. A full commit SHA plus package-tree digest binds discovery, scan, review, install, and receipt evidence to the same bytes.</p></div>
+</details>
 
-<h2>Are installed skills global too?</h2>
-<p>Reviewed catalog skills default to the current project. Third-party candidates are project-local only. The finder shows the exact destination and material capabilities before confirmation.</p>
+<details id="two-companions">
+<summary>Why are there two companion skills?</summary>
+<div class="accordion-content"><p><code>bcgov-find-extension</code> handles discovery, controlled installation, and third-party candidate registration. <code>bcgov-create-extension</code> handles authoring and hosted submission. Keeping the entry points separate loads only the workflow needed for the request.</p></div>
+</details>
 
-<h2>Where is installation evidence?</h2>
-<p>Preferred APM installs use <code>apm.yml</code> and <code>apm.lock.yaml</code>; the fallback installer may write <code>skills-lock.json</code>. Legacy helper receipts live under <code>.github/agent-marketplace/receipts/</code>. Local evidence stays in the project unless the developer chooses to share it for support or incident response.</p>
+<details id="install-scope">
+<summary>Are installed skills global too?</summary>
+<div class="accordion-content"><p>Reviewed catalog skills default to the current project. Third-party candidates are project-local only. The finder shows the exact destination and material capabilities before confirmation.</p></div>
+</details>
 
-<h2>Can a companion publish its own work?</h2>
-<p>No. The creator may open a signed draft pull request, but cannot approve, merge, modify protection, or assign review status. CI and human reviewers decide publication.</p>
+<details id="installation-evidence">
+<summary>Where is installation evidence?</summary>
+<div class="accordion-content"><p>Preferred APM installs use <code>apm.yml</code> and <code>apm.lock.yaml</code>; the fallback installer may write <code>skills-lock.json</code>. Legacy helper receipts live under <code>.github/agent-marketplace/receipts/</code>. Local evidence stays in the project unless the developer chooses to share it for support or incident response.</p></div>
+</details>
 
-<h2>What if I cannot push a branch?</h2>
-<p>The creator preserves the staged package and provides an access-request action. Fork PRs are intentionally blocked. Third-party registration uses issues and does not require branch access.</p>
+<details id="self-publish">
+<summary>Can a companion publish its own work?</summary>
+<div class="accordion-content"><p>No. The creator may open a signed draft pull request, but cannot approve, merge, modify protection, or assign review status. CI and human reviewers decide publication.</p></div>
+</details>
 
-<h2>How is a package quarantined?</h2>
-<p>Maintainers set its lifecycle to <code>quarantined</code>, regenerate, and publish through review. The finder excludes it from default results. Support then identifies affected receipts or declared dependencies and publishes update or removal guidance.</p>
+<details id="no-branch-access">
+<summary>What if I cannot push a branch?</summary>
+<div class="accordion-content"><p>The creator preserves the staged package and provides an access-request action. Fork PRs are intentionally blocked. Third-party registration uses issues and does not require branch access.</p></div>
+</details>
+
+<details id="quarantine">
+<summary>How is a package quarantined?</summary>
+<div class="accordion-content"><p>Maintainers set its lifecycle to <code>quarantined</code>, regenerate, and publish through review. The finder excludes it from default results. Support then identifies affected receipts or declared dependencies and publishes update or removal guidance. See the <a href="https://github.com/bcgov/agent-marketplace/blob/main/docs/MARKETPLACE_RUNBOOK.md" target="_blank" rel="noopener">operations runbook</a> and the <a href="https://github.com/bcgov/agent-marketplace/blob/main/SECURITY.md" target="_blank" rel="noopener">private reporting route</a>.</p></div>
+</details>
+</div>

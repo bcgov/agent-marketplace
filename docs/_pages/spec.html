@@ -10,20 +10,20 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     </div>
     <div>
-        The PR check runs <code>scripts/validate_skill.py</code> against every <strong>changed</strong> skill. Run the same checks locally with <code>uv run python scripts/validate_skill.py --all</code> (or just one skill: <code>uv run python scripts/validate_skill.py skills/&lt;bucket&gt;/&lt;name&gt;/SKILL.md</code>).
+        The PR check runs <code>scripts/validate_skill.py</code> against every <strong>changed</strong> skill. <a href="#run-locally">Run the same checks locally</a> before you push.
     </div>
 </div>
 
 <h2 id="layout">Directory layout</h2>
 
-<p>A skill lives in its own directory under one of two roots. Both are validated against this spec; only <code>skills/</code> is part of the public catalogue.</p>
+<p>A skill lives in its own directory under <code>skills/community/</code> or a specialty such as <code>skills/security/</code>. Every package is validated against this spec.</p>
 
-<pre><code>skills/&lt;skill-name&gt;/            # contributed skills (public catalogue)
-skills/community/&lt;skill-name&gt;/  # hosted marketplace companions
-├── SKILL.md        # required: the manifest
-├── scripts/        # optional, flat — one level deep
-├── references/     # optional, flat
-└── assets/         # optional, flat</code></pre>
+<pre data-no-copy><code>skills/&lt;community-or-specialty&gt;/&lt;skill-name&gt;/
+├── SKILL.md              # required: the manifest
+├── bcgov-extension.yaml  # required: marketplace metadata
+├── scripts/              # optional, flat — one level deep
+├── references/           # optional, flat
+└── assets/               # optional, flat</code></pre>
 
 <h2 id="frontmatter">1. Frontmatter (required)</h2>
 
@@ -144,12 +144,12 @@ See [references/REFERENCE.md](references/REFERENCE.md) for &lt;heavy detail&gt;<
     <li><strong>Section headings use a straight ASCII apostrophe.</strong> Write <code>## Don't Use When</code> with <code>'</code> (U+0027), not the curly <code>'</code> (U+2019) that some editors auto-insert. The validator normalises smart quotes to straight in the heading-match step, so the canonical form in your file is the ASCII one.</li>
 </ul>
 
-<h3 style="margin-top: 1.5rem;">Run it locally</h3>
+<h3 id="run-locally" style="margin-top: 1.5rem;">Run it locally</h3>
 
-<pre><code>uv run python scripts/validate_skill.py skills/community/&lt;your-skill&gt;/SKILL.md
+<p>From a clone of the repository, validate every skill:</p>
 
-# or validate every skill
-uv run python scripts/validate_skill.py --all
+<pre><code>make validate</code></pre>
 
-# or via the Makefile
-make validate</code></pre>
+<p>Or validate one skill, replacing <code>repo-hardening</code> with your skill's directory:</p>
+
+<pre><code>uv run python scripts/validate_skill.py skills/security/repo-hardening/SKILL.md</code></pre>

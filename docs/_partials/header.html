@@ -119,6 +119,30 @@
             font-weight: 600;
         }
 
+        .bc-nav > a:focus-visible,
+        .bc-header-brand:focus-visible,
+        .search-btn:focus-visible {
+            outline: 3px solid var(--bc-gold);
+            outline-offset: 2px;
+        }
+
+        .skip-link {
+            position: absolute;
+            top: -100px;
+            left: 1rem;
+            z-index: 2000;
+            padding: 0.6rem 1rem;
+            border-radius: 0 0 6px 6px;
+            background: var(--bc-gold);
+            color: var(--bc-blue);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
         /* Dropdown */
         .nav-dropdown {
             position: relative;
@@ -199,6 +223,10 @@
             padding: 2rem;
             flex: 1;
             width: 100%;
+        }
+
+        main:focus {
+            outline: none;
         }
 
         /* Hero Section */
@@ -343,7 +371,7 @@
 
         .catalog-app {
             display: grid;
-            grid-template-columns: 15rem minmax(0, 1fr) 23rem;
+            grid-template-columns: 14rem minmax(0, 1fr) 22rem;
             align-items: start;
             gap: 1.75rem;
             margin: 1.5rem 0 2rem;
@@ -483,14 +511,21 @@
             overflow: hidden;
         }
 
+        /* Two rows per record: identity beside trust, access beside domain.
+           Every cell wraps instead of clipping. */
         .cat-row {
             position: relative;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 6rem 12.5rem 6.5rem;
-            align-items: center;
-            gap: 0.85rem;
-            padding: 0.5rem 0.9rem;
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas:
+                "id trust"
+                "slots domain";
+            align-items: start;
+            gap: 0.55rem 1rem;
+            padding: 0.85rem 1rem;
             border-top: 1px solid #e6e9ee;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
         }
 
         .cat-row:first-child {
@@ -518,12 +553,13 @@
         }
 
         .cat-row-id {
+            grid-area: id;
             min-width: 0;
         }
 
         .cat-row h3 {
             margin: 0;
-            font-size: 0.9375rem;
+            font-size: 1rem;
             line-height: 1.3;
         }
 
@@ -537,9 +573,7 @@
             font-weight: 700;
             color: var(--bc-blue);
             text-align: left;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            overflow-wrap: anywhere;
             cursor: pointer;
         }
 
@@ -554,28 +588,30 @@
         }
 
         .cat-row-summary {
-            margin: 0.1rem 0 0;
+            margin: 0.2rem 0 0;
             color: var(--text-secondary);
-            font-size: 0.8125rem;
-            line-height: 1.35;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 0.875rem;
+            line-height: 1.45;
         }
 
         .cat-row-domain {
+            grid-area: domain;
+            justify-self: end;
+            align-self: center;
             margin: 0;
-            font-size: 0.8125rem;
+            padding: 0.1rem 0.55rem;
+            border: 1px solid #d7dce3;
+            border-radius: 999px;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .cat-slots {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 0.25rem;
+            grid-area: slots;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
             margin: 0;
             padding: 0;
             list-style: none;
@@ -583,12 +619,11 @@
 
         .cat-slot {
             margin: 0;
-            padding: 0.15rem 0.2rem;
+            padding: 0.15rem 0.55rem;
             border-radius: 4px;
-            font-size: 0.6875rem;
-            text-align: center;
+            font-size: 0.75rem;
+            line-height: 1.5;
             white-space: nowrap;
-            overflow: hidden;
         }
 
         .cat-slot.is-on {
@@ -608,28 +643,155 @@
         }
 
         .cat-slot.is-off {
-            border: 1px dashed #d7dce3;
-            padding: calc(0.15rem - 1px) calc(0.2rem - 1px);
-            color: #a9b1bd;
+            border: 1px dashed #c4cbd4;
+            padding: calc(0.15rem - 1px) calc(0.55rem - 1px);
+            color: #6b7684;
+            text-decoration: line-through;
+            text-decoration-color: #a9b1bd;
         }
 
         /* Colour tracks the strength of the evidence, so a weaker review
            never reads as a full marketplace review. */
         .cat-row-trust {
+            grid-area: trust;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.3rem;
             margin: 0;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #1c6b3f;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            line-height: 1.3;
+            text-align: right;
             white-space: nowrap;
         }
 
-        .cat-row-trust[data-status="domain-reviewed"] {
-            color: var(--bc-blue-light);
+        /* Each trust tier and access level pairs a distinct shape with its
+           colour, so the meaning never depends on colour alone. */
+        .trust-label,
+        .cat-row-risk {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
         }
 
-        .cat-row-trust[data-status="unreviewed"],
-        .cat-row-trust[data-status="locally-scanned-not-bc-gov-reviewed"] {
+        .trust-label::before,
+        .cat-row-risk::before {
+            content: '';
+            flex-shrink: 0;
+            width: 1.1em;
+            height: 1.1em;
+            background: currentColor;
+            -webkit-mask: var(--icon) center / contain no-repeat;
+            mask: var(--icon) center / contain no-repeat;
+        }
+
+        .trust-label {
             color: #8a4715;
+            --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+        }
+
+        .trust-label[data-status="marketplace-reviewed"] {
+            color: #1c6b3f;
+            --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+        }
+
+        .trust-label[data-status="domain-reviewed"] {
+            color: var(--bc-blue-light);
+            --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3Cpath d='M3 21v-2a4 4 0 0 1 4-4h4'/%3E%3Cpath d='m15 19 2 2 5-5'/%3E%3C/svg%3E");
+        }
+
+        .trust-label[data-status="auto-scanned"] {
+            color: #3d5a73;
+            --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 7V5a2 2 0 0 1 2-2h2'/%3E%3Cpath d='M17 3h2a2 2 0 0 1 2 2v2'/%3E%3Cpath d='M21 17v2a2 2 0 0 1-2 2h-2'/%3E%3Cpath d='M7 21H5a2 2 0 0 1-2-2v-2'/%3E%3Cpath d='m8 12 3 3 5-6'/%3E%3C/svg%3E");
+        }
+
+        .trust-label[data-status="locally-scanned-not-bc-gov-reviewed"] {
+            --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+        }
+
+        .facet-option[aria-pressed="true"] .trust-label {
+            color: inherit;
+        }
+
+        .cat-row-risk {
+            padding: 0.05rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            background: #eaf3ec;
+            color: #1c6b3f;
+            --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' stroke='black' stroke-width='1.5'%3E%3Crect x='3' y='14' width='4' height='7' rx='1'/%3E%3Crect x='10.5' y='9.5' width='3' height='11' rx='1' fill='none'/%3E%3Crect x='17.5' y='4.5' width='3' height='16' rx='1' fill='none'/%3E%3C/svg%3E");
+        }
+
+        .cat-row-risk[data-risk="elevated"] {
+            background: #fdf3d7;
+            color: #7a5200;
+            --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' stroke='black' stroke-width='1.5'%3E%3Crect x='3' y='14' width='4' height='7' rx='1'/%3E%3Crect x='10' y='9' width='4' height='12' rx='1'/%3E%3Crect x='17.5' y='4.5' width='3' height='16' rx='1' fill='none'/%3E%3C/svg%3E");
+        }
+
+        .cat-row-risk[data-risk="high"] {
+            background: #fbe4dc;
+            color: #8f2d0d;
+            --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' stroke='black' stroke-width='1.5'%3E%3Crect x='3' y='14' width='4' height='7' rx='1'/%3E%3Crect x='10' y='9' width='4' height='12' rx='1'/%3E%3Crect x='17' y='4' width='4' height='17' rx='1'/%3E%3C/svg%3E");
+        }
+
+        /* Key to the trust and access symbols, shown beneath the filters. */
+        .catalog-key {
+            margin: 1.25rem 0 0;
+            padding-top: 0.5rem;
+            border: none;
+            border-top: 1px solid #e6e9ee;
+            border-radius: 0;
+            box-shadow: none;
+            background: none;
+            overflow: visible;
+        }
+
+        .catalog-key:hover {
+            box-shadow: none;
+        }
+
+        .catalog-key summary,
+        .catalog-key summary:hover,
+        .catalog-key[open] summary {
+            padding: 0.5rem 0;
+            border: none;
+            background: none;
+            font-size: 0.9rem;
+        }
+
+        .catalog-key summary:focus-visible {
+            outline: 3px solid rgba(252, 186, 25, 0.5);
+            outline-offset: 2px;
+        }
+
+        .catalog-key h3 {
+            margin: 0.5rem 0 0.5rem;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-secondary);
+        }
+
+        .catalog-key dl {
+            display: grid;
+            gap: 0.6rem;
+            margin: 0 0 1rem;
+        }
+
+        .catalog-key dt {
+            font-size: 0.8125rem;
+            font-weight: 700;
+        }
+
+        .catalog-key dd {
+            margin: 0.1rem 0 0;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            line-height: 1.4;
         }
 
         .catalog-detail {
@@ -686,15 +848,28 @@
             color: var(--text-secondary);
         }
 
+        /* Mid widths keep the evidence panel beside the list and move the
+           filters above it, so selecting a row never scrolls the page. */
         @media (max-width: 1240px) {
             .catalog-app {
-                grid-template-columns: 14rem minmax(0, 1fr);
+                grid-template-columns: minmax(0, 1fr) 20rem;
             }
 
-            .catalog-detail {
+            .catalog-rail {
+                grid-column: 1 / -1;
                 position: static;
                 max-height: none;
-                grid-column: 1 / -1;
+            }
+
+            #catalog-facets {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+                column-gap: 1.25rem;
+            }
+
+            .catalog-key dl {
+                grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+                column-gap: 1.25rem;
             }
         }
 
@@ -703,39 +878,31 @@
                 grid-template-columns: minmax(0, 1fr);
             }
 
-            .catalog-rail {
+            .catalog-detail {
                 position: static;
                 max-height: none;
             }
+        }
 
+        @media (max-width: 480px) {
             .cat-row {
-                grid-template-columns: minmax(0, 1fr) auto;
+                grid-template-columns: minmax(0, 1fr);
                 grid-template-areas:
-                    "id trust"
-                    "slots domain";
-                gap: 0.4rem 0.75rem;
-                padding: 0.65rem 0.9rem;
-            }
-
-            .cat-row-id {
-                grid-area: id;
+                    "id"
+                    "trust"
+                    "slots"
+                    "domain";
             }
 
             .cat-row-trust {
-                grid-area: trust;
-                align-self: start;
-            }
-
-            .cat-slots {
-                grid-area: slots;
-                grid-template-columns: repeat(3, minmax(0, 5.5rem));
-                justify-content: start;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-items: center;
+                text-align: left;
             }
 
             .cat-row-domain {
-                grid-area: domain;
-                text-align: right;
-                align-self: center;
+                justify-self: start;
             }
         }
 
@@ -1015,6 +1182,7 @@
         .catalog-detail pre {
             margin: 0;
             padding: 0.7rem 0.8rem;
+            padding-right: 5.25rem;
             border-radius: 6px;
             box-shadow: none;
         }
@@ -1028,27 +1196,59 @@
             overflow-wrap: anywhere;
         }
 
-        .copy-command {
-            margin-top: 0.5rem;
-            border: 1px solid var(--bc-blue);
-            border-radius: 4px;
-            background: var(--white);
-            color: var(--bc-blue);
+        /* One-click copy, added to every code block by the footer script. */
+        .code-block {
+            position: relative;
+            margin: 1rem 0;
+        }
+
+        .code-block > pre {
+            margin: 0;
+            padding-right: 5.75rem;
+        }
+
+        .catalog-detail .code-block {
+            margin: 0.4rem 0;
+        }
+
+        .code-copy {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            min-height: 2.25rem;
+            padding: 0.3rem 0.7rem;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
             font: inherit;
             font-size: 0.8125rem;
             font-weight: 600;
-            padding: 0.35rem 0.85rem;
             cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
         }
 
-        .copy-command:hover {
-            background: var(--bc-blue);
-            color: var(--white);
+        .code-copy:hover {
+            background: rgba(255, 255, 255, 0.22);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .code-copy.is-copied {
+            background: var(--bc-gold);
+            border-color: var(--bc-gold);
+            color: var(--bc-blue);
+        }
+
+        .code-copy svg {
+            flex-shrink: 0;
         }
 
         .shell-option:focus-visible,
-        .copy-command:focus-visible {
-            outline: 3px solid rgba(252, 186, 25, 0.5);
+        .code-copy:focus-visible {
+            outline: 3px solid rgba(252, 186, 25, 0.8);
             outline-offset: 2px;
         }
 
@@ -1228,15 +1428,49 @@
         }
 
         /* Responsive */
-        @media (max-width: 768px) {
+        /* A wrapped nav made the sticky header cover a third of small
+           screens, so below this width it scrolls away with the page. */
+        @media (max-width: 1100px) {
+            html {
+                scroll-padding-top: 1rem;
+            }
+
             .bc-header {
-                flex-direction: column;
-                text-align: center;
-                padding: 1rem;
+                position: relative;
             }
 
             .bc-nav {
-                justify-content: center;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                max-width: 100%;
+                scrollbar-width: thin;
+            }
+
+            .bc-nav > a {
+                white-space: nowrap;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .bc-header {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: left;
+                padding: 0.75rem 1rem 0.5rem;
+                gap: 0.5rem;
+            }
+
+            .bc-header-title {
+                font-size: 1.2rem;
+            }
+
+            .bc-nav {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .search-btn-kbd {
+                display: none;
             }
 
             .nav-dropdown-menu {
@@ -1548,6 +1782,7 @@
     <script src="assets/search.js" defer id="search-script"></script>
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="bc-header">
         <a href="index.html" class="bc-header-brand">
             <img src="assets/bc_citz_logo.jpg" alt="BC Government" class="bc-header-logo">
@@ -1556,14 +1791,13 @@
                 <div class="bc-header-subtitle">A shared catalogue of agent skill profiles</div>
             </div>
         </a>
-        <nav class="bc-nav">
+        <nav class="bc-nav" aria-label="Primary">
             <a href="index.html" class="{{NAV_INDEX}}">Home</a>
             <a href="getting-started.html" class="{{NAV_GETTING_STARTED}}">Get Started</a>
             <a href="catalog.html" class="{{NAV_CATALOG}}">Catalogue</a>
             <a href="consume.html" class="{{NAV_CONSUME}}">Consume</a>
             <a href="contribute.html" class="{{NAV_CONTRIBUTE}}">Contribute</a>
             <a href="spec.html" class="{{NAV_SPEC}}">Spec</a>
-            <a href="architecture.html" class="{{NAV_ARCHITECTURE}}">Pipeline</a>
             <a href="faq.html" class="{{NAV_FAQ}}">FAQ</a>
             <a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener" class="{{NAV_GITHUB}}">GitHub</a>
 
@@ -1601,6 +1835,6 @@
         </div>
     </div>
 
-    <main>
+    <main id="main-content" tabindex="-1">
         <!-- Breadcrumb: injected by search.js when arriving from a search result -->
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>

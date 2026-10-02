@@ -23,7 +23,7 @@
 
 <h2>Package contract</h2>
 
-<pre><code>skills/&lt;community-or-specialty&gt;/&lt;name&gt;/
+<pre data-no-copy><code>skills/&lt;community-or-specialty&gt;/&lt;name&gt;/
 ├── SKILL.md
 ├── bcgov-extension.yaml
 ├── scripts/       optional, flat files only
@@ -40,7 +40,10 @@
 
 <h2>Manual contribution</h2>
 
-<p>Marketplace maintainers working directly in this repository follow <a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>. This optional local path uses the repository's Python and <code>uv</code> toolchain:</p>
+<p>Marketplace maintainers working directly in this repository follow <a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>. This optional local path uses the repository's Python and <code>uv</code> toolchain. Clone the repository once:</p>
 
-<pre><code>make generate
-make verify</code></pre>
+<pre><code>git clone https://github.com/bcgov/agent-marketplace.git && cd agent-marketplace && make setup</code></pre>
+
+<p>Then regenerate the catalogue and run the full gate before opening a pull request:</p>
+
+<pre><code>make generate && make verify</code></pre>

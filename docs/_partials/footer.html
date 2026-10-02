@@ -21,7 +21,6 @@
                     <li><a href="consume.html">Consume a Skill</a></li>
                     <li><a href="contribute.html">Contribute a Skill</a></li>
                     <li><a href="spec.html">SKILL.md Spec</a></li>
-                    <li><a href="architecture.html">Pipeline &amp; Governance</a></li>
                     <li><a href="faq.html">FAQ</a></li>
                 </ul>
             </div>
@@ -42,10 +41,96 @@
 
     <script>
         (function () {
+            const COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+            const DONE_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+
+            const announcer = document.createElement('div');
+            announcer.className = 'visually-hidden';
+            announcer.setAttribute('aria-live', 'polite');
+            document.body.appendChild(announcer);
+
+            function copyText(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    return navigator.clipboard.writeText(text);
+                }
+                return new Promise(function (resolve, reject) {
+                    const scratch = document.createElement('textarea');
+                    scratch.value = text;
+                    scratch.setAttribute('readonly', '');
+                    scratch.style.position = 'fixed';
+                    scratch.style.opacity = '0';
+                    document.body.appendChild(scratch);
+                    scratch.select();
+                    const ok = document.execCommand('copy');
+                    scratch.remove();
+                    ok ? resolve() : reject(new Error('copy failed'));
+                });
+            }
+
+            function setButton(button, copied) {
+                button.classList.toggle('is-copied', copied);
+                button.innerHTML = (copied ? DONE_ICON : COPY_ICON) +
+                    '<span>' + (copied ? 'Copied' : 'Copy') + '</span>';
+            }
+
+            // Blocks marked data-no-copy are illustrations (trees, diagrams).
+            function enhanceCodeBlocks(root) {
+                (root || document).querySelectorAll('main pre:not([data-no-copy])').forEach(function (pre) {
+                    if (pre.parentElement.classList.contains('code-block')) return;
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'code-block';
+                    pre.parentNode.insertBefore(wrapper, pre);
+                    wrapper.appendChild(pre);
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'code-copy';
+                    button.setAttribute('aria-label', 'Copy to clipboard');
+                    setButton(button, false);
+                    wrapper.appendChild(button);
+                });
+            }
+            window.enhanceCodeBlocks = enhanceCodeBlocks;
+
+            document.addEventListener('click', function (event) {
+                const button = event.target.closest && event.target.closest('.code-copy');
+                if (!button) return;
+                const pre = button.parentElement.querySelector('pre');
+                const text = pre.textContent.replace(/\s+$/, '');
+                copyText(text).then(function () {
+                    setButton(button, true);
+                    announcer.textContent = 'Copied to clipboard';
+                }, function () {
+                    const range = document.createRange();
+                    range.selectNodeContents(pre);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    announcer.textContent = 'Copy failed. The text is selected; press Ctrl+C or Command+C.';
+                });
+                window.clearTimeout(button._resetTimer);
+                button._resetTimer = window.setTimeout(function () {
+                    setButton(button, false);
+                    announcer.textContent = '';
+                }, 2000);
+            });
+
+            enhanceCodeBlocks(document);
+
+            const activeNav = document.querySelector('.bc-nav > a.active');
+            if (activeNav) {
+                activeNav.setAttribute('aria-current', 'page');
+                if (activeNav.scrollIntoView && activeNav.parentElement.scrollWidth > activeNav.parentElement.clientWidth) {
+                    activeNav.scrollIntoView({ block: 'nearest', inline: 'center' });
+                }
+            }
+        })();
+
+        (function () {
             function scrollToWithHeaderOffset(el) {
                 if (!el) return;
                 const header = document.querySelector('.bc-header');
-                const offset = (header ? header.getBoundingClientRect().height : 0) + 16;
+                const sticky = header && getComputedStyle(header).position === 'sticky';
+                const offset = (sticky ? header.getBoundingClientRect().height : 0) + 16;
 
                 const top = el.getBoundingClientRect().top + window.scrollY - offset;
                 window.scrollTo({ top: Math.max(0, top) });

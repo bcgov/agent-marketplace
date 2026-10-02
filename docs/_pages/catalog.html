@@ -3,11 +3,11 @@
 
 <h1>Agent Extension Catalog</h1>
 
-<p>Every record here is generated from the exact package bytes at revision <code>842241b962849ad239e1e9c90589b6bc9c881e53</code>, and carries its source, digest, declared access, policy result, and named review evidence.</p>
+<p>Every record here is generated from the exact package bytes at revision <code>{{PUBLISHED_REVISION}}</code>, and carries its source, digest, declared access, policy result, and how far it was checked.</p>
 
 <div class="alert alert-info">
     <div class="alert-icon" aria-hidden="true">i</div>
-    <div><strong>Trust language is precise.</strong> Reviewed means named reviewers assessed the published revision and digest. It is not a claim that software is safe or verified secure. Third-party candidates do not appear here until review is published.</div>
+    <div><strong>Trust language is precise.</strong> <em>Auto-checked</em> means the exact bytes passed automated policy and content scanning. <em>Reviewed</em> means named reviewers assessed the published revision and digest. Neither is a claim that software is safe or verified secure. Third-party candidates do not appear here until review is published.</div>
 </div>
 
 <div class="catalog-app">
@@ -16,12 +16,29 @@
     <input id="catalog-search" class="catalog-search" type="search" placeholder="Search by task or tool" autocomplete="off" />
     <div id="catalog-facets"></div>
     <button type="button" id="catalog-reset" class="catalog-reset" hidden>Clear all filters</button>
+
+    <details class="catalog-key" id="catalog-key" open>
+      <summary>Symbol key</summary>
+      <h3>How far it was checked</h3>
+      <dl>
+        <div><dt><span class="trust-label" data-status="marketplace-reviewed">Reviewed</span></dt><dd>Named marketplace reviewers assessed the exact revision and digest.</dd></div>
+        <div><dt><span class="trust-label" data-status="domain-reviewed">Domain reviewed</span></dt><dd>A specialty owner, such as security, reviewed the exact revision and digest.</dd></div>
+        <div><dt><span class="trust-label" data-status="auto-scanned">Auto-checked</span></dt><dd>Passed automated policy and content scanning. No human review.</dd></div>
+        <div><dt><span class="trust-label" data-status="unreviewed">Unreviewed</span></dt><dd>No review evidence is published.</dd></div>
+      </dl>
+      <h3>Access level</h3>
+      <dl>
+        <div><dt><span class="cat-row-risk" data-risk="low">Low access</span></dt><dd>No commands, network, writes, or secrets. Not badged in the list.</dd></div>
+        <div><dt><span class="cat-row-risk" data-risk="elevated">Elevated access</span></dt><dd>Runs commands, reaches the network, or writes files.</dd></div>
+        <div><dt><span class="cat-row-risk" data-risk="high">High access</span></dt><dd>Combines secrets with commands or network, handles restricted data, or uses wildcards.</dd></div>
+      </dl>
+    </details>
   </form>
 
   <div class="catalog-results">
     <p class="catalog-status"><span id="catalog-count" aria-live="polite">Showing every extension</span></p>
     <ul class="catalog-legend">
-      <li>Access shown as declared by each extension</li>
+      <li>Access shown as declared by each extension. Crossed-out access is not declared.</li>
     </ul>
 
     <div id="published-skills" class="cat-list">
@@ -40,13 +57,11 @@
 
 <h2>Installing from this catalog</h2>
 
-<p>After checking a record's declared access and immutable source, install its exact path and revision. APM is preferred because it records the dependency and resolved bytes in a lockfile.</p>
+<p>Select any row above to get its exact, pinned install command with a one-click copy button. APM is preferred because it records the dependency and resolved bytes in a lockfile. For example, to install Repo Hardening into the current project:</p>
 
-<pre><code>apm install \
-  bcgov/agent-marketplace/skills/&lt;specialty&gt;/&lt;skill-name&gt;#842241b962849ad239e1e9c90589b6bc9c881e53 \
-  --target copilot</code></pre>
+<pre><code>apm install bcgov/agent-marketplace/skills/security/repo-hardening#{{PUBLISHED_REVISION}} --target copilot</code></pre>
 
-<p>If APM is unavailable, the finder offers a pinned <code>npx skills@1.5.23</code> command and recommends installing APM for future dependency and lockfile management. Both paths require confirmation.</p>
+<p>If APM is unavailable, the same panel offers a pinned <code>npx skills@{{INSTALLER_VERSION}}</code> command. The marketplace finder recommends installing APM for future dependency and lockfile management. Both paths require confirmation.</p>
 
 <p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
 
@@ -60,6 +75,11 @@
   const emptyState = document.getElementById('catalog-empty');
   const detail = document.getElementById('catalog-detail');
   const rail = document.getElementById('catalog-rail');
+
+  // The key sits above the list on small screens, so start it collapsed there.
+  if (window.matchMedia('(max-width: 900px)').matches) {
+    document.getElementById('catalog-key').open = false;
+  }
 
   const ACCESS_LABELS = {
     commands: 'Runs commands',
@@ -92,6 +112,7 @@
   const TRUST_LABELS = {
     'marketplace-reviewed': 'Reviewed',
     'domain-reviewed': 'Domain reviewed',
+    'auto-scanned': 'Auto-checked',
     'locally-scanned-not-bc-gov-reviewed': 'Scanned only',
     unreviewed: 'Unreviewed'
   };
@@ -101,6 +122,7 @@
   const TRUST_ORDER = [
     'marketplace-reviewed',
     'domain-reviewed',
+    'auto-scanned',
     'locally-scanned-not-bc-gov-reviewed',
     'unreviewed'
   ];
@@ -108,8 +130,15 @@
   const TRUST_EVIDENCE = {
     'marketplace-reviewed': 'Named reviewers assessed this exact revision and digest.',
     'domain-reviewed': 'A specialty owner reviewed this exact revision and digest. It is not marketplace reviewed.',
+    'auto-scanned': 'These exact bytes passed automated policy and content scanning. No human review is published for this record.',
     'locally-scanned-not-bc-gov-reviewed': 'Scanned locally. No BC Gov review evidence exists for it.',
     unreviewed: 'No review evidence is published for this record.'
+  };
+
+  const RISK_LABELS = {
+    low: 'Low',
+    elevated: 'Elevated',
+    high: 'High'
   };
 
   // Cache each row's filterable values once, so typing never re-reads the DOM.
@@ -228,7 +257,10 @@
         const disabled = count === 0 && !pressed ? ' disabled' : '';
         return `<li><button type="button" class="facet-option" data-facet="${group.key}" ` +
           `data-value="${option.value}" aria-pressed="${pressed}"${disabled}>` +
-          `<span>${option.label}</span><span class="facet-count">${count}</span></button></li>`;
+          (group.key === 'status'
+            ? `<span class="trust-label" data-status="${option.value}">${option.label}</span>`
+            : `<span>${option.label}</span>`) +
+          `<span class="facet-count">${count}</span></button></li>`;
       }).join('');
       return `<div class="catalog-facet"><h3>${group.title}</h3><ul>${options}</ul></div>`;
     }).join('');
@@ -291,12 +323,13 @@
     }
 
     const source = record.source || {};
-    const revision = source.revision || (record.review || {}).revision || 'not available';
+    const review = record.review || {};
+    const revision = source.revision || review.revision || 'not available';
     const sourceUrl = source.repository && source.path
       ? `${source.repository}/tree/${revision}/${source.path}`
       : null;
-    const status = (record.review || {}).status || 'unreviewed';
-    const reviewers = ((record.review || {}).reviewers || []).join(', ');
+    const status = review.status || 'unreviewed';
+    const reviewers = (review.reviewers || []).join(', ');
     const repoPath = (source.repository || '').replace(/^https?:\/\/github\.com\//, '');
 
     // Installation is activated only for active skills, so anything else says
@@ -319,8 +352,7 @@
         <button type="button" class="shell-option" aria-pressed="false" data-installer="npx">Skills CLI</button>
       </div>
       <pre aria-live="polite"><code id="install-command">${escapeHtml(commands.apm)}</code></pre>
-      <button type="button" class="copy-command" data-copy>Copy command</button>
-      <p class="install-note" id="install-rationale">APM records the dependency and resolved bytes in a lockfile. Pinned to the reviewed revision and digest, and installing still needs your confirmation.</p>`
+      <p class="install-note" id="install-rationale">APM records the dependency and resolved bytes in a lockfile. Pinned to the checked revision and digest, and installing still needs your confirmation.</p>`
       : `
       <h4>Install</h4>
       <p class="install-note">Installation is activated for active skills only. This record is
@@ -337,9 +369,12 @@
       <h4>Review</h4>
       <p>${escapeHtml(TRUST_EVIDENCE[status] || TRUST_EVIDENCE.unreviewed)}</p>
       <dl>
+        <div><dt>Trust</dt><dd><span class="trust-label" data-status="${escapeHtml(status)}">${escapeHtml(TRUST_LABELS[status] || status)}</span></dd></div>
+        ${review.risk ? `<div><dt>Access level</dt><dd><span class="cat-row-risk" data-risk="${escapeHtml(review.risk)}">${escapeHtml(RISK_LABELS[review.risk] || review.risk)}</span></dd></div>` : ''}
         <div><dt>Type</dt><dd>${escapeHtml(TYPE_LABELS[record.type] || record.type || 'Unknown')}</dd></div>
-        <div><dt>Reviewers</dt><dd>${escapeHtml(reviewers || 'Not published')}</dd></div>
+        <div><dt>Reviewers</dt><dd>${escapeHtml(reviewers || (status === 'auto-scanned' ? 'Automated scan only' : 'Not published'))}</dd></div>
         <div><dt>Policy</dt><dd>${escapeHtml((record.policy || {}).outcome || 'not available')}</dd></div>
+        ${typeof review.advisories === 'number' ? `<div><dt>Advisories</dt><dd>${review.advisories}</dd></div>` : ''}
         <div><dt>Maintainers</dt><dd>${escapeHtml((record.maintainers || []).join(', ') || 'Unknown')}</dd></div>
         <div><dt>License</dt><dd>${escapeHtml(record.license || 'Not specified')}</dd></div>
         <div><dt>Prerequisites</dt><dd>${escapeHtml((record.prerequisites || ['None declared']).join('; '))}</dd></div>
@@ -351,18 +386,18 @@
     `;
 
     if (installable) wireInstaller(commands);
+    if (window.enhanceCodeBlocks) window.enhanceCodeBlocks(detail);
   }
 
-  // Tabs swap the command text in place; the copy button reports back on the
-  // button itself so the result is visible where the action happened.
+  // Tabs swap the command text in place; the shared copy button always reads
+  // the command that is currently shown.
   function wireInstaller(commands) {
     const code = detail.querySelector('#install-command');
     const rationale = detail.querySelector('#install-rationale');
-    const copyButton = detail.querySelector('[data-copy]');
     const tabs = Array.from(detail.querySelectorAll('[data-installer]'));
     const NOTES = {
-      apm: 'APM records the dependency and resolved bytes in a lockfile. Pinned to the reviewed revision and digest, and installing still needs your confirmation.',
-      npx: 'Use this when APM is unavailable. It installs from the immutable tree at the reviewed revision; APM is still preferred because it adds a manifest and lockfile.'
+      apm: 'APM records the dependency and resolved bytes in a lockfile. Pinned to the checked revision and digest, and installing still needs your confirmation.',
+      npx: 'Use this when APM is unavailable. It installs from the immutable tree at the checked revision; APM is still preferred because it adds a manifest and lockfile.'
     };
 
     for (const tab of tabs) {
@@ -375,37 +410,8 @@
           other.classList.toggle('active', isActive);
           other.setAttribute('aria-pressed', String(isActive));
         }
-        copyButton.textContent = 'Copy command';
       });
     }
-
-    copyButton.addEventListener('click', async () => {
-      const text = code.textContent;
-      try {
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(text);
-        } else {
-          const scratch = document.createElement('textarea');
-          scratch.value = text;
-          scratch.setAttribute('readonly', '');
-          scratch.style.position = 'fixed';
-          scratch.style.opacity = '0';
-          document.body.appendChild(scratch);
-          scratch.select();
-          document.execCommand('copy');
-          scratch.remove();
-        }
-        copyButton.textContent = 'Copied';
-      } catch (error) {
-        copyButton.textContent = 'Press Ctrl+C to copy';
-        const range = document.createRange();
-        range.selectNodeContents(code);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-      }
-      window.setTimeout(() => { copyButton.textContent = 'Copy command'; }, 2000);
-    });
   }
 
   function select(row) {
@@ -414,7 +420,7 @@
       other.node.classList.toggle('is-selected', other.id === selectedId);
     }
     renderDetail(row);
-    if (window.matchMedia('(max-width: 1240px)').matches) {
+    if (window.matchMedia('(max-width: 900px)').matches) {
       detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
