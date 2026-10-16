@@ -139,13 +139,6 @@ jobs:
     needs: [fork-gate, lint-tests, skills, marketplace]
     runs-on: ubuntu-24.04
     steps:
-      - name: Fail if any required job failed or was cancelled
-        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
-        run: |
-          set -euo pipefail
-          echo "At least one required job failed or was cancelled."
-          echo '${{ toJSON(needs) }}'
-          exit 1
-
-      - name: All required jobs passed
-        run: echo "All required jobs passed (or were intentionally skipped)."
+      - uses: bcgov/actions/workflow-results@79aefe3a7abb2d0d00b1b3ea4cfbf12727a10638 # v0.9.0
+        with:
+          needs: ${{ toJson(needs) }}
