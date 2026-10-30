@@ -2,9 +2,9 @@
 <!-- NAV: index -->
 
 <section class="hero">
-    <span class="badge badge-gold">Agent Skills · GitHub backed</span>
+    <span class="badge badge-gold">Skills · Prompts · Instructions · Agents</span>
     <h1>BC Gov Agent Marketplace</h1>
-    <p>Find BC Gov Agent Skills by purpose, see exactly how far each one was checked, inspect its source and capabilities, and install immutable bytes with a project lockfile.</p>
+    <p>Find BC Gov agent assets, inspect their source, capabilities, and review evidence, then install skills or follow explicit import guidance for other formats.</p>
     <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
         <a href="catalog.html" class="hero-action primary">Browse catalog</a>
         <a href="getting-started.html" class="hero-action secondary">Install companions</a>
@@ -15,7 +15,7 @@
 
 <h2>Quick start</h2>
 
-<p>Install the two marketplace companions once per device with <a href="https://github.com/microsoft/apm" target="_blank" rel="noopener">APM</a>, then ask Copilot to find or create skills from any workspace. <a href="getting-started.html">Other install options and verification</a>.</p>
+<p>Install the two marketplace companions once per device with <a href="https://github.com/microsoft/apm" target="_blank" rel="noopener">APM</a>, then ask Copilot to find or create agent assets from any workspace. <a href="getting-started.html">Other install options and verification</a>.</p>
 
 <pre><code>apm install -g \
     bcgov/agent-marketplace/skills/community/bcgov-find-extension#{{RELEASE_TAG}} \
@@ -27,7 +27,7 @@
 <div class="grid grid-3">
     <a href="catalog.html" class="card-link"><div class="card card-gold" style="height:100%;"><h3>Browse checked records</h3><p>Compare purpose, owner, exact revision, digest, capabilities, policy outcome, and how far each record was checked &mdash; auto-scanned or human-reviewed &mdash; generated from package metadata.</p><div class="card-arrow">Open catalog</div></div></a>
     <a href="getting-started.html" class="card-link"><div class="card" style="height:100%;"><h3>Ask Copilot to find one</h3><p>Install the two global companions, then search and install a checked project skill from an ordinary-language request.</p><div class="card-arrow">Get started</div></div></a>
-    <a href="contribute.html" class="card-link"><div class="card" style="height:100%;"><h3>Turn work into a skill</h3><p>Create a valid package, scan and preview public output, and open a signed draft pull request without assembling repository files by hand.</p><div class="card-arrow">Create a skill</div></div></a>
+    <a href="contribute.html" class="card-link"><div class="card" style="height:100%;"><h3>Contribute an asset</h3><p>Package a skill, prompt, instruction, or agent definition, preview its public output, and open a signed draft pull request.</p><div class="card-arrow">Create an asset</div></div></a>
 </div>
 
 <h2>Trust is attached to bytes</h2>
@@ -43,4 +43,4 @@
 
 <h2>Marketplace boundary</h2>
 
-<p>The MVP publishes Agent Skills only. It does not publish hooks, MCP servers, custom agents, organization policy, or silent automatic execution. Installation always identifies a destination and requires confirmation.</p>
+<p>The MVP publishes skills, prompts, instructions, and agent definitions. Hooks, MCP servers, and silent automatic execution are out of scope. Installation or import always identifies a destination and requires confirmation.</p>

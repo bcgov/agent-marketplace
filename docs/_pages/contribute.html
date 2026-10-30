@@ -1,18 +1,18 @@
-<!-- TITLE: Create a Skill -->
+<!-- TITLE: Contribute an Asset -->
 <!-- NAV: contribute -->
 
-<h1>Create a Skill</h1>
+<h1>Contribute an Agent Asset</h1>
 
 <p>The creation companion owns the path from an idea in any workspace to a review-ready draft pull request. The contributor does not need a marketplace checkout, Python, or <code>uv</code>.</p>
 
-<pre><code>Turn this workflow idea into a BC Gov Agent Skill and prepare a draft pull request.</code></pre>
+<pre><code>Turn this workflow idea into a BC Gov agent asset and prepare a draft pull request.</code></pre>
 
 <h2>What it does</h2>
 
 <ol>
     <li>Searches the BC Gov catalog and every approved upstream source for equivalents.</li>
     <li>Asks which local files may become public and excludes sensitive or unselected material.</li>
-    <li>Creates the portable skill and closed marketplace metadata in an isolated staging directory using the hosted specification and schema.</li>
+    <li>Creates a skill, prompt, instruction, or agent definition with closed marketplace metadata in an isolated staging directory using the hosted specification and schema.</li>
     <li>Inventories public files and capabilities and performs a local content inspection without executing package scripts.</li>
     <li>Shows one preview containing upstream evidence, public files, capabilities, destination, known findings, and checks deferred to CI.</li>
     <li>After confirmation, uses an available GitHub integration or temporary checkout to open a draft pull request.</li>
@@ -25,12 +25,23 @@
 
 <pre data-no-copy><code>skills/&lt;community-or-specialty&gt;/&lt;name&gt;/
 ├── SKILL.md
-├── bcgov-extension.yaml
-├── scripts/       optional, flat files only
-├── references/    optional, flat files only
-└── assets/        optional, flat files only</code></pre>
+└── bcgov-extension.yaml
 
-<p>Hosted packages use Apache-2.0 and IDs of the form <code>bcgov-public/&lt;name&gt;</code>. Metadata declares prerequisites and all filesystem, network, command, environment-variable, secret-name, and data-class capabilities. Authors cannot set review fields.</p>
+prompts/&lt;community-or-specialty&gt;/&lt;name&gt;/
+├── prompt.prompt.md
+└── bcgov-extension.yaml
+
+instructions/&lt;community-or-specialty&gt;/&lt;name&gt;/
+├── instructions.instructions.md
+└── bcgov-extension.yaml
+
+agents/&lt;community-or-specialty&gt;/&lt;name&gt;/
+├── agent.agent.md
+└── bcgov-extension.yaml</code></pre>
+
+<p>Hosted packages use Apache-2.0 and IDs of the form <code>bcgov-public/&lt;name&gt;</code>. Metadata declares prerequisites, capabilities, and optional author-declared harness exclusions. An exclusion list is not a compatibility test. Authors cannot set review fields. The installer automates skills only; other types use explicit manual import guidance.</p>
+
+<p>Authors must be members of the GitHub <code>bcgov</code> organization. This is an eligibility proxy, not employment verification. If the workflow cannot confirm membership, it blocks the PR and explains the membership-token check to investigate.</p>
 
 <h2>Publication boundary</h2>
 

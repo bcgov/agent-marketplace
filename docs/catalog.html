@@ -1840,7 +1840,7 @@
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
 <h1 id="agent-extension-catalog">Agent Extension Catalog</h1>
 
-<p>Every record here is generated from the exact package bytes at revision <code>2046da7b0de0f673bf39208b35385c1516be4c75</code>, and carries its source, digest, declared access, policy result, and how far it was checked.</p>
+<p>Every record here is generated from the exact package bytes at revision <code>2046da7b0de0f673bf39208b35385c1516be4c75</code>, and carries its source, digest, declared access, policy result, and author-declared harness readiness.</p>
 
 <div class="alert alert-info">
     <div class="alert-icon" aria-hidden="true">i</div>
@@ -1879,7 +1879,7 @@
     </ul>
 
     <div id="published-skills" class="cat-list">
-<script type="application/json" id="catalog-vocabulary">{"installer-version": "1.5.23", "types": ["skill", "prompt", "instruction", "agent", "hook", "mcp"]}</script>
+<script type="application/json" id="catalog-vocabulary">{"installer-version": "1.5.23", "types": ["skill", "prompt", "instructions", "agent", "hook", "mcp"]}</script>
 
 <article class="cat-row" data-extension-id="bcgov-public/azure-networking"
   data-type="skill"
@@ -2075,19 +2075,19 @@
 
   <aside id="catalog-detail" class="catalog-detail" aria-live="polite" aria-label="Extension evidence">
     <h3 id="select-an-extension">Select an extension</h3>
-    <p>Choose any row to read its declared access, review evidence, immutable source, and install command.</p>
+    <p>Choose any row to read its declared access, review evidence, immutable source, and install or import guidance.</p>
   </aside>
 </div>
 
 <noscript><p>Filtering needs JavaScript. Every published extension is listed above, and <a href="assets/catalog.json"><code>catalog.json</code></a> holds the same records in machine-readable form.</p></noscript>
 
-<h2 id="installing-from-this-catalog">Installing from this catalog</h2>
+<h2 id="using-assets-from-this-catalog">Using assets from this catalog</h2>
 
-<p>Select any row above to get its exact, pinned install command with a one-click copy button. APM is preferred because it records the dependency and resolved bytes in a lockfile. For example, to install Repo Hardening into the current project:</p>
+<p>Skills have pinned installation commands; other asset types use their native import locations. Each command or import requires an explicit user action. The marketplace does not install assets silently.</p>
 
 <pre><code>apm install bcgov/agent-marketplace/skills/security/repo-hardening#2046da7b0de0f673bf39208b35385c1516be4c75 --target copilot</code></pre>
 
-<p>If APM is unavailable, the same panel offers a pinned <code>npx skills@1.5.23</code> command. The marketplace finder recommends installing APM for future dependency and lockfile management. Both paths require confirmation.</p>
+<p>If APM is unavailable, the same panel offers a pinned <code>npx skills@1.5.23</code> command. The marketplace finder recommends installing APM for future dependency and lockfile management. Other formats and their harness-specific import guidance are described in the <a href="asset-formats.html">asset format guide</a>.</p>
 
 <p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
 
@@ -2129,7 +2129,7 @@
   const TYPE_LABELS = {
     skill: 'Skill',
     prompt: 'Prompt',
-    instruction: 'Instruction',
+    instructions: 'Instructions',
     agent: 'Agent',
     hook: 'Hook',
     mcp: 'MCP server'
@@ -2358,9 +2358,13 @@
     const reviewers = (review.reviewers || []).join(', ');
     const repoPath = (source.repository || '').replace(/^https?:\/\/github\.com\//, '');
 
-    // Installation is activated only for active skills, so anything else says
-    // so plainly instead of offering a command that will not be honoured.
+    // The automated installer currently targets skills; other asset types use
+    // the documented native import path instead of a misleading command.
     const installable = record.type === 'skill' && record.lifecycle === 'active';
+    const notReadyOn = ((record.compatibility || {})['not-ready-on'] || []);
+    const readiness = notReadyOn.length
+      ? `Author-declared not ready on: ${notReadyOn.join(', ')}. These claims are not independently tested.`
+      : 'No harness exclusions are declared by the author. This is not a compatibility test result.';
     const commands = {
       apm: source.path
         ? `apm install ${repoPath}/${source.path}#${revision} --target copilot`
@@ -2380,10 +2384,10 @@
       <pre aria-live="polite"><code id="install-command">${escapeHtml(commands.apm)}</code></pre>
       <p class="install-note" id="install-rationale">APM records the dependency and resolved bytes in a lockfile. Pinned to the checked revision and digest, and installing still needs your confirmation.</p>`
       : `
-      <h4>Install</h4>
-      <p class="install-note">Installation is activated for active skills only. This record is
-      ${escapeHtml(record.lifecycle === 'active' ? `a ${record.type || 'non-skill'} extension` : `${record.lifecycle || 'not active'}`)},
-      so no install command is offered.</p>`;
+      <h4>Import</h4>
+      <p class="install-note">No automated install command is offered for this record. Follow the
+      <a href="asset-formats.html">manual import guidance</a>
+      for its asset type and target harness. Review the package and confirm its destination before importing.</p>`;
 
     detail.innerHTML = `
       <h3 id="escapehtmlrecorddisplay-name-extension">${escapeHtml(record['display-name'] || 'Extension')}</h3>
@@ -2391,6 +2395,9 @@
 
       <h4>What it can access</h4>
       ${accessDetail(record)}
+
+      <h4>Harness readiness</h4>
+      <p>${escapeHtml(readiness)}</p>
 
       <h4>Review</h4>
       <p>${escapeHtml(TRUST_EVIDENCE[status] || TRUST_EVIDENCE.unreviewed)}</p>

@@ -18,20 +18,28 @@ The repository includes two marketplace companion skills for GitHub Copilot:
 - `bcgov-find-extension` — searches catalog entries and shows evidence before installation guidance.
 - `bcgov-create-extension` — turns an idea or selected files into a draft package and submission workflow.
 
-Use the published marketplace revision. APM is preferred because it records an installer manifest and lockfile.
+Use the catalog release tag from the published catalog's `version` field. Do not install from a checkout whose `release-state` is `development`. The installer lock records the exact commit and package digest resolved from the tag. APM is preferred because it records an installer manifest and lockfile.
+
+Replace the example release tag and installer version below with the published catalog's `version` and `installer-version` values before running the commands. The quoted values keep the examples valid shell syntax until you replace them.
 
 ```bash
+RELEASE_TAG="catalog-YYYY.MM.DD"
+INSTALLER_VERSION="X.Y.Z"
+
 apm install \
-  bcgov/agent-marketplace/skills/community/bcgov-find-extension#<published-commit-sha> \
-  bcgov/agent-marketplace/skills/community/bcgov-create-extension#<published-commit-sha> \
+  "bcgov/agent-marketplace/skills/community/bcgov-find-extension#${RELEASE_TAG}" \
+  "bcgov/agent-marketplace/skills/community/bcgov-create-extension#${RELEASE_TAG}" \
   --target copilot
 ```
 
 If APM is not available, use the catalog-pinned Skills CLI fallback:
 
 ```bash
-npx skills@<catalog-installer-version> add \
-  https://github.com/bcgov/agent-marketplace/tree/<published-commit-sha> \
+RELEASE_TAG="catalog-YYYY.MM.DD"
+INSTALLER_VERSION="X.Y.Z"
+
+npx skills@"${INSTALLER_VERSION}" add \
+  "https://github.com/bcgov/agent-marketplace/tree/${RELEASE_TAG}" \
   --skill bcgov-find-extension --skill bcgov-create-extension \
   --agent github-copilot -y
 ```

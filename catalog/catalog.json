@@ -72,6 +72,9 @@
         ],
         "secret-names": []
       },
+      "compatibility": {
+        "not-ready-on": []
+      },
       "content-digest": "sha256:bbfa9c9bc082d1e009f9b30f0d4ec28df225d588b54c1809922f4ae8c577ae8c",
       "display-name": "Azure Networking",
       "files": [
@@ -148,7 +151,10 @@
         ],
         "secret-names": []
       },
-      "content-digest": "sha256:22545e020f12f15e388edb85b346115820940f6d09bb0ac006266a469a51f22d",
+      "compatibility": {
+        "not-ready-on": []
+      },
+      "content-digest": "sha256:55ba2bf7f5c048be39f7f093382bbe7818808416fe1d8a52624eaa582f931077",
       "display-name": "BC Gov Create Extension",
       "files": [
         {
@@ -158,23 +164,23 @@
         },
         {
           "path": "references/SUBMISSION.md",
-          "sha256": "42e6aa6f5cc9118fe66a9fde59d401b54517de662f2ff77317efd5eb3e1d13b7",
-          "size": 2262
+          "sha256": "06d1eed67427ebe2fbf79baa49615866cc0610fed82b859986af751f18c8ad47",
+          "size": 2524
         },
         {
           "path": "references/writing-agents.md",
-          "sha256": "bf369ad1cea753b64a50509c8d85fd207cfa00e6959ed4c03d311be4e12affb1",
-          "size": 1478
+          "sha256": "681a343e0d284a1ac5e2db06c7860383d9e380cfb52393f9aadcaec12ade210e",
+          "size": 1491
         },
         {
           "path": "references/writing-instructions.md",
-          "sha256": "2626b1495e95c747cad3b689e965fd6808c0a023abec9fece907d1ce102fb987",
-          "size": 1618
+          "sha256": "c5f340322719bccb5859b54961fde6906e2c09c6f804f481e0b8d2c22aff86e4",
+          "size": 1635
         },
         {
           "path": "references/writing-prompts.md",
-          "sha256": "8cde9c8935dd4337152e3b6d17b64566617b626e94ec35b198e0219d8f9e5d78",
-          "size": 1390
+          "sha256": "bbb47acea4fd626bb1de259f4478b097c23819c11140e5b90541d24b3b7dd0d5",
+          "size": 1401
         },
         {
           "path": "references/writing-skills.md",
@@ -183,8 +189,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "0ad2d9120a52c3305a96cee70ce619578857d366df11395dfc8b9997d1615671",
-          "size": 5195
+          "sha256": "0c7ee0c3f14cae0897d462ebac34a54f402f2775bb9bb2dc80651e91636f8bc1",
+          "size": 5132
         }
       ],
       "id": "bcgov-public/bcgov-create-extension",
@@ -205,7 +211,7 @@
       "publisher": "Province of British Columbia",
       "review": {
         "advisories": 0,
-        "content-digest": "sha256:22545e020f12f15e388edb85b346115820940f6d09bb0ac006266a469a51f22d",
+        "content-digest": "sha256:55ba2bf7f5c048be39f7f093382bbe7818808416fe1d8a52624eaa582f931077",
         "method": "automated-policy-scan",
         "policy-version": "bcgov-marketplace-policy/1.0",
         "reviewers": [],
@@ -240,7 +246,10 @@
         ],
         "secret-names": []
       },
-      "content-digest": "sha256:10e2500eddae9e3ee13ffb5dc1d480ac94ba1e9372b2bb7e66be37574a9057e0",
+      "compatibility": {
+        "not-ready-on": []
+      },
+      "content-digest": "sha256:9b2efd7efd60842ca9df3ccc3c18906c8191bc4f9945fb9fbf9cc69f629c2ceb",
       "display-name": "BC Gov Find Extension",
       "files": [
         {
@@ -250,8 +259,8 @@
         },
         {
           "path": "references/INSTALLATION.md",
-          "sha256": "6b634a230404732256970d7901c6331cb27be93456792cd4eee7252b3856849f",
-          "size": 2035
+          "sha256": "12ad79a730e63f7ad5f8ca08d7cf9297151ea3d7681a83e83cd4111b366ce94e",
+          "size": 2255
         },
         {
           "path": "references/THIRD_PARTY.md",
@@ -290,7 +299,7 @@
       "publisher": "Province of British Columbia",
       "review": {
         "advisories": 1,
-        "content-digest": "sha256:10e2500eddae9e3ee13ffb5dc1d480ac94ba1e9372b2bb7e66be37574a9057e0",
+        "content-digest": "sha256:9b2efd7efd60842ca9df3ccc3c18906c8191bc4f9945fb9fbf9cc69f629c2ceb",
         "method": "automated-policy-scan",
         "policy-version": "bcgov-marketplace-policy/1.0",
         "reviewers": [],
@@ -338,6 +347,9 @@
         "secret-names": [
           "GITHUB_TOKEN"
         ]
+      },
+      "compatibility": {
+        "not-ready-on": []
       },
       "content-digest": "sha256:ec33a9388c3b50a32fda77d8b0ef51194168dce7744927b5a3695fb0b05227d5",
       "display-name": "GitHub Actions",
@@ -427,6 +439,9 @@
           "www.first.org"
         ],
         "secret-names": []
+      },
+      "compatibility": {
+        "not-ready-on": []
       },
       "content-digest": "sha256:39c052747fa7d319576fdca00b44e1ad8b825dcbd9a1cb7abba3b6467828db1c",
       "display-name": "GitHub Repository Setup",
@@ -523,6 +538,9 @@
           "img.shields.io"
         ],
         "secret-names": []
+      },
+      "compatibility": {
+        "not-ready-on": []
       },
       "content-digest": "sha256:58310909cad7d5d52455fa78c40f81dd397e561f7f8f6cffc949dc3d6d0d5800",
       "display-name": "n8n Runbook Parser",
@@ -714,6 +732,9 @@
           "N8N_API_KEY"
         ]
       },
+      "compatibility": {
+        "not-ready-on": []
+      },
       "content-digest": "sha256:84146ec685ef4d17931f60c5d03f5dbdae320ff4274e501a35f0d22f144368e0",
       "display-name": "n8n Workflow Builder",
       "files": [
@@ -876,6 +897,9 @@
         ],
         "secret-names": []
       },
+      "compatibility": {
+        "not-ready-on": []
+      },
       "content-digest": "sha256:55fd1005c185c8e5210051568f7dcac7987171eeb8e8b6e3b1da17a31225060f",
       "display-name": "OpenShift Deployment",
       "files": [
@@ -959,6 +983,9 @@
         "secret-names": [
           "GITHUB_TOKEN"
         ]
+      },
+      "compatibility": {
+        "not-ready-on": []
       },
       "content-digest": "sha256:9fd010749fc81d20119daa1b504c89aa10ebde34f172d8277992720201d16355",
       "display-name": "Repo Hardening",

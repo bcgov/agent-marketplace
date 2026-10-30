@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Scaffold, preview, and submit hosted marketplace Agent Skills."""
+"""Scaffold, preview, and submit hosted marketplace agent assets."""
 
 from __future__ import annotations
 
@@ -19,11 +19,23 @@ class CreateError(Exception):
 
 EXTENSION_TYPE_STATUS = {
   "skill": "active",
-  "prompt": "reserved",
-  "instructions": "reserved",
-  "agent": "reserved",
+  "prompt": "active",
+  "instructions": "active",
+  "agent": "active",
   "hook": "deferred",
   "mcp": "deferred",
+}
+TYPE_DIRECTORIES = {
+  "skill": "skills",
+  "prompt": "prompts",
+  "instructions": "instructions",
+  "agent": "agents",
+}
+ARTIFACT_FILENAMES = {
+  "skill": "SKILL.md",
+  "prompt": "prompt.prompt.md",
+  "instructions": "instructions.instructions.md",
+  "agent": "agent.agent.md",
 }
 
 
@@ -57,13 +69,16 @@ def _run(command: list[str], cwd: Path, capture: bool = True) -> str:
   return result.stdout.strip() if capture else ""
 
 
-def _skill_dir(marketplace: Path, name: str, specialty: str = "community") -> Path:
-  """Validate a skill name and return its canonical package directory."""
+def _package_dir(
+  marketplace: Path, name: str, extension_type: str, specialty: str = "community"
+) -> Path:
+  """Validate package metadata and return its canonical asset directory."""
   if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name) or len(name) > 64:
-    raise CreateError("skill name must be kebab-case and at most 64 characters")
+    raise CreateError("extension name must be kebab-case and at most 64 characters")
+  _require_active_type(extension_type)
   if specialty not in {"community", "security"}:
     raise CreateError("specialty must be community or security")
-  return marketplace.resolve() / "skills" / specialty / name
+  return marketplace.resolve() / TYPE_DIRECTORIES[extension_type] / specialty / name
 
 
 def _skill_template(name: str, description: str, display_name: str) -> str:
@@ -103,6 +118,35 @@ no bundled references are required.
 """
 
 
+def _artifact_template(
+  extension_type: str, name: str, description: str, display_name: str
+) -> str:
+  """Render a portable starter file for one supported agent asset type."""
+  if extension_type == "skill":
+    return _skill_template(name, description, display_name)
+  frontmatter = {"description": description}
+  if extension_type in {"prompt", "agent"}:
+    frontmatter["name"] = name
+  if extension_type == "prompt":
+    frontmatter["agent"] = "agent"
+  serialized = yaml.safe_dump(
+    frontmatter, sort_keys=False, allow_unicode=False
+  ).rstrip()
+  body = {
+    "prompt": (
+      "Describe the user input, evidence to inspect, and one bounded deliverable."
+    ),
+    "instructions": (
+      "State the persistent guidance, its scope, and any important exceptions."
+    ),
+    "agent": (
+      "Define one focused responsibility, operating boundaries, and "
+      "completion criteria."
+    ),
+  }[extension_type]
+  return f"---\n{serialized}\n---\n\n# {display_name}\n\n{body}\n"
+
+
 def _manifest(args) -> dict:
   """Build author-controlled marketplace metadata for a new package."""
   return {
@@ -116,6 +160,7 @@ def _manifest(args) -> dict:
     "license": "Apache-2.0",
     "lifecycle": "active",
     "prerequisites": [],
+    "compatibility": {"not-ready-on": getattr(args, "not_ready_on", [])},
     "capabilities": {
       "filesystem": {"read": [], "write": []},
       "network": [],
@@ -128,46 +173,62 @@ def _manifest(args) -> dict:
 
 
 def initialize(args) -> dict:
-  """Create one new hosted skill package without overwriting existing work."""
-  _require_active_type(getattr(args, "extension_type", "skill"))
-  package = _skill_dir(args.marketplace, args.name, args.specialty)
-  if package.exists():
-    raise CreateError(f"package already exists: {package}")
+  """Create one new hosted asset package without overwriting existing work."""
+  extension_type = getattr(args, "extension_type", "skill")
+  marketplace = args.marketplace.resolve()
+  package = _package_dir(marketplace, args.name, extension_type, args.specialty)
+  for directory in TYPE_DIRECTORIES.values():
+    existing = marketplace / directory / args.specialty / args.name
+    if existing.exists():
+      raise CreateError(f"extension id is already in use: bcgov-public/{args.name}")
   package.mkdir(parents=True)
-  (package / "SKILL.md").write_text(
-    _skill_template(args.name, args.description, args.display_name), encoding="utf-8"
+  artifact_filename = ARTIFACT_FILENAMES[extension_type]
+  (package / artifact_filename).write_text(
+    _artifact_template(extension_type, args.name, args.description, args.display_name),
+    encoding="utf-8",
   )
   (package / "bcgov-extension.yaml").write_text(
     yaml.safe_dump(_manifest(args), sort_keys=False, allow_unicode=False),
     encoding="utf-8",
   )
-  return {"package": str(package), "files": ["SKILL.md", "bcgov-extension.yaml"]}
+  return {
+    "package": str(package),
+    "files": [artifact_filename, "bcgov-extension.yaml"],
+  }
 
 
-def _validate(marketplace: Path, name: str, specialty: str) -> list[dict]:
+def _validate(
+  marketplace: Path, name: str, specialty: str, extension_type: str = "skill"
+) -> list[dict]:
   """Run portable and marketplace gates without executing package scripts."""
-  package = _skill_dir(marketplace, name, specialty)
-  commands = [
-    ["uv", "run", "python", "scripts/validate_skill.py", str(package / "SKILL.md")],
-    ["uv", "run", "python", "scripts/marketplace.py", "analyze", str(package)],
-    ["uv", "run", "python", "scripts/marketplace.py", "generate"],
-    ["uv", "run", "pytest", "-q"],
-    ["uv", "run", "python", "scripts/marketplace.py", "validate"],
-  ]
+  package = _package_dir(marketplace, name, extension_type, specialty)
+  commands = []
+  if extension_type == "skill":
+    commands.append(
+      ["uv", "run", "python", "scripts/validate_skill.py", str(package / "SKILL.md")]
+    )
+  commands.extend(
+    [
+      ["uv", "run", "python", "scripts/marketplace.py", "analyze", str(package)],
+      ["uv", "run", "python", "scripts/marketplace.py", "generate"],
+      ["uv", "run", "pytest", "-q"],
+      ["uv", "run", "python", "scripts/marketplace.py", "validate"],
+    ]
+  )
   results = []
   for command in commands:
     results.append({"command": " ".join(command), "output": _run(command, marketplace)})
   return results
 
 
-def _public_diff(marketplace: Path, name: str, specialty: str = "community") -> str:
+def _public_diff(marketplace: Path, package_path: str) -> str:
   """Return tracked and untracked package and generated projection changes."""
   tracked = _run(
     [
       "git",
       "diff",
       "--",
-      f"skills/{specialty}/{name}",
+      package_path,
       "catalog",
       "docs/_generated",
       "docs/assets/catalog.json",
@@ -181,7 +242,7 @@ def _public_diff(marketplace: Path, name: str, specialty: str = "community") -> 
       "--others",
       "--exclude-standard",
       "--",
-      f"skills/{specialty}/{name}",
+      package_path,
     ],
     marketplace,
   )
@@ -204,17 +265,17 @@ def _public_diff(marketplace: Path, name: str, specialty: str = "community") -> 
 
 def preview(args) -> dict:
   """Validate and return the complete public package preview."""
-  _require_active_type(getattr(args, "extension_type", "skill"))
+  extension_type = getattr(args, "extension_type", "skill")
   marketplace = args.marketplace.resolve()
-  package = _skill_dir(marketplace, args.name, args.specialty)
+  package = _package_dir(marketplace, args.name, extension_type, args.specialty)
   if not package.is_dir():
     raise CreateError(f"package does not exist: {package}")
-  validation = _validate(marketplace, args.name, args.specialty)
+  validation = _validate(marketplace, args.name, args.specialty, extension_type)
   manifest = yaml.safe_load(
     (package / "bcgov-extension.yaml").read_text(encoding="utf-8")
   )
   changed = _run(["git", "status", "--short"], marketplace)
-  diff = _public_diff(marketplace, args.name, args.specialty)
+  diff = _public_diff(marketplace, package.relative_to(marketplace).as_posix())
   files = [
     path.relative_to(package).as_posix()
     for path in sorted(package.rglob("*"))
@@ -225,6 +286,7 @@ def preview(args) -> dict:
     "package": str(package),
     "files": files,
     "capabilities": manifest["capabilities"],
+    "compatibility": manifest.get("compatibility", {"not-ready-on": []}),
     "validation": validation,
     "working-tree": changed,
     "diff": diff,
@@ -245,9 +307,9 @@ def _confirm(assume_yes: bool) -> None:
 
 def submit(args) -> dict:
   """Create a signed package commit and open a draft pull request."""
-  _require_active_type(getattr(args, "extension_type", "skill"))
+  extension_type = getattr(args, "extension_type", "skill")
   marketplace = args.marketplace.resolve()
-  package = _skill_dir(marketplace, args.name, args.specialty)
+  package = _package_dir(marketplace, args.name, extension_type, args.specialty)
   if not package.is_dir():
     raise CreateError(f"package does not exist: {package}")
   current_branch = _run(["git", "branch", "--show-current"], marketplace)
@@ -255,9 +317,10 @@ def submit(args) -> dict:
     _run(["git", "switch", "-c", args.branch], marketplace)
   elif current_branch != args.branch:
     raise CreateError(f"checkout is on {current_branch!r}, expected {args.branch!r}")
-  _validate(marketplace, args.name, args.specialty)
+  _validate(marketplace, args.name, args.specialty, extension_type)
+  package_path = package.relative_to(marketplace).as_posix()
   allowed = (
-    f"skills/{args.specialty}/{args.name}/",
+    f"{package_path}/",
     "catalog/catalog.json",
     "docs/assets/catalog.json",
     "docs/_generated/catalog-cards.html",
@@ -277,20 +340,29 @@ def submit(args) -> dict:
     [
       "git",
       "add",
-      f"skills/{args.specialty}/{args.name}",
+      package_path,
       "catalog/catalog.json",
       "docs/assets/catalog.json",
       "docs/_generated/catalog-cards.html",
     ],
     marketplace,
   )
-  _run(["git", "commit", "-S", "-m", f"feat(skills): add {args.name}"], marketplace)
+  _run(
+    [
+      "git",
+      "commit",
+      "-S",
+      "-m",
+      f"feat(extensions): add {args.name}",
+    ],
+    marketplace,
+  )
   commit = _run(["git", "rev-parse", "HEAD"], marketplace)
   _run(["git", "push", "--set-upstream", "origin", args.branch], marketplace)
   body = "\n".join(
     [
       "## Summary",
-      f"Adds the `{args.name}` marketplace extension package.",
+      f"Adds the `{args.name}` {extension_type} marketplace extension package.",
       "",
       "## Upstream search",
       args.upstream_evidence,
@@ -336,6 +408,7 @@ def _parser() -> argparse.ArgumentParser:
   initialize_parser.add_argument("--display-name", required=True)
   initialize_parser.add_argument("--summary", required=True)
   initialize_parser.add_argument("--maintainer", action="append", required=True)
+  initialize_parser.add_argument("--not-ready-on", action="append", default=[])
   initialize_parser.add_argument(
     "--specialty", choices=["community", "security"], default="community"
   )

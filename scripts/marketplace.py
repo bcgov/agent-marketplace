@@ -19,8 +19,23 @@ from jsonschema import Draft202012Validator, FormatChecker
 SCHEMA_VERSION = "bcgov-extension/v1alpha1"
 POLICY_VERSION = "bcgov-marketplace-policy/1.0"
 MANIFEST_NAME = "bcgov-extension.yaml"
-ROOT_FILES = {"SKILL.md", MANIFEST_NAME}
-RESOURCE_DIRECTORIES = {"assets", "references", "scripts"}
+TYPE_DIRECTORIES = {
+  "skills": "skill",
+  "prompts": "prompt",
+  "instructions": "instructions",
+  "agents": "agent",
+  "hooks": "hook",
+  "mcp": "mcp",
+}
+ARTIFACT_FILES = {
+  "skills": "SKILL.md",
+  "prompts": "prompt.prompt.md",
+  "instructions": "instructions.instructions.md",
+  "agents": "agent.agent.md",
+}
+ROOT_FILES = {MANIFEST_NAME, *ARTIFACT_FILES.values()}
+RESOURCE_DIRECTORIES = {"agents", "assets", "references", "scripts"}
+SPECIALTIES = {"community", "security"}
 MAX_FILES = 100
 MAX_FILE_BYTES = 512 * 1024
 MAX_PACKAGE_BYTES = 2 * 1024 * 1024
@@ -167,14 +182,14 @@ def load_schema(root: Path) -> dict:
 def manifest_paths(root: Path) -> list[Path]:
   """Return hosted marketplace manifests in stable package-name order.
 
-  Canonical packages live under either the generic community bucket or a named
-  specialty area. The legacy flat layout is intentionally unsupported and is
-  excluded from the generated catalog.
+  Canonical packages live under one of the publishable type directories and
+  either the generic community bucket or a named specialty area. The legacy
+  flat layout is intentionally unsupported and excluded from the catalog.
   """
   candidates = []
-  skills_root = root / "skills"
-  candidates.extend(sorted(skills_root.glob(f"community/*/{MANIFEST_NAME}")))
-  candidates.extend(sorted(skills_root.glob(f"security/*/{MANIFEST_NAME}")))
+  for type_directory in ARTIFACT_FILES:
+    type_root = root / type_directory
+    candidates.extend(sorted(type_root.glob(f"*/*/{MANIFEST_NAME}")))
   seen = set()
   unique = []
   for path in candidates:
@@ -200,10 +215,51 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
   expected_id = f"bcgov-public/{path.parent.name}"
   if manifest.get("id") != expected_id:
     errors.append(f"{path}: id must be {expected_id!r}")
-  skill_path = path.parent / "SKILL.md"
-  if not skill_path.is_file():
-    errors.append(f"{path.parent}: missing SKILL.md")
+  parts = path.parts[-4:-1]
+  if len(parts) != 3 or parts[0] not in ARTIFACT_FILES or parts[1] not in SPECIALTIES:
+    errors.append(
+      f"{path.parent}: package must use a canonical type/specialty/name path"
+    )
+  else:
+    artifact_path = path.parent / ARTIFACT_FILES[parts[0]]
+    errors.extend(_validate_artifact(artifact_path, TYPE_DIRECTORIES[parts[0]], path))
   return manifest, errors
+
+
+def _validate_artifact(
+  path: Path, extension_type: str, manifest_path: Path
+) -> list[str]:
+  """Validate the portable frontmatter required by one declarative asset type."""
+  errors = []
+  if not path.is_file():
+    return [f"{manifest_path.parent}: missing {path.name}"]
+  try:
+    text = path.read_text(encoding="utf-8")
+  except (OSError, UnicodeError) as exc:
+    return [f"{path}: cannot read UTF-8 content: {exc}"]
+  if extension_type == "skill":
+    return [] if text.strip() else [f"{path}: content must not be empty"]
+  match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)", text, re.DOTALL)
+  if not match:
+    return [f"{path}: expected a YAML frontmatter block"]
+  try:
+    frontmatter = yaml.load(match.group(1), Loader=StrictSafeLoader)
+  except yaml.YAMLError as exc:
+    return [f"{path}: invalid YAML frontmatter: {exc}"]
+  if not isinstance(frontmatter, dict):
+    return [f"{path}: frontmatter must be a mapping"]
+
+  required = {
+    "prompt": {"description"},
+    "instructions": {"description"},
+    "agent": {"name", "description"},
+  }[extension_type]
+  for field in sorted(required):
+    if not isinstance(frontmatter.get(field), str) or not frontmatter[field].strip():
+      errors.append(f"{path}: frontmatter field {field!r} must be a non-empty string")
+  if not text[match.end() :].strip():
+    errors.append(f"{path}: content after frontmatter must not be empty")
+  return errors
 
 
 def _finding(
@@ -421,7 +477,7 @@ def intake_decision(
       f"capability risk '{risk}' exceeds the auto-publish ceiling '{ceiling}'"
     )
   if author_trusted is False:
-    reasons.append("author does not meet the account-tenure or org-membership bar")
+    reasons.append("author does not meet the community account-age threshold")
   if within_velocity is False:
     reasons.append("author exceeds the submission-velocity limit")
   if author_trusted is None or within_velocity is None:
@@ -440,6 +496,11 @@ def scan_package(package_dir: Path, manifest: dict) -> dict:
   """Scan package bytes without importing or executing contributed content."""
   files, findings = _regular_files(package_dir)
   declared_commands = set(manifest.get("capabilities", {}).get("commands", []))
+  type_directory = package_dir.parent.parent.name
+  expected_root_files = {
+    MANIFEST_NAME,
+    ARTIFACT_FILES.get(type_directory, "SKILL.md"),
+  }
   for field in capability_wildcards(manifest.get("capabilities", {}) or {}):
     findings.append(
       _finding(
@@ -463,7 +524,7 @@ def scan_package(package_dir: Path, manifest: dict) -> dict:
       findings.append(
         _finding("blocking", "hidden-path", relative, "hidden paths are not allowed")
       )
-    if (len(parts) == 1 and relative not in ROOT_FILES) or (
+    if (len(parts) == 1 and relative not in expected_root_files) or (
       len(parts) > 1 and (len(parts) != 2 or parts[0] not in RESOURCE_DIRECTORIES)
     ):
       findings.append(
@@ -472,6 +533,17 @@ def scan_package(package_dir: Path, manifest: dict) -> dict:
           "nested-resource",
           relative,
           "resources must be flat files under assets, references, or scripts",
+        )
+      )
+    if parts[0] == "agents" and (
+      type_directory != "skills" or relative != "agents/openai.yaml"
+    ):
+      findings.append(
+        _finding(
+          "blocking",
+          "unsupported-agent-metadata",
+          relative,
+          "only optional agents/openai.yaml metadata is supported",
         )
       )
     if path.name.lower() in BLOCKED_FILENAMES:
@@ -596,16 +668,8 @@ def analyze_submission(root: Path, package_dir: Path) -> dict:
   if errors or manifest is None:
     raise MarketplaceError("\n".join(errors))
   parts = prospective_path.split("/")
-  if (
-    len(parts) != 3
-    or parts[0] != "skills"
-    or parts[1]
-    not in {
-      "community",
-      "security",
-    }
-  ):
-    raise MarketplaceError("submission package must use a canonical skill path")
+  if len(parts) != 3 or parts[0] not in ARTIFACT_FILES or parts[1] not in SPECIALTIES:
+    raise MarketplaceError("submission package must use a canonical asset path")
   scan = scan_package(package_dir, manifest)
   files, structural_findings = _regular_files(package_dir)
   inventory = _inventory_regular_files(package_dir, files)
@@ -791,7 +855,6 @@ def _validate_community_intake(path: Path, intake: object) -> None:
     raise MarketplaceError(f"{path}: community-intake must be a mapping")
   allowed = {
     "min-account-age-days",
-    "require-verified-org-membership",
     "max-open-submissions-per-author",
     "max-new-packages-per-window",
     "window-days",
@@ -812,12 +875,6 @@ def _validate_community_intake(path: Path, intake: object) -> None:
       raise MarketplaceError(
         f"{path}: community-intake {key} must be a non-negative integer"
       )
-  if "require-verified-org-membership" in intake and not isinstance(
-    intake["require-verified-org-membership"], bool
-  ):
-    raise MarketplaceError(
-      f"{path}: community-intake require-verified-org-membership must be true or false"
-    )
   ceiling = intake.get("auto-publish-risk-ceiling", "elevated")
   if ceiling not in RISK_ORDER:
     raise MarketplaceError(
@@ -825,20 +882,10 @@ def _validate_community_intake(path: Path, intake: object) -> None:
     )
 
 
-TYPE_DIRECTORIES = {
-  "skills": "skill",
-  "prompts": "prompt",
-  "instructions": "instruction",
-  "agents": "agent",
-  "hooks": "hook",
-  "mcp": "mcp",
-}
-
 # Ordered by how likely a reader is to meet the type, not alphabetically.
-# Skills are the only publishable type today; prompts and instructions are
-# inert content and closest behind; agents, hooks, and MCP servers execute and
-# stay deferred until their runtime security models exist.
-EXTENSION_TYPE_ORDER = ["skill", "prompt", "instruction", "agent", "hook", "mcp"]
+# The first four types are declarative assets; hooks and MCP servers stay
+# deferred until their runtime security models exist.
+EXTENSION_TYPE_ORDER = ["skill", "prompt", "instructions", "agent", "hook", "mcp"]
 
 
 def _review_status(
@@ -906,17 +953,23 @@ def build_catalog(root: Path) -> tuple[dict, str]:
   config = load_marketplace_config(root)
   records = []
   errors = []
+  seen_ids = set()
   for path in manifest_paths(root):
     manifest, manifest_errors = validate_manifest(path, schema)
     errors.extend(manifest_errors)
     if manifest is None or manifest_errors:
       continue
+    if manifest["id"] in seen_ids:
+      errors.append(f"{path}: duplicate extension id {manifest['id']!r}")
+      continue
+    seen_ids.add(manifest["id"])
     package_dir = path.parent
     relative_path = package_dir.relative_to(root).as_posix()
     parts = relative_path.split("/")
     specialty = namespace_of(relative_path)
     record = {
       **manifest,
+      "compatibility": manifest.get("compatibility", {"not-ready-on": []}),
       "type": TYPE_DIRECTORIES.get(parts[0], "skill"),
       "specialty": specialty,
       "source": {
@@ -1159,7 +1212,7 @@ def _parser() -> argparse.ArgumentParser:
     "--author-trust",
     choices=["yes", "no", "unknown"],
     default="unknown",
-    help="whether the author cleared the tenure and org-membership checks",
+    help="whether the author cleared the community account-age threshold",
   )
   intake_parser.add_argument(
     "--velocity",

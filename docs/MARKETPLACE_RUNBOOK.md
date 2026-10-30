@@ -8,7 +8,19 @@ Acknowledge critical security reports within one business day and ordinary marke
 
 ## Access
 
-Contributors need permission to push an in-repository branch and must use signed commits. Fork pull requests fail closed. If access is missing, retain the validated isolated checkout and request contributor access through a support issue. Do not move unpublished package content to a public fork.
+Contributors need permission to push an in-repository branch, must use signed
+commits, and must be members of the GitHub `bcgov` organization. Membership is
+the contributor-eligibility proxy, not employment verification. Fork pull
+requests fail closed. If access is missing, retain the validated isolated
+checkout and request contributor access through a support issue. Do not move
+unpublished package content to a public fork.
+
+The `Community intake / intake` check must be required by the protected-branch
+ruleset for changes under `skills/`, `prompts/`, `instructions/`, and `agents/`.
+Configure `ORG_READ_TOKEN` as a repository or organization Actions secret with
+the membership-read permissions documented in
+[COMMUNITY_INTAKE_POLICY.md](COMMUNITY_INTAKE_POLICY.md). Without the required
+status check, the workflow may report failure without preventing a merge.
 
 ## Publish
 

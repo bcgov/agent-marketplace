@@ -32,6 +32,7 @@ declared shape.
 
 ## Marketplace status
 
-Prompts are reserved in the BC Gov marketplace. Produce a valid portable draft,
-but do not create a `prompts/` marketplace package or claim it can be submitted
-or installed until the schema, scanner, and target adapter are active.
+Prompts are an active marketplace asset type. Package the native
+`.prompt.md` content file with `bcgov-extension.yaml`, validate its frontmatter
+and policy metadata, and disclose harnesses where the author does not consider
+the prompt ready.

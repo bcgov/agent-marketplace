@@ -35,7 +35,7 @@ returns the promised output, and cannot enter a circular or premature handoff.
 
 ## Marketplace status
 
-Custom agents are reserved in the BC Gov marketplace. Produce a valid portable
-draft, but do not create an `agents/` marketplace package or claim it can be
-submitted or installed until the schema, scanner, and target adapter are
-active.
+Agent definitions are an active marketplace asset type. Package the native
+`.agent.md` content file with `bcgov-extension.yaml`, validate its frontmatter
+and policy metadata, and disclose harnesses where the author does not consider
+the agent ready.

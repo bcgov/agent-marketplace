@@ -14,22 +14,27 @@ If the result is not present in the catalog, the issue is not automatically trea
 
 ## Install a published extension safely
 
-Use the exact package path and immutable revision from the catalog.
+Use the catalog release tag from the published catalog's `version` field. The installer lock records the exact commit and package digest resolved from that tag. Do not use a checkout whose `release-state` is `development` as an install source.
 
 Preferred flow:
 
 ```bash
+RELEASE_TAG="catalog-YYYY.MM.DD"
+
 apm install \
-  bcgov/agent-marketplace/skills/community/<skill-name>#<published-commit-sha> \
+  "bcgov/agent-marketplace/skills/community/<skill-name>#${RELEASE_TAG}" \
   --target copilot
 ```
 
 Fallback flow:
 
 ```bash
-npx skills@<catalog-installer-version> add \
-  https://github.com/bcgov/agent-marketplace/tree/<published-commit-sha> \
-  --skill <skill-name> \
+RELEASE_TAG="catalog-YYYY.MM.DD"
+INSTALLER_VERSION="X.Y.Z"
+
+npx skills@"${INSTALLER_VERSION}" add \
+  "https://github.com/bcgov/agent-marketplace/tree/${RELEASE_TAG}" \
+  --skill "<skill-name>" \
   --agent github-copilot -y
 ```
 

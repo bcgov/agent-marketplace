@@ -21,15 +21,12 @@ reviews:
     status: domain-reviewed
     team: "@bcgov/security"
     content-digest: "sha256:9fd010749fc81d20119daa1b504c89aa10ebde34f172d8277992720201d16355"
-# Anti-abuse gate for the open community namespace. Community submissions are
-# not human-reviewed, so these limits are what stop a new or compromised
-# account from flooding the marketplace. The values are enforced at intake
-# (pull-request) time by the community-intake workflow.
+# Additional anti-abuse limits for community auto-publishing. Organization
+# membership is a required contributor gate for every active asset type.
 community-intake:
-  # An author must have belonged to the GitHub org for at least this many days.
+  # An author's GitHub account must be at least this old for community
+  # auto-publish eligibility; this is not a measurement of org tenure.
   min-account-age-days: 30
-  # The author must be a verified member of the bcgov organisation.
-  require-verified-org-membership: true
   # How many community submissions one author may have open at once.
   max-open-submissions-per-author: 3
   # How many brand-new packages one author may add within the window below.
