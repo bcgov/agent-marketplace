@@ -16,6 +16,7 @@
       --paper: #fff;
     }
     * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
     body { margin: 0; padding-bottom: 6rem; }
     button { font: inherit; cursor: pointer; }
     button:focus-visible, a:focus-visible { outline: 3px solid #006bb6; outline-offset: 3px; }
@@ -49,8 +50,6 @@
     .callout { background: #edf4fa; border-left: 4px solid var(--blue); padding: .75rem 1rem; margin: 1rem 0; }
     .warn { background: #fff4e0; border-left-color: #9c6100; }
     .failure { background: #fff2ef; border-left-color: #a23225; }
-    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-    .wide { grid-column: 1 / -1; }
     .workspace { display: grid; grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr); gap: 1rem; }
     .workspace nav { background: var(--blue); color: #fff; padding: 1.2rem; }
     .workspace nav a { display: block; padding: .65rem 0; color: #fff; border-bottom: 1px solid #ffffff55; }
@@ -62,7 +61,7 @@
     .switcher button { background: #fff; color: #123457; border: 0; border-radius: .3rem; min-width: 44px; min-height: 44px; }
     .switcher output { min-width: 12rem; text-align: center; font-weight: 700; }
     @media (max-width: 700px) {
-      .grid, .workspace { grid-template-columns: 1fr; }
+      .workspace { grid-template-columns: 1fr; }
       .workspace nav { display: none; }
       header span { display: block; margin-left: 0; }
       .switcher output { min-width: 8rem; font-size: .85rem; }
@@ -72,9 +71,14 @@
 <body>
   <header><strong>BC Gov Agent Marketplace</strong><span>Security checks / throwaway prototype, not a live check</span></header>
   <main>
-    <h1>What happens to an Extension after a PR?</h1>
-    <p class="intro">Compare three ways to explain rule ownership, actionable findings and revision-specific Catalogue evidence. All data below is illustrative; no submitted content is executed or scanned here.</p>
-    <div class="toolbar" role="group" aria-label="Example submission">
+    <h1>Security evidence in three places</h1>
+    <p class="intro">This is a storyboard, not one proposed product page. Security reviews rule changes in the repository; authors fix findings on their GitHub PR; Catalogue readers see evidence for the published revision. Choose whose view to inspect, then compare three possible presentations. All data is illustrative; nothing is scanned here.</p>
+    <div class="tabs" role="group" aria-label="Audience and surface">
+      <button type="button" data-context="policy" aria-pressed="false">Security / repository policy</button>
+      <button type="button" data-context="pr" aria-pressed="true">Author / GitHub PR</button>
+      <button type="button" data-context="catalogue" aria-pressed="false">Reader / Catalogue</button>
+    </div>
+    <div class="toolbar" id="example-revision" role="group" aria-label="Example submission">
       <strong>Example revision:</strong>
       <button type="button" id="held" aria-pressed="true">Held: missing declaration</button>
       <button type="button" id="eligible" aria-pressed="false">Eligible: corrected declaration</button>
@@ -87,10 +91,12 @@
     <button id="next" type="button" aria-label="Next layout">&#8594;</button>
   </div>
   <script>
-    // Three layouts of the same hypothetical flow, switchable with ?variant=A|B|C.
-    const variants = { A: "Contribution journey", B: "Review workspace", C: "Evidence record" };
+    // Three layouts of each hypothetical surface, switchable with ?variant=A|B|C.
+    const variants = { A: "Guided steps", B: "Working view", C: "Evidence sheet" };
+    const contexts = { policy: "Security / repository policy", pr: "Author / GitHub PR", catalogue: "Reader / Catalogue" };
     const params = new URLSearchParams(location.search);
     let variant = variants[params.get("variant")] ? params.get("variant") : "A";
+    let context = contexts[params.get("context")] ? params.get("context") : "pr";
     let held = true;
 
     function governance() {
@@ -124,33 +130,40 @@
         <div class="callout">Proposed filters: Extension type, Specialty, hosted versus External source, and check status. A badge indicates provenance and revision-specific evidence; External-source links must not inherit hosted-check badges.</div>`;
     }
     function journey() {
-      return `<section class="surface"><h2>From rule to result</h2>
-        <div class="step"><strong>1. Approve a shared policy</strong>${governance()}</div>
-        <div class="step"><strong>2. Submit and correct</strong>${author()}</div>
-        <div class="step"><strong>3. Inspect the merge box</strong>${checks()}</div>
-        <div class="step"><strong>4. Publish revision evidence</strong>${catalogue()}</div></section>`;
+      const steps = {
+        policy: `<div class="step"><strong>Propose a rule change</strong>${governance()}</div><div class="step"><strong>Publish approved policy</strong><p>A changed rule and its disposition take effect only after Security approves the policy PR. Pin the approved policy revision for subsequent scans.</p></div>`,
+        pr: `<div class="step"><strong>Fix the finding</strong>${author()}</div><div class="step"><strong>Check the exact revision</strong>${checks()}</div>`,
+        catalogue: `<div class="step"><strong>Inspect the published entry</strong>${catalogue()}</div>`
+      };
+      return `<section class="surface"><h2>${contexts[context]}</h2>${steps[context]}</section>`;
     }
     function workspace() {
-      return `<div class="workspace"><nav aria-label="Mock workspace sections">
-        <strong>Review workspace</strong><a href="#policy">Rule ownership</a><a href="#submission">Submission</a><a href="#checks">PR gates</a><a href="#catalogue">Catalogue</a></nav>
-        <div class="grid">
-          <section class="surface wide" id="submission">${author()}</section>
-          <section class="surface" id="checks">${checks()}</section>
-          <section class="surface" id="catalogue">${catalogue()}</section>
-          <section class="surface wide" id="policy">${governance()}</section>
-        </div></div>`;
+      const side = {
+        policy: `<strong>Repository policy PR</strong><p>Owner: Security</p><p>Integration: marketplace maintainers</p><p>Approval: Security before blocking</p>`,
+        pr: `<strong>GitHub PR checks</strong><p>Revision: ${held ? "a31f0c7" : "b74e231"}</p><p>Policy: v1.3</p><p>Status: ${held ? "held" : "eligible for other gates"}</p>`,
+        catalogue: `<strong>Catalogue filters</strong><p>Extension type</p><p>Specialty</p><p>Hosted / External source</p><p>Check status</p>`
+      };
+      const body = {
+        policy: `<section class="surface">${governance()}</section>`,
+        pr: `<section class="surface">${author()}</section><section class="surface">${checks()}</section>`,
+        catalogue: `<section class="surface">${catalogue()}</section>`
+      };
+      return `<div class="workspace"><nav aria-label="Mock context summary">${side[context]}</nav><div>${body[context]}</div></div>`;
     }
-    let activeTab = "Finding";
-    const records = { Policy: governance, Finding: author, "PR checks": checks, Catalogue: catalogue };
     function record() {
-      return `<section class="surface"><h2>Revision evidence sheet</h2>
-        <p>One record connects policy to the exact PR revision and, only after publishing, to its Catalogue entry. Select a record section to inspect its evidence.</p>
-        <div class="tabs" role="group" aria-label="Evidence section">${Object.keys(records).map(name => `<button type="button" aria-pressed="${activeTab === name}" data-tab="${name}">${name}</button>`).join("")}</div>
-        <div class="record" id="record-panel">${records[activeTab]()}</div></section>`;
+      const entries = {
+        policy: [["Owner and approval", "Security approves the versioned policy PR before new deterministic rules can block."], ["Rule and adapter", governance()]],
+        pr: [["Finding / next action", author()], ["Checks / merge conditions", checks()]],
+        catalogue: [["Published revision / evidence", catalogue()], ["Trust boundary", "Hosted check evidence applies to one published revision. External-source entries do not inherit its badges."]]
+      };
+      return `<section class="surface"><h2>${contexts[context]}: evidence sheet</h2>
+        <p>Fields are tied to the source they came from; a passed check is not a safety certification.</p>
+        ${entries[context].map(([label, detail]) => `<div class="record"><span class="label">${label}</span>${detail}</div>`).join("")}</section>`;
     }
     function render() {
       document.getElementById("prototype").innerHTML = ({ A: journey, B: workspace, C: record })[variant]();
-      document.querySelectorAll("[data-tab]").forEach(button => button.addEventListener("click", () => { activeTab = button.dataset.tab; render(); }));
+      document.querySelectorAll("[data-context]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.context === context)));
+      document.getElementById("example-revision").hidden = context === "policy";
       document.getElementById("variant-label").textContent = `${variant} / ${variants[variant]}`;
       document.getElementById("held").setAttribute("aria-pressed", String(held));
       document.getElementById("eligible").setAttribute("aria-pressed", String(!held));
@@ -162,6 +175,12 @@
       history.replaceState(null, "", `${location.pathname}?${params}${location.hash}`);
       render();
     }
+    document.querySelectorAll("[data-context]").forEach(button => button.addEventListener("click", () => {
+      context = button.dataset.context;
+      params.set("context", context);
+      history.replaceState(null, "", `${location.pathname}?${params}${location.hash}`);
+      render();
+    }));
     document.getElementById("previous").addEventListener("click", () => switchVariant(-1));
     document.getElementById("next").addEventListener("click", () => switchVariant(1));
     document.getElementById("held").addEventListener("click", () => { held = true; render(); });
