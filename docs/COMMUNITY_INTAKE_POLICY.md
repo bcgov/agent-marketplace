@@ -82,11 +82,20 @@ ceiling does not override the disabled flag.
 
 ## Honest limitations
 
-- **Membership follows GitHub's author association.** The workflow accepts only
-  pull requests GitHub identifies with `author_association: MEMBER`; other
-  associations fail closed. This uses GitHub's pull-request event metadata and
-  does not require an organization-readable token or additional repository
-  secret.
+- **Membership checks need an org-readable token.** The workflow uses
+  `ORG_READ_TOKEN`, with `github.token` as a fallback. GitHub returns `404` both
+  when the author is not a member and when the token lacks permission to read
+  membership, so a `404` cannot distinguish those cases by itself. For the
+  workflow to confirm membership, configure the repository or organization
+  Actions secret `ORG_READ_TOKEN` with a token owned by `bcgov`, organization
+  `Members: read` permission (or a classic token with `read:org` scope), and
+  organization approval. See GitHub's
+  [membership endpoint](https://docs.github.com/en/rest/orgs/members#check-organization-membership-for-a-user)
+  and
+  [fine-grained token permissions](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens).
+  A `404` blocks the PR with this ambiguity explained; other API, permission,
+  expiry, SSO, or rate-limit errors are reported separately. Fix the
+  token/configuration and rerun before treating a valid member as ineligible.
 - **Velocity is not yet resolved.** The workflow returns an unknown velocity
   signal and holds submissions rather than publishing without a working cap.
 - **This gate governs new submissions only.** Skills already in the tree are shown
