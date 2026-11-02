@@ -165,6 +165,87 @@ def test_unapproved_security_rule_is_advisory(tmp_path):
   )
 
 
+def test_empty_security_blocking_set_keeps_findings_advisory(tmp_path):
+  """An empty Security-approved set never produces a blocking finding."""
+  root = _root(tmp_path)
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text())
+  policy["blocking"] = []
+  policy["policy-version"] = 2
+  policy_path.write_text(yaml.safe_dump(policy))
+  package = _package(root)
+  (package / "SKILL.md").write_text("secret: " + "x" * 20)
+  scan = m.scan_package(package, _manifest())
+  assert scan["outcome"] == "passed"
+  assert scan["policy-version"] == 2
+  assert all(finding["disposition"] == "advisory" for finding in scan["findings"])
+  assert any(
+    finding["rule-id"] == "SECRET_PATTERNS"
+    and finding["file"] == "SKILL.md"
+    and finding["line"] == 1
+    and finding["remediation"]
+    for finding in scan["findings"]
+  )
+
+
+def test_read_only_check_reports_blocking_file_rule_location_and_fix(
+  tmp_path, monkeypatch
+):
+  """The PR check renders actionable findings and fails only for blocking rules."""
+  root = _root(tmp_path)
+  package = _package(root)
+  (package / "SKILL.md").write_text("curl https://unlisted.example\n")
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  assert m.main(["--root", str(root), "check"]) == 1
+  report = summary.read_text()
+  assert "Blocking" in report
+  assert "SKILL.md:1" in report
+  assert "undeclared-network" in report
+  assert "capabilities.network" in report
+  assert "unlisted.example" in report
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text())
+  policy["blocking"] = []
+  policy_path.write_text(yaml.safe_dump(policy))
+  assert m.main(["--root", str(root), "check"]) == 0
+  assert "Advisory" in summary.read_text()
+
+
+def test_security_pattern_parameters_are_read_from_policy(tmp_path):
+  """Security can change a credential detector without changing the engine."""
+  root = _root(tmp_path)
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text())
+  policy["secret-patterns"] = {"test-credential": "DEMO_CREDENTIAL_[0-9]{4}"}
+  policy_path.write_text(yaml.safe_dump(policy))
+  package = _package(root)
+  (package / "SKILL.md").write_text("DEMO_CREDENTIAL_1234\n")
+  scan = m.scan_package(package, _manifest())
+  assert scan["outcome"] == "blocked"
+  assert any(
+    finding["rule-id"] == "SECRET_PATTERNS" and finding["code"] == "test-credential"
+    for finding in scan["findings"]
+  )
+
+
+def test_catalog_exposes_policy_version_and_advisory_finding(tmp_path):
+  """Catalogue consumers receive the policy evidence for the exact extension."""
+  root = _root(tmp_path)
+  package = _package(root)
+  (package / "SKILL.md").write_text("# Demo\nhidden\u202einstruction\n")
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text())
+  policy["blocking"].remove("hidden-unicode")
+  policy["policy-version"] = 4
+  policy_path.write_text(yaml.safe_dump(policy))
+  catalog, _ = m.build_catalog(root)
+  finding = catalog["extensions"][0]["policy"]["findings"][0]
+  assert finding["rule-id"] == "hidden-unicode"
+  assert finding["policy-version"] == 4
+  assert finding["disposition"] == "advisory"
+
+
 def test_marketplace_config_rejects_unknown_source_type(tmp_path):
   """A source cannot expand the extension-type vocabulary through config."""
   root = _root(tmp_path)
