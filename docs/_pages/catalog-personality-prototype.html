@@ -1,0 +1,208 @@
+<!-- TITLE: Catalogue personality prototype (not for publication) -->
+<!-- NAV: catalog -->
+<!-- Three throwaway catalogue layouts on this page, switched via ?variant=A|B|C. -->
+
+<style>
+  .personality-prototype {
+    --navy: #003366;
+    --gold: #fcba19;
+    --ink: #313132;
+    --teal: #075e69;
+    --paper: #fff;
+    --line: #c6d1db;
+    color: var(--ink);
+    padding-bottom: 6rem;
+  }
+  .personality-prototype * { box-sizing: border-box; }
+  .personality-prototype h1,
+  .personality-prototype h2,
+  .personality-prototype h3 { border: 0; padding: 0; margin: 0; color: var(--navy); }
+  .personality-prototype h2::before { display: none; }
+  .personality-prototype h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.12; }
+  .personality-prototype h2 { font-size: 1.55rem; }
+  .personality-prototype p { margin: 0; max-width: 72ch; }
+  .personality-prototype a { color: var(--navy); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  .personality-prototype :focus-visible, .prototype-switcher :focus-visible {
+    outline: 3px solid #b26300; outline-offset: 3px;
+  }
+  .prototype-note {
+    border-left: 5px solid var(--gold); background: #fff8df;
+    padding: .8rem 1rem; margin-bottom: 1.5rem;
+  }
+  .prototype-variant { display: grid; gap: 1.6rem; }
+  .prototype-variant[hidden] { display: none; }
+  .prototype-lead { font-size: 1.12rem; margin-top: .6rem !important; }
+  .prototype-small { font-size: .89rem; color: #414952; }
+  .prototype-kicker { font-weight: 700; color: var(--teal); margin-bottom: .4rem !important; }
+  .prototype-list { list-style: none; margin: 0; padding: 0; }
+  .prototype-list li { margin: 0; }
+  .prototype-tag {
+    display: inline-block; font-size: .83rem; font-weight: 600;
+    border: 1px solid var(--line); padding: .15rem .55rem;
+    border-radius: .25rem; color: var(--navy); background: #fff;
+  }
+  .prototype-field {
+    display: block; width: 100%; padding: .9rem 1rem; border: 2px solid var(--navy);
+    background: white; font: inherit; border-radius: .35rem;
+  }
+  .prototype-hero { padding: 1.8rem; background: var(--paper); border-top: 6px solid var(--navy); }
+  .prototype-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+  .prototype-panel { padding: 1.35rem; background: white; border: 1px solid var(--line); }
+  .prototype-panel h2 { margin-bottom: .65rem; }
+  .prototype-panel ul { margin: .6rem 0 0; padding-left: 1.3rem; }
+  .prototype-panel li { margin: .55rem 0; }
+  .index-layout { display: grid; grid-template-columns: 14rem minmax(0, 1fr); gap: 1.2rem; }
+  .index-rail { background: #e5eef5; padding: 1.2rem; align-self: start; }
+  .index-rail li { border-top: 1px solid var(--line); padding: .7rem 0; }
+  .index-rail h2 { font-size: 1.2rem; }
+  .index-results { background: white; border-top: 5px solid var(--gold); }
+  .index-results h2 { padding: 1.1rem 1.3rem; }
+  .index-results li { display: grid; gap: .3rem; border-top: 1px solid var(--line); padding: 1rem 1.3rem; }
+  .index-results a { font-size: 1.12rem; font-weight: 700; }
+  .dispatch-hero { padding: 2rem; background: var(--navy); color: white; }
+  .dispatch-hero h1, .dispatch-hero .prototype-kicker { color: white; }
+  .dispatch-hero .prototype-lead { color: #e4ecf7; }
+  .dispatch-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(14rem, 1fr); gap: 1.2rem; }
+  .dispatch-stream { border-left: 5px solid var(--gold); padding-left: 1.2rem; }
+  .dispatch-stream article { background: white; padding: 1.25rem; margin-bottom: .7rem; }
+  .dispatch-stream article h3 { font-size: 1.2rem; margin: .45rem 0; }
+  .dispatch-aside { align-self: start; }
+  .bench-hero { background: #dceff0; padding: 1.8rem; border-left: 9px solid var(--teal); }
+  .bench-hero h1 { max-width: 15ch; }
+  .bench-hero label { display: block; font-weight: 700; margin: 1.2rem 0 .4rem; }
+  .bench-lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  .bench-lanes section { background: white; padding: 1.2rem; border-top: 5px solid var(--teal); }
+  .bench-lanes h2 { font-size: 1.25rem; }
+  .bench-lanes li { border-top: 1px solid var(--line); padding: .75rem 0; }
+  .prototype-switcher {
+    position: fixed; z-index: 1100; bottom: max(1rem, env(safe-area-inset-bottom));
+    left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: .5rem; border-radius: 2rem;
+    background: #002244; color: white; padding: .4rem .55rem; box-shadow: 0 6px 24px #0006;
+    max-width: calc(100vw - 1rem);
+  }
+  .prototype-switcher button {
+    min-width: 44px; min-height: 44px; border-radius: 50%; cursor: pointer;
+    background: var(--gold); border: 0; color: #002244; font: 700 1.3rem sans-serif;
+  }
+  .prototype-switcher strong { text-align: center; min-width: 12rem; font-size: .9rem; }
+  @media (max-width: 720px) {
+    .prototype-grid, .index-layout, .dispatch-layout, .bench-lanes { grid-template-columns: 1fr; }
+    .personality-prototype h1 { font-size: 2rem; }
+    .prototype-switcher strong { min-width: 8rem; font-size: .78rem; }
+  }
+</style>
+
+<div class="personality-prototype">
+  <p class="prototype-note"><strong>Throwaway prototype.</strong> Three layouts for discussion, not a released catalogue. Entries are real examples; any activity, scores, levels or dates below are explicitly illustrative and not derived from live data.</p>
+
+  <section class="prototype-variant" data-variant="A" aria-label="Field guide layout">
+    <div class="prototype-hero">
+      <p class="prototype-kicker">Field guide</p>
+      <h1>Find an Extension by the work you need to do.</h1>
+      <p class="prototype-lead">A reference-first catalogue: filter by Specialty, then inspect an Extension's capabilities and review evidence before installing.</p>
+    </div>
+    <div class="index-layout">
+      <aside class="index-rail">
+        <h2>Specialties</h2>
+        <ul class="prototype-list">
+          <li><a href="#a-results">Community</a></li>
+          <li><a href="#a-results">Security</a></li>
+        </ul>
+        <p class="prototype-small">A Specialty names the team responsible for domain review, not a ranking.</p>
+      </aside>
+      <section class="index-results" id="a-results">
+        <h2>Browse Extensions</h2>
+        <ul class="prototype-list">
+          <li><span class="prototype-tag">Community / Skill</span><a href="catalog.html">Azure Networking</a><p>Infrastructure guidance for Azure networking work.</p></li>
+          <li><span class="prototype-tag">Community / Skill</span><a href="catalog.html">GitHub Actions</a><p>Guidance for working with repository automation.</p></li>
+          <li><span class="prototype-tag">Security / Skill</span><a href="catalog.html">Repo Hardening</a><p>Security checks for a repository.</p></li>
+        </ul>
+      </section>
+    </div>
+    <div class="prototype-grid">
+      <section class="prototype-panel"><h2>Recently added</h2><p class="prototype-small">Show this only when published timestamps exist. “New this week” requires a reliable event date, not the build date.</p></section>
+      <section class="prototype-panel"><h2>Why this layout?</h2><p>Specialties work as browsable shelves, while review evidence stays attached to each Extension. No points or invented popularity signals.</p></section>
+    </div>
+  </section>
+
+  <section class="prototype-variant" data-variant="B" aria-label="Release desk layout" hidden>
+    <div class="dispatch-hero">
+      <p class="prototype-kicker">Release desk</p>
+      <h1>What changed in the catalogue?</h1>
+      <p class="prototype-lead">A time-ordered front page for repeat visitors, with the full catalogue one click away.</p>
+    </div>
+    <div class="dispatch-layout">
+      <section class="dispatch-stream">
+        <h2>Latest activity (illustrative)</h2>
+        <article><span class="prototype-tag">New Extension / date pending</span><h3>Azure Networking</h3><p>Newly published item, if the build can prove its first published date.</p></article>
+        <article><span class="prototype-tag">Updated / date pending</span><h3>GitHub Actions</h3><p>An update to published bytes, not a generic commit to the repository.</p></article>
+        <article><span class="prototype-tag">Specialty / Security</span><h3>Repo Hardening</h3><p>Inspect declared access and review evidence in the catalogue.</p></article>
+      </section>
+      <aside class="dispatch-aside prototype-panel">
+        <h2>Contributors (illustrative)</h2>
+        <p>Potential recognition: first merged contribution, or a monthly thank-you list. Reviewer credit needs actual reviews; maintainer names are not contribution counts.</p>
+        <ul><li>Contributor A / first contribution</li><li>Contributor B / reviewed this month</li></ul>
+        <p class="prototype-small">No leaderboard until eligibility, identity, opt-out and counting rules are agreed.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="prototype-variant" data-variant="C" aria-label="Specialty workbench layout" hidden>
+    <div class="bench-hero">
+      <h1>Choose a task. Find the right tool.</h1>
+      <p class="prototype-lead">A task-first workbench with Specialty lanes and candid evidence rather than a score.</p>
+      <label for="bench-search">Search by task or tool</label>
+      <input class="prototype-field" id="bench-search" type="search" placeholder="For example, deploy to OpenShift" disabled>
+      <p class="prototype-small">Search is visual only in this throwaway mockup.</p>
+    </div>
+    <div class="bench-lanes">
+      <section><h2>Community</h2><p>Shared practices that pass automated checks.</p><ul class="prototype-list"><li><a href="catalog.html">GitHub Repo Setup</a><br><span class="prototype-small">Skill / review evidence in detail</span></li><li><a href="catalog.html">OpenShift Deployment</a></li></ul></section>
+      <section><h2>Security</h2><p>Extensions owned by domain specialists.</p><ul class="prototype-list"><li><a href="catalog.html">Repo Hardening</a><br><span class="prototype-small">Skill / domain review evidence in detail</span></li></ul></section>
+      <section><h2>How to judge an Extension</h2><p>Possible maturity markers: draft, active, deprecated. These are lifecycle states, not game levels.</p><ul class="prototype-list"><li>Review evidence, not “verified safe”</li><li>Published revision, not install counts</li><li>Maintainer contact, not a leaderboard</li></ul></section>
+    </div>
+    <p class="prototype-small">A streak badge would require stable, opt-in contributor identity and meaningful eligible events; it is deliberately not shown here.</p>
+  </section>
+</div>
+
+<nav class="prototype-switcher" aria-label="Prototype variant selector">
+  <button type="button" id="prototype-prev" aria-label="Previous variant">←</button>
+  <strong id="prototype-current" aria-live="polite"></strong>
+  <button type="button" id="prototype-next" aria-label="Next variant">→</button>
+</nav>
+<script>
+  (() => {
+    const names = { A: 'A / Field guide', B: 'B / Release desk', C: 'C / Specialty workbench' };
+    const keys = Object.keys(names);
+    const label = document.getElementById('prototype-current');
+    let active = keys.includes(new URLSearchParams(location.search).get('variant'))
+      ? new URLSearchParams(location.search).get('variant') : 'A';
+
+    function show(key) {
+      active = key;
+      document.querySelectorAll('.prototype-variant').forEach(section => {
+        section.hidden = section.dataset.variant !== key;
+      });
+      label.textContent = names[key];
+      const url = new URL(location.href);
+      url.searchParams.set('variant', key);
+      history.replaceState(null, '', url);
+    }
+    function cycle(direction) {
+      show(keys[(keys.indexOf(active) + direction + keys.length) % keys.length]);
+    }
+    document.getElementById('prototype-prev').addEventListener('click', () => cycle(-1));
+    document.getElementById('prototype-next').addEventListener('click', () => cycle(1));
+    document.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      const target = event.target;
+      if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
+      cycle(event.key === 'ArrowRight' ? 1 : -1);
+    });
+    window.addEventListener('popstate', () => {
+      const key = new URLSearchParams(location.search).get('variant');
+      show(keys.includes(key) ? key : 'A');
+    });
+    show(active);
+  })();
+</script>
