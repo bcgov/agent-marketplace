@@ -1,20 +1,16 @@
 # What this marketplace is
 
-This repository is a BC Gov marketplace for reviewed agent extensions. It is designed to help teams discover, inspect, and install trusted extension packages with clear provenance and review evidence.
+This repository is a BC Gov marketplace for skills, prompts, instructions, and agent definitions. It is designed to help teams discover and inspect agent assets with clear provenance, capability declarations, and review evidence.
 
 The core idea is simple: an extension should not be installed on trust alone. Every published record is tied to a specific source repository, an immutable revision, a file inventory, and a policy result. When something is reviewed, the evidence is attached to that exact package state and not to a later change.
 
 ## The bigger picture
 
-This is not just a skills catalog. At the platform level, the repository is built around the broader idea of an extension marketplace for GitHub Copilot and related agent workflows.
-
-Skills are the first public extension type covered by the current marketplace implementation, but the repository metadata, catalog model, approval flow, and discovery policy are designed to accommodate other extension classes as the catalog matures. In other words, skills are the currently published and validated surface area, not the only extension family the system is prepared to support.
-
-That distinction matters because it keeps the repo honest:
-
-- the public catalog can currently hold reviewed skill packages;
-- the underlying model is not limited to a single extension form;
-- future catalog entries may include prompts, instructions, or agent-style extensions under the same trust and provenance controls.
+The public catalog supports four declarative asset types: skills, prompts,
+instructions, and agent definitions. Each has a canonical package format and
+uses the same provenance, capability, and review controls. Skills can use the
+marketplace installer; the other types have explicit, harness-specific manual
+import guidance.
 
 ## What the marketplace does
 
@@ -22,7 +18,8 @@ The marketplace helps users do three things:
 
 1. discover reviewed or candidate extensions;
 2. inspect the exact source and evidence before installation;
-3. install a pinned, immutable revision instead of an unnamed or drifting dependency.
+3. install a pinned, immutable skill revision or manually import another asset
+   after reviewing its source and target.
 
 It also gives maintainers a controlled path for review, quarantine, publication, and rollback.
 
@@ -42,9 +39,15 @@ This is intentionally stricter than a plain “download a package and run it” 
 
 ## What is currently in scope
 
-The current public implementation in this repo focuses on GitHub Copilot-compatible extension packages under the `skills/` layout, with a clear `SKILL.md` contract and validation path.
+The public implementation supports four declarative formats under
+`skills/`, `prompts/`, `instructions/`, and `agents/`. Package shape and
+metadata are validated, but the marketplace does not claim per-package runtime
+compatibility or model-quality testing. Authors can declare harnesses where an
+asset is not ready; an empty exclusion list is not a test result.
 
-That does not mean the marketplace concept is limited to skills in the middle of the architecture. The broader operating model is extension-agnostic, while the published MVP remains intentionally narrow and safe.
+GitHub `bcgov` organization membership is the contributor eligibility proxy.
+It is not proof of employment. Readers may browse and retrieve public packages
+without being members.
 
 ## What is intentionally out of scope
 
@@ -59,4 +62,5 @@ The marketplace is designed around explicit confirmation, source provenance, and
 
 ## In one sentence
 
-This repository is a GitHub-backed marketplace for trusted agent extensions, with skills as the first fully implemented public catalog type and a broader extension model behind the scenes.
+This repository is a GitHub-backed marketplace for four declarative agent
+asset types, with trust evidence attached to immutable package revisions.

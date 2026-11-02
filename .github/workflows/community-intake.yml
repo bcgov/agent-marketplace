@@ -1,26 +1,15 @@
 name: Community intake
 
-# Anti-abuse gate for the open skills/community/** namespace. Community skills
-# are not human-reviewed, so this workflow is what stops a new or compromised
-# account from flooding the marketplace. It resolves the author's tenure, org
-# membership, and open-submission count, then asks the tested decision function
-# in scripts/marketplace.py whether each changed community package may
-# auto-publish. It never publishes anything itself: it labels and, when a
-# submission must wait for a maintainer, fails so branch protection can hold the
-# merge.
+# Every active asset contributor must be a confirmed member of the bcgov
+# GitHub organization. Community packages also pass anti-abuse checks before
+# they may auto-publish; specialty packages still require human review. This
+# workflow never publishes anything itself.
 #
-# The decision logic lives in Python (marketplace.py intake) and is unit-tested.
-# This workflow only gathers the live GitHub signals the decision needs.
+# Community intake decisions live in Python (marketplace.py intake) and are
+# unit-tested. This workflow gathers the live GitHub signals they need.
 
 on:
   pull_request:
-    paths:
-      - "skills/community/**"
-      - "prompts/community/**"
-      - "instructions/community/**"
-      - "agents/community/**"
-      - "hooks/community/**"
-      - "mcp/community/**"
 
 # Deny-all baseline. The single job opts in to the narrow tokens it needs.
 permissions: {}
@@ -34,27 +23,80 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
+      issues: read
       pull-requests: write
     env:
       AUTHOR: ${{ github.event.pull_request.user.login }}
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       ORG: bcgov
-      # A token that can read org membership and search the author's open PRs.
-      # Falls back to the default job token, which cannot read private org
-      # membership; when membership cannot be confirmed the author is treated as
-      # untrusted and the submission is held (fail-safe).
+      # Must read org membership and search the author's open PRs. The default
+      # job token is a fallback only; inability to confirm membership blocks
+      # the PR and emits a diagnostic.
       GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
+      - name: Detect active asset changes
+        id: changes
+        run: |
+          set -euo pipefail
+
+          CHANGED="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          ACTIVE_ASSETS="$(printf '%s\n' "$CHANGED" \
+            | grep -E '^(skills|prompts|instructions|agents)/' || true)"
+          COMMUNITY_ASSETS="$(printf '%s\n' "$CHANGED" \
+            | grep -E '^(skills|prompts|instructions|agents)/community/' || true)"
+
+          if [ -n "$ACTIVE_ASSETS" ]; then
+            echo "has_assets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_assets=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [ -n "$COMMUNITY_ASSETS" ]; then
+            echo "has_community=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_community=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install uv
+        if: steps.changes.outputs.has_community == 'true'
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Verify contributor organization membership
+        id: membership
+        if: steps.changes.outputs.has_assets == 'true'
+        run: |
+          set -euo pipefail
+
+          set +e
+          RESPONSE="$(gh api --include "orgs/${ORG}/members/${AUTHOR}" 2>&1)"
+          API_EXIT=$?
+          set -e
+
+          if [ "$API_EXIT" -eq 0 ]; then
+            echo "member=yes" >> "$GITHUB_OUTPUT"
+            echo "Contributor membership confirmed for ${ORG}."
+            exit 0
+          fi
+
+          HTTP_STATUS="$(printf '%s\n' "$RESPONSE" \
+            | sed -nE 's#^HTTP/[0-9.]+[[:space:]]+([0-9]{3}).*#\1#p' \
+            | head -n 1)"
+          if [ "$HTTP_STATUS" = "404" ]; then
+            echo "::error::GitHub returned 404 for the membership check. This means either the author is not a bcgov member or ORG_READ_TOKEN cannot read organization membership. Configure ORG_READ_TOKEN with bcgov Members: read permission (or classic read:org scope), then rerun."
+          elif [ -n "$HTTP_STATUS" ]; then
+            echo "::error::Could not verify bcgov membership (GitHub HTTP ${HTTP_STATUS}). Check ORG_READ_TOKEN permissions, organization approval/SSO, token expiry, and GitHub API rate limits."
+          else
+            echo "::error::Could not reach the GitHub membership API. Check the workflow token and GitHub Actions network/API availability."
+          fi
+          exit 1
 
       - name: Resolve author trust and velocity signals
         id: signals
+        if: steps.changes.outputs.has_community == 'true'
         run: |
           set -euo pipefail
 
@@ -69,7 +111,6 @@ jobs:
           PY
           }
           MIN_AGE="$(read_cfg min-account-age-days)"
-          REQUIRE_ORG="$(read_cfg require-verified-org-membership)"
           MAX_OPEN="$(read_cfg max-open-submissions-per-author)"
 
           # Account age is measured from account creation (the public API does not
@@ -78,13 +119,6 @@ jobs:
           CREATED_AT="$(gh api "users/${AUTHOR}" --jq .created_at)"
           AGE_DAYS=$(( ( $(date -u +%s) - $(date -u -d "$CREATED_AT" +%s) ) / 86400 ))
 
-          # Org membership: 204 => member. Any other status (including a token
-          # that cannot read membership) => not confirmed.
-          ORG_MEMBER=no
-          if gh api "orgs/${ORG}/members/${AUTHOR}" --silent 2>/dev/null; then
-            ORG_MEMBER=yes
-          fi
-
           # Open community submissions by this author (velocity signal).
           OPEN_PRS="$(gh api -X GET search/issues \
             -f q="repo:${GITHUB_REPOSITORY} is:pr is:open author:${AUTHOR}" \
@@ -92,17 +126,17 @@ jobs:
 
           TRUST=yes
           if [ "$AGE_DAYS" -lt "$MIN_AGE" ]; then TRUST=no; fi
-          if [ "$REQUIRE_ORG" = "true" ] && [ "$ORG_MEMBER" != "yes" ]; then TRUST=no; fi
 
           VELOCITY=ok
           if [ "$OPEN_PRS" -gt "$MAX_OPEN" ]; then VELOCITY=exceeded; fi
 
           echo "trust=$TRUST" >> "$GITHUB_OUTPUT"
           echo "velocity=$VELOCITY" >> "$GITHUB_OUTPUT"
-          echo "Author=$AUTHOR age=${AGE_DAYS}d org_member=$ORG_MEMBER open_prs=$OPEN_PRS -> trust=$TRUST velocity=$VELOCITY"
+          echo "Author=$AUTHOR age=${AGE_DAYS}d org_member=yes open_prs=$OPEN_PRS -> trust=$TRUST velocity=$VELOCITY"
 
       - name: Decide intake for each changed community package
         id: decide
+        if: steps.changes.outputs.has_community == 'true'
         run: |
           set -euo pipefail
           TRUST="${{ steps.signals.outputs.trust }}"
@@ -110,7 +144,7 @@ jobs:
 
           # Changed community package directories (one bcgov-extension.yaml each).
           mapfile -t PKGS < <(git diff --name-only "$BASE_SHA" "$HEAD_SHA" \
-            | grep -E '^(skills|prompts|instructions|agents|hooks|mcp)/community/[^/]+/bcgov-extension\.yaml$' \
+            | grep -E '^(skills|prompts|instructions|agents)/community/[^/]+/bcgov-extension\.yaml$' \
             | xargs -r -n1 dirname | sort -u)
 
           if [ "${#PKGS[@]}" -eq 0 ]; then

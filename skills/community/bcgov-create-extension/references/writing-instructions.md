@@ -38,7 +38,7 @@ the intended files.
 
 ## Marketplace status
 
-Instructions are reserved in the BC Gov marketplace. Produce a valid portable
-draft, but do not create an `instructions/` marketplace package or claim it can
-be submitted or installed until the schema, scanner, and target adapter are
-active.
+Instructions are an active marketplace asset type. Package the native
+`.instructions.md` content file with `bcgov-extension.yaml`, validate the
+frontmatter and policy metadata, and disclose harnesses where the author does
+not consider the instructions ready.

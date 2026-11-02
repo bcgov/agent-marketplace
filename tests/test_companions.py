@@ -285,15 +285,51 @@ def test_sources_command_reads_generated_catalog(tmp_path, capsys):
   assert json.loads(capsys.readouterr().out)[0]["id"] == "example-skills"
 
 
-def test_creator_blocks_reserved_extension_types(tmp_path):
-  """Reserved types are routed to an explanation instead of scaffolding."""
+@pytest.mark.parametrize(
+  ("extension_type", "directory", "filename"),
+  [
+    ("skill", "skills", "SKILL.md"),
+    ("prompt", "prompts", "prompt.prompt.md"),
+    ("instructions", "instructions", "instructions.instructions.md"),
+    ("agent", "agents", "agent.agent.md"),
+  ],
+)
+def test_creator_scaffolds_every_declarative_asset_type(
+  tmp_path, extension_type, directory, filename
+):
+  """Every first-release declarative type gets a canonical package scaffold."""
   args = SimpleNamespace(
     marketplace=tmp_path,
-    name="release-notes",
-    extension_type="prompt",
+    name="demo",
+    extension_type=extension_type,
+    description="A test asset.",
+    display_name="Demo",
+    summary="A demo asset.",
+    maintainer=["@bcgov/platform-services"],
+    specialty="community",
+    support="https://github.com/bcgov/agent-marketplace/issues",
+    not_ready_on=["claude-code"],
+  )
+  result = creator.initialize(args)
+  package = tmp_path / directory / "community" / "demo"
+  assert result["package"] == str(package)
+  assert (package / filename).is_file()
+  manifest = yaml.safe_load(
+    (package / "bcgov-extension.yaml").read_text(encoding="utf-8")
+  )
+  assert manifest["compatibility"]["not-ready-on"] == ["claude-code"]
+
+
+@pytest.mark.parametrize("extension_type", ["hook", "mcp"])
+def test_creator_keeps_executable_integrations_deferred(tmp_path, extension_type):
+  """Executable integrations remain outside the first-release product boundary."""
+  args = SimpleNamespace(
+    marketplace=tmp_path,
+    name="demo",
+    extension_type=extension_type,
     specialty="community",
   )
-  with pytest.raises(creator.CreateError, match="reserved"):
+  with pytest.raises(creator.CreateError, match="deferred"):
     creator.initialize(args)
 
 
@@ -356,6 +392,31 @@ def test_staged_scanner_blocks_undeclared_capabilities(tmp_path):
     "undeclared-network",
     "undeclared-environment-variable",
   } <= blocking
+
+
+def test_staged_scanner_accepts_optional_codex_metadata(tmp_path):
+  """The optional Codex UI file does not make a skill package malformed."""
+  (tmp_path / "SKILL.md").write_text(
+    "---\nname: demo\ndescription: demo\n---\n# Demo\n", encoding="utf-8"
+  )
+  agents = tmp_path / "agents"
+  agents.mkdir()
+  (agents / "openai.yaml").write_text(
+    "interface:\n  display_name: Demo\n", encoding="utf-8"
+  )
+  assert finder.scan_staged(tmp_path)["outcome"] == "passed"
+
+
+def test_staged_scanner_rejects_unrelated_agent_metadata(tmp_path):
+  """Only Codex's optional UI file is permitted in a skill agents/ directory."""
+  (tmp_path / "SKILL.md").write_text(
+    "---\nname: demo\ndescription: demo\n---\n# Demo\n", encoding="utf-8"
+  )
+  agents = tmp_path / "agents"
+  agents.mkdir()
+  (agents / "other.yaml").write_text("name: other\n", encoding="utf-8")
+  result = finder.scan_staged(tmp_path)
+  assert "unsupported-agent-metadata" in {item["code"] for item in result["findings"]}
 
 
 def test_immutable_source_validation_and_archive_paths(monkeypatch, tmp_path):
@@ -542,7 +603,7 @@ def test_creator_public_diff_includes_all_untracked_package_files(tmp_path):
   package.mkdir(parents=True)
   (package / "SKILL.md").write_text("# Demo\n", encoding="utf-8")
   (package / "bcgov-extension.yaml").write_text("id: demo\n", encoding="utf-8")
-  diff = creator._public_diff(tmp_path, "demo")
+  diff = creator._public_diff(tmp_path, "skills/community/demo")
   assert "+++ b/skills/community/demo/SKILL.md" in diff
   assert "+++ b/skills/community/demo/bcgov-extension.yaml" in diff
   assert "+# Demo" in diff
@@ -578,13 +639,59 @@ def test_getting_started_describes_portable_marketplace_workflows():
   assert "--global" not in page
 
 
+def test_install_docs_pin_the_catalog_release_tag():
+  """Consumer install guides use the published tag and lock-verified revision."""
+  paths = (
+    ROOT / "docs" / "getting-started.md",
+    ROOT / "docs" / "how-to-use-the-marketplace.md",
+    ROOT
+    / "skills"
+    / "community"
+    / "bcgov-find-extension"
+    / "references"
+    / "INSTALLATION.md",
+  )
+  for path in paths:
+    content = " ".join(path.read_text(encoding="utf-8").lower().split())
+    assert "catalog release tag" in content
+    assert "release_tag" in content
+
+
 def test_catalog_ids_match_hosted_manifests():
   """Generated catalog count and IDs exactly match hosted package manifests."""
   catalog = json.loads((ROOT / "catalog" / "catalog.json").read_text())
   package_ids = {
     f"bcgov-public/{path.parent.name}"
-    for path in (ROOT / "skills").glob("*/*/bcgov-extension.yaml")
+    for asset_type in ("skills", "prompts", "instructions", "agents")
+    for path in (ROOT / asset_type).glob("*/*/bcgov-extension.yaml")
   }
   catalog_ids = {record["id"] for record in catalog["extensions"]}
   assert catalog["count"] == len(package_ids)
   assert catalog_ids == package_ids
+
+
+def test_asset_format_guide_documents_supported_types_and_claim_limits():
+  """The public guide distinguishes supported formats from tested compatibility."""
+  page = (ROOT / "docs" / "_pages" / "asset-formats.html").read_text(encoding="utf-8")
+  spec = (ROOT / "spec" / "ASSET_SPEC.md").read_text(encoding="utf-8")
+  for extension_type in ("Skill", "Prompt", "Instructions", "Agent"):
+    assert extension_type in page
+  assert "not-ready-on" in spec
+  assert "does not mean the asset was runtime-tested" in spec
+  assert "openai.yaml" in spec
+
+
+def test_contributor_eligibility_workflow_gates_all_active_asset_types():
+  """Every active asset PR gets the fail-closed bcgov membership check."""
+  workflow = (ROOT / ".github" / "workflows" / "community-intake.yml").read_text(
+    encoding="utf-8"
+  )
+  for asset_type in ("skills", "prompts", "instructions", "agents"):
+    assert asset_type in workflow
+  assert "^(skills|prompts|instructions|agents)/" in workflow
+  assert "paths:" not in workflow
+  assert "Detect active asset changes" in workflow
+  assert "if: steps.changes.outputs.has_assets == 'true'" in workflow
+  assert 'gh api --include "orgs/${ORG}/members/${AUTHOR}"' in workflow
+  assert "GitHub returned 404 for the membership check" in workflow
+  assert "Members: read permission" in workflow

@@ -43,8 +43,15 @@ MAX_FILES = 100
 MIN_MATCH_SCORE = 8
 ACTIVE_EXTENSION_TYPES = {"skill"}
 KNOWN_EXTENSION_TYPES = {"skill", "prompt", "instructions", "agent", "hook", "mcp"}
-ROOT_FILES = {"SKILL.md"}
-RESOURCE_DIRECTORIES = {"assets", "references", "scripts"}
+PUBLISHABLE_EXTENSION_TYPES = {"skill", "prompt", "instructions", "agent"}
+ARTIFACT_FILES = {
+  "skill": "SKILL.md",
+  "prompt": "prompt.prompt.md",
+  "instructions": "instructions.instructions.md",
+  "agent": "agent.agent.md",
+}
+ROOT_FILES = {*ARTIFACT_FILES.values(), "bcgov-extension.yaml"}
+RESOURCE_DIRECTORIES = {"agents", "assets", "references", "scripts"}
 ALLOWED_SUFFIXES = {
   ".css",
   ".html",
@@ -249,9 +256,15 @@ def _github_archive_url(repository: str, revision: str) -> str:
 
 
 def stage_package(
-  repository: str, revision: str, package_path: str, target: Path
+  repository: str,
+  revision: str,
+  package_path: str,
+  target: Path,
+  extension_type: str = "skill",
 ) -> None:
   """Extract only one package path from an immutable GitHub archive."""
+  if extension_type not in PUBLISHABLE_EXTENSION_TYPES:
+    raise FinderError(f"unsupported extension type: {extension_type}")
   package = PurePosixPath(package_path)
   if package.is_absolute() or ".." in package.parts or not package.parts:
     raise FinderError("package path must be a non-empty repository-relative path")
@@ -284,8 +297,9 @@ def stage_package(
         raise FinderError(f"archive file exceeds size limit: {relative}")
       destination.write_bytes(content)
       destination.chmod(0o644)
-  if not (target / "SKILL.md").is_file():
-    raise FinderError("resolved package does not contain SKILL.md")
+  artifact_file = ARTIFACT_FILES[extension_type]
+  if not (target / artifact_file).is_file():
+    raise FinderError(f"resolved package does not contain {artifact_file}")
 
 
 def inventory(package: Path) -> list[dict]:
@@ -320,10 +334,16 @@ def tree_digest(file_inventory: list[dict]) -> str:
   return f"sha256:{digest.hexdigest()}"
 
 
-def scan_staged(package: Path, capabilities: dict | None = None) -> dict:
+def scan_staged(
+  package: Path, capabilities: dict | None = None, extension_type: str = "skill"
+) -> dict:
   """Apply deterministic local policy without executing staged content."""
   findings = []
   total = 0
+  if extension_type not in PUBLISHABLE_EXTENSION_TYPES:
+    raise FinderError(f"unsupported extension type: {extension_type}")
+  artifact_file = ARTIFACT_FILES[extension_type]
+  expected_root_files = {artifact_file, "bcgov-extension.yaml"}
   files = inventory(package)
   if len(files) > MAX_FILES:
     findings.append(_finding("blocking", "file-count", ".", 0))
@@ -339,10 +359,14 @@ def scan_staged(package: Path, capabilities: dict | None = None) -> dict:
     parts = PurePosixPath(relative).parts
     if any(part.startswith(".") for part in parts):
       findings.append(_finding("blocking", "hidden-path", relative, 0))
-    if (len(parts) == 1 and relative not in ROOT_FILES) or (
+    if (len(parts) == 1 and relative not in expected_root_files) or (
       len(parts) > 1 and (len(parts) != 2 or parts[0] not in RESOURCE_DIRECTORIES)
     ):
       findings.append(_finding("blocking", "nested-resource", relative, 0))
+    if parts[0] == "agents" and (
+      extension_type != "skill" or relative != "agents/openai.yaml"
+    ):
+      findings.append(_finding("blocking", "unsupported-agent-metadata", relative, 0))
     if path.name.lower() in BLOCKED_NAMES:
       findings.append(_finding("blocking", "blocked-extension-type", relative, 0))
     if path.suffix.lower() not in ALLOWED_SUFFIXES:
@@ -393,11 +417,14 @@ def scan_staged(package: Path, capabilities: dict | None = None) -> dict:
             )
   if total > MAX_PACKAGE_BYTES:
     findings.append(_finding("blocking", "package-size", ".", 0))
-  skill_text = (package / "SKILL.md").read_text(encoding="utf-8", errors="replace")
+  artifact_path = package / artifact_file
+  asset_text = artifact_path.read_text(encoding="utf-8", errors="replace")
   if not re.match(
-    r"^---\s*\n(?:(?!\n---\s*$).)*\n---\s*\n", skill_text, re.DOTALL | re.MULTILINE
+    r"^---\s*\n(?:(?!\n---\s*$).)*\n---\s*\n",
+    asset_text,
+    re.DOTALL | re.MULTILINE,
   ):
-    findings.append(_finding("blocking", "malformed-skill-metadata", "SKILL.md", 1))
+    findings.append(_finding("blocking", "malformed-asset-metadata", artifact_file, 1))
   findings.sort(
     key=lambda item: (item["severity"], item["path"], item["line"], item["code"])
   )
@@ -579,7 +606,9 @@ def _scan_source(args) -> dict:
   with tempfile.TemporaryDirectory(prefix="bcgov-rescan-") as directory:
     staged = Path(directory) / "package"
     staged.mkdir()
-    stage_package(args.repository, args.revision, args.path, staged)
+    stage_package(
+      args.repository, args.revision, args.path, staged, args.extension_type
+    )
     file_inventory = inventory(staged)
     capabilities = getattr(args, "capabilities", None)
     if capabilities is None and hasattr(args, "read"):
@@ -592,7 +621,7 @@ def _scan_source(args) -> dict:
       },
       "package-tree-digest": tree_digest(file_inventory),
       "files": file_inventory,
-      "scan": scan_staged(staged, capabilities),
+      "scan": scan_staged(staged, capabilities, args.extension_type),
     }
 
 
@@ -706,7 +735,9 @@ def _third_party_install(args) -> dict:
   with tempfile.TemporaryDirectory(prefix="bcgov-candidate-") as directory:
     staged = Path(directory) / "package"
     staged.mkdir()
-    stage_package(args.repository, args.revision, args.path, staged)
+    stage_package(
+      args.repository, args.revision, args.path, staged, args.extension_type
+    )
     scan = scan_staged(staged, capabilities)
     digest = tree_digest(inventory(staged))
     preview = {
@@ -843,7 +874,9 @@ def _parser() -> argparse.ArgumentParser:
   scan_source.add_argument("--repository", required=True)
   scan_source.add_argument("--revision", required=True)
   scan_source.add_argument("--path", required=True)
-  scan_source.add_argument("--extension-type", default="skill")
+  scan_source.add_argument(
+    "--extension-type", choices=sorted(PUBLISHABLE_EXTENSION_TYPES), default="skill"
+  )
   _add_capability_arguments(scan_source)
   register_parser = commands.add_parser("register")
   register_parser.add_argument("--receipt", type=Path, required=True)
@@ -871,10 +904,6 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "install-third-party":
       result = _third_party_install(args)
     elif args.command == "scan-source":
-      if args.extension_type not in ACTIVE_EXTENSION_TYPES:
-        raise FinderError(
-          f"extension type is {args.extension_type!r}; scanning is not active"
-        )
       result = _scan_source(args)
     elif args.command == "register":
       result = _retry_registration(args)

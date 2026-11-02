@@ -1,5 +1,9 @@
 # SKILL.md Spec
 
+The marketplace also supports portable prompt, instruction, and agent
+definitions. See the [Agent Asset Package Spec](./ASSET_SPEC.md) for those
+types and the shared compatibility contract.
+
 Every skill profile in this repository is described by a `SKILL.md` manifest,
 validated by the PR check.
 
@@ -96,6 +100,10 @@ nested subdirectories (e.g. `references/REFERENCE.md`, not
 `references/api/v1/REFERENCE.md`). A flat layout keeps on-demand resources
 predictable for the agent to locate. The validator fails any nested resource
 directory.
+
+Codex-specific `agents/openai.yaml` metadata is optional. It may customize
+display or invocation behavior in Codex; it is not required for a valid skill
+and does not establish compatibility with another harness.
 
 ## 3. What the PR check enforces
 

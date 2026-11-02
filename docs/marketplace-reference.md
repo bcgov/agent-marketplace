@@ -7,25 +7,30 @@ This is the reference document for the repository and the marketplace mechanics.
 ```text
 config/marketplace.yaml               centrally controlled release and source policy
 schemas/                              marketplace metadata schemas
-skills/<bucket>/<name>/SKILL.md      portable instruction manifest
-skills/<bucket>/<name>/bcgov-extension.yaml  author-controlled package metadata
+skills/<bucket>/<name>/SKILL.md      Agent Skill content
+prompts/<bucket>/<name>/prompt.prompt.md  prompt content
+instructions/<bucket>/<name>/instructions.instructions.md  instruction content
+agents/<bucket>/<name>/agent.agent.md  agent definition
+<type>/<bucket>/<name>/bcgov-extension.yaml  author-controlled package metadata
 scripts/marketplace.py                validation, scanning, digesting, and generation
 catalog/catalog.json                 generated machine-readable catalog
 docs/                                public website source and generated pages
 spec/SKILL_SPEC.md                   authoritative skill specification
 ```
 
-## Supported extension types
+## Supported asset types
 
-This repository is an agent extension marketplace rather than a skill-only registry.
+The public catalog accepts skills, prompts, instructions, and agent
+definitions. Each package has one canonical content file and a common
+`bcgov-extension.yaml` manifest; see [ASSET_SPEC.md](../spec/ASSET_SPEC.md).
+The installer currently automates skills only. The other asset types require
+explicit manual import using the target harness's native format.
 
-The public MVP is intentionally narrow and currently validates skills as the primary published extension type. However, the extension taxonomy, discovery sources, and approval pipeline are not hard-wired to one file format alone. The general marketplace model can support prompt, instruction, agent, and skill entries, while the current catalog remains conservative and intentionally focused on the skill surface that the repo can validate and review reliably.
+The catalog's `not-ready-on` values are author-declared exclusions, not runtime
+test results. An absent list does not certify compatibility.
 
-In practical terms:
-
-- skills are the current reviewed and published default;
-- the marketplace architecture is wider than the current public catalog;
-- future extension forms should still satisfy the same trust, provenance, and review controls before publication.
+Contributors must be members of the GitHub `bcgov` organization. This is the
+marketplace's eligibility proxy, not employment verification.
 
 ## Lifecycle and review model
 

@@ -3,6 +3,8 @@
 
 <h1>SKILL.md Spec</h1>
 
+<p>The marketplace also supports prompts, instructions, and agent definitions. See the <a href="asset-formats.html">Agent Asset Formats</a> guide for their package formats and harness import notes.</p>
+
 <p>Every skill in this repo is described by a <code>SKILL.md</code> manifest, validated by the PR check. This page summarises what the validator enforces. The authoritative document lives at <a href="https://github.com/bcgov/agent-marketplace/blob/main/spec/SKILL_SPEC.md" target="_blank" rel="noopener"><code>spec/SKILL_SPEC.md</code></a>.</p>
 
 <div class="alert alert-info">
@@ -116,6 +118,8 @@ See [references/REFERENCE.md](references/REFERENCE.md) for &lt;heavy detail&gt;<
 <h3 id="flat-resources">Keep bundled resources flat: one level deep</h3>
 
 <p>Skills may ship <code>scripts/</code>, <code>references/</code>, and <code>assets/</code> directories beside the <code>SKILL.md</code>. These must stay <strong>exactly one level deep</strong>: flat files only, no nested subdirectories. Use <code>references/REFERENCE.md</code>, not <code>references/api/v1/REFERENCE.md</code>. A flat layout keeps on-demand resources predictable for the agent to locate.</p>
+
+<p>Codex-specific <code>agents/openai.yaml</code> metadata is optional. It may configure Codex display or invocation behavior; it is not required for a valid skill and does not establish compatibility with another harness.</p>
 
 <h2 id="validator-checks">3. What the PR check enforces</h2>
 

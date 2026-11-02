@@ -180,6 +180,99 @@ def test_manifest_paths_reject_flat_legacy_layout(tmp_path):
   assert m.manifest_paths(root) == []
 
 
+@pytest.mark.parametrize(
+  ("directory", "extension_type", "filename", "frontmatter"),
+  [
+    (
+      "skills",
+      "skill",
+      "SKILL.md",
+      "name: demo\ndescription: A reusable workflow.",
+    ),
+    (
+      "prompts",
+      "prompt",
+      "prompt.prompt.md",
+      "name: demo\ndescription: A focused task.\nagent: agent",
+    ),
+    (
+      "instructions",
+      "instructions",
+      "instructions.instructions.md",
+      "description: Persistent project guidance.",
+    ),
+    (
+      "agents",
+      "agent",
+      "agent.agent.md",
+      "name: demo\ndescription: A focused assistant role.",
+    ),
+  ],
+)
+def test_manifest_paths_and_catalog_support_declarative_asset_types(
+  tmp_path, directory, extension_type, filename, frontmatter
+):
+  """The four declarative asset types share marketplace identity and evidence."""
+  root = _root(tmp_path)
+  package = root / directory / "community" / "demo"
+  package.mkdir(parents=True)
+  (package / filename).write_text(
+    f"---\n{frontmatter}\n---\n\n# Demo\n\nAsset body.\n", encoding="utf-8"
+  )
+  manifest = _manifest()
+  manifest["compatibility"] = {"not-ready-on": ["claude-code"]}
+  (package / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+  )
+
+  found = [path.relative_to(root).as_posix() for path in m.manifest_paths(root)]
+  assert f"{directory}/community/demo/{m.MANIFEST_NAME}" in found
+  _, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
+  assert errors == []
+
+  catalog, _ = m.build_catalog(root)
+  record = catalog["extensions"][0]
+  assert record["type"] == extension_type
+  assert record["compatibility"] == {"not-ready-on": ["claude-code"]}
+
+
+def test_manifest_rejects_invalid_harness_readiness_claim(tmp_path):
+  """Harness exclusions use stable, human-readable identifiers."""
+  root = _root(tmp_path)
+  package = _package(root)
+  manifest = _manifest()
+  manifest["compatibility"] = {"not-ready-on": ["Claude Code"]}
+  (package / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
+  )
+  _, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
+  assert any("not-ready-on" in error for error in errors)
+
+
+def test_skill_accepts_optional_codex_ui_metadata(tmp_path):
+  """Codex UI metadata is allowed without becoming a required skill file."""
+  root = _root(tmp_path)
+  package = _package(root)
+  agents = package / "agents"
+  agents.mkdir()
+  (agents / "openai.yaml").write_text(
+    "interface:\n  display_name: Demo\n", encoding="utf-8"
+  )
+  result = m.scan_package(package, _manifest())
+  assert result["outcome"] == "passed"
+
+
+def test_skill_rejects_unsupported_nested_agent_metadata(tmp_path):
+  """Only the optional Codex UI metadata file is accepted under agents/."""
+  root = _root(tmp_path)
+  package = _package(root)
+  agents = package / "agents"
+  agents.mkdir()
+  (agents / "custom.yaml").write_text("name: custom\n", encoding="utf-8")
+  result = m.scan_package(package, _manifest())
+  assert "unsupported-agent-metadata" in {item["code"] for item in result["findings"]}
+
+
 def test_catalog_adds_type_and_specialty_metadata(tmp_path):
   """Catalog records expose the extension type and specialty in the generated output."""
   root = _root(tmp_path)

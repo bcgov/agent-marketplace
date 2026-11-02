@@ -1,6 +1,6 @@
 # BC Gov Agent Marketplace
 
-A public, GitHub-backed marketplace for reviewed BC Gov Agent Skills. Packages have closed metadata, immutable source identity, deterministic package digests, declared capabilities, policy results, and GitHub-native review evidence.
+A public, GitHub-backed marketplace for BC Gov agent assets: skills, prompts, instructions, and agent definitions. Packages have closed metadata, immutable source identity, deterministic package digests, declared capabilities, policy results, and GitHub-native review evidence.
 
 The canonical repository is `bcgov/agent-marketplace` (renamed after this checkout was created).
 
@@ -15,28 +15,39 @@ The current config uses `release-state: development`. After this implementation 
 
 ## Repository contract
 
-The repository follows the canonical marketplace skeleton, with the catch-all `community` bucket for non-specialized skills and the active specialty limited to `security`.
+The repository follows the canonical marketplace skeleton, with a catch-all
+`community` bucket and the active `security` specialty. Each supported asset
+type has its own package directory and canonical content file.
 
 ```text
 schemas/                                            closed marketplace metadata schema
 config/marketplace.yaml                             centrally controlled release and source policy
-skills/<bucket>/<name>/SKILL.md                     portable Agent Skill instructions
-skills/<bucket>/<name>/bcgov-extension.yaml         author-controlled package metadata
-skills/community/                                   catch-all bucket for non-specialized skills
-skills/security/                                    active Phase 1 specialty inventory
+skills/<bucket>/<name>/SKILL.md                     portable Agent Skill
+prompts/<bucket>/<name>/prompt.prompt.md            reusable prompt
+instructions/<bucket>/<name>/instructions.instructions.md  persistent guidance
+agents/<bucket>/<name>/agent.agent.md               focused agent definition
+<type>/<bucket>/<name>/bcgov-extension.yaml         author-controlled package metadata
 scripts/marketplace.py                              validation, scanning, digesting, generation
 catalog/catalog.json                                generated machine-readable catalog
 docs/_generated/                                   escaped generated website projection
 ```
 
-No legacy compatibility contract is promised. A flat `skills/<name>/...` layout is not a supported interface, and repo moves or reorgs are allowed to break legacy paths when they are replaced by the canonical `community` or `security` structure. Hosted packages use Apache-2.0 and stable IDs of the form `bcgov-public/<name>`. Authors cannot set review fields. Hooks, MCP servers, custom agents, and automatic execution are outside this MVP.
+No legacy compatibility contract is promised. A flat `<type>/<name>/...`
+layout is not a supported interface, and repo moves or reorgs may change
+canonical package paths. Hosted packages use Apache-2.0 and stable IDs of the
+form `bcgov-public/<name>`. Authors cannot set review fields. Hooks, MCP
+servers, silent automatic execution, and automatic import of non-skill assets
+are outside this MVP. GitHub `bcgov` organization membership is the contributor
+eligibility proxy; it is not employment verification.
 
 ## Local verification
 
 Marketplace users do not need Python, `uv`, or a repository checkout. APM is
 preferred for installing published skills, with a catalog-pinned `npx skills`
-fallback. Repository maintainers need Python 3.12+, [uv](https://docs.astral.sh/uv/),
-and Node.js for validation, generation, and documentation builds.
+fallback. Prompts, instructions, and agent definitions use explicit,
+harness-specific manual import guidance. Repository maintainers need Python
+3.12+, [uv](https://docs.astral.sh/uv/), and Node.js for validation, generation,
+and documentation builds.
 
 ```bash
 make setup
@@ -72,12 +83,14 @@ The authoritative repository documents are intentionally small and explicit:
 
 - [README.md](README.md) — repo overview, release state, installation and validation commands, and the local workflow.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contributor workflow, package authoring requirements, and PR expectations.
-- [spec/SKILL_SPEC.md](spec/SKILL_SPEC.md) — the authoritative contract for every `SKILL.md` file.
+- [spec/ASSET_SPEC.md](spec/ASSET_SPEC.md) — package contracts for the four supported asset types.
+- [spec/SKILL_SPEC.md](spec/SKILL_SPEC.md) — additional requirements for `SKILL.md` files.
+- [GLOSSARY.md](GLOSSARY.md) — agreed marketplace terms and trust labels.
 - [config/marketplace.yaml](config/marketplace.yaml) — release metadata and approved discovery sources.
 - [docs/MARKETPLACE_RUNBOOK.md](docs/MARKETPLACE_RUNBOOK.md) — release, quarantine, removal, rollback, and incident-response operations.
 - [SECURITY.md](SECURITY.md) — the private vulnerability reporting route.
 - [docs/README.md](docs/README.md) — the generated static-site workflow and build caveats.
-- [docs/what-is-the-agent-marketplace.md](docs/what-is-the-agent-marketplace.md) — explanation-oriented overview of the marketplace, its goals, and its broader extension model.
+- [docs/what-is-the-agent-marketplace.md](docs/what-is-the-agent-marketplace.md) — overview of supported asset types, trust evidence, and contributor eligibility.
 - [docs/getting-started.md](docs/getting-started.md) — tutorial for a first successful discovery and installation flow.
 - [docs/how-to-use-the-marketplace.md](docs/how-to-use-the-marketplace.md) — how-to recipes for common operational tasks.
 - [docs/marketplace-reference.md](docs/marketplace-reference.md) — technical reference for repo structure, lifecycle, trust model, and validation mechanics.

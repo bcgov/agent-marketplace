@@ -1,0 +1,25 @@
+{
+  // Start every session on Default Approvals. Never Bypass Approvals or Autopilot.
+  "chat.permissions.default": "default",
+
+  // Run agent terminal commands in the OS sandbox (macOS/Linux/WSL2). Sandboxed
+  // commands are auto-approved because they are contained — fewer prompts, safely.
+  "chat.agent.sandbox.enabled": "on",
+
+  // Auto-approve only safe, read-only commands. Everything else still asks.
+  // `false` entries are hard blocks and take precedence over `true` entries.
+  "chat.tools.terminal.autoApprove": {
+    "/^git (status|diff|log|show|branch|remote)\\b/": true,
+    "/^(ls|pwd|cat|head|tail|wc|grep|rg|find|echo|which|tree)\\b/": true,
+    "/^(npm|pnpm|yarn) (run )?(test|lint|build|typecheck|format)\\b/": true,
+    "/^(pytest|go test|mvn test|gradle test)\\b/": true,
+
+    "rm": false,
+    "sudo": false,
+    "curl": false,
+    "wget": false,
+    "/^git (push|reset|clean|checkout)\\b/": false,
+    "/\\b(oc|kubectl|az|aws|gcloud|terraform|helm)\\b/": false,
+    "/\\b(psql|mysql|mongosh|redis-cli)\\b/": false
+  }
+}
