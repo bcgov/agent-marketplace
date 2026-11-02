@@ -1910,6 +1910,31 @@
   .bench-lanes section { background: white; padding: 1.2rem; border-top: 5px solid var(--teal); }
   .bench-lanes h2 { font-size: 1.25rem; }
   .bench-lanes li { border-top: 1px solid var(--line); padding: .75rem 0; }
+  .browse-hero { padding: 1.5rem 1.8rem; background: #e5eef5; border-top: 6px solid var(--gold); }
+  .browse-layout { display: grid; grid-template-columns: 13rem minmax(0, 1fr) 19rem; gap: 1rem; align-items: start; }
+  .browse-filter, .browse-detail, .browse-results { background: white; border: 1px solid var(--line); padding: 1.2rem; }
+  .browse-filter h2, .browse-results h2, .browse-detail h2 { font-size: 1.2rem; margin-bottom: .7rem; }
+  .browse-filter label { display: block; min-height: 44px; padding: .5rem 0; cursor: pointer; }
+  .browse-filter input { margin-right: .4rem; }
+  .browse-results label { display: block; font-weight: 700; margin-bottom: .4rem; }
+  .browse-results ul { margin-top: 1rem; }
+  .browse-results li { border-top: 1px solid var(--line); padding: .85rem 0; }
+  .browse-results li[hidden] { display: none; }
+  .browse-results button {
+    display: block; border: 0; padding: .3rem 0; background: transparent;
+    color: var(--navy); font-family: inherit; font-size: 1.12rem; font-weight: 700; text-align: left;
+    text-decoration: underline; cursor: pointer;
+  }
+  .browse-detail dl { margin: .7rem 0; }
+  .browse-detail dt { font-weight: 700; margin-top: .75rem; }
+  .browse-detail dd { margin: 0; overflow-wrap: anywhere; }
+  .browse-detail a { display: inline-block; margin-top: .7rem; }
+  .browse-detail button {
+    display: block; margin: .8rem 0; padding: .6rem .8rem;
+    background: var(--navy); color: white; border: 0; border-radius: .25rem;
+    font: inherit; font-weight: 700; cursor: pointer;
+  }
+  .browse-detail { position: sticky; top: 5.5rem; }
   .prototype-switcher {
     position: fixed; z-index: 1100; bottom: max(1rem, env(safe-area-inset-bottom));
     left: 50%; transform: translateX(-50%);
@@ -1923,14 +1948,15 @@
   }
   .prototype-switcher strong { text-align: center; min-width: 12rem; font-size: .9rem; }
   @media (max-width: 720px) {
-    .prototype-grid, .index-layout, .dispatch-layout, .bench-lanes { grid-template-columns: 1fr; }
+    .prototype-grid, .index-layout, .dispatch-layout, .bench-lanes, .browse-layout { grid-template-columns: 1fr; }
+    .browse-detail { position: static; }
     .personality-prototype h1 { font-size: 2rem; }
     .prototype-switcher strong { min-width: 8rem; font-size: .78rem; }
   }
 </style>
 
 <div class="personality-prototype">
-  <p class="prototype-note"><strong>Throwaway prototype.</strong> Three layouts for discussion, not a released catalogue. Entries are real examples; any activity, scores, levels or dates below are explicitly illustrative and not derived from live data.</p>
+  <p class="prototype-note"><strong>Throwaway prototype.</strong> Four layouts for discussion, not a released catalogue. Entries are real examples; any activity, scores, levels or dates below are explicitly illustrative and not derived from live data.</p>
 
   <section class="prototype-variant" data-variant="A" aria-label="Field guide layout">
     <div class="prototype-hero">
@@ -1999,6 +2025,61 @@
     </div>
     <p class="prototype-small">A streak badge would require stable, opt-in contributor identity and meaningful eligible events; it is deliberately not shown here.</p>
   </section>
+
+  <section class="prototype-variant" data-variant="D" aria-label="Browse and evidence layout" hidden>
+    <div class="browse-hero">
+      <h1 id="browse-the-catalogue">Browse the catalogue</h1>
+      <p class="prototype-lead">Filter by Specialty, search names and descriptions, then inspect the evidence before installing.</p>
+    </div>
+    <div class="browse-layout">
+      <form class="browse-filter" aria-label="Filter by Specialty">
+        <h2 id="specialty">Specialty</h2>
+        <label><input type="radio" name="browse-specialty" value="" checked>All Specialties</label>
+        <label><input type="radio" name="browse-specialty" value="community">Community</label>
+        <label><input type="radio" name="browse-specialty" value="security">Security</label>
+        <p class="prototype-small">A Specialty names a domain team, not a popularity tier.</p>
+      </form>
+      <section class="browse-results">
+        <h2 id="extensions">Extensions</h2>
+        <label for="browse-search">Search names and descriptions</label>
+        <input class="prototype-field" id="browse-search" type="search" placeholder="Try Azure, actions or security">
+        <p id="browse-count" class="prototype-small" role="status" aria-live="polite"></p>
+        <ul class="prototype-list">
+          <li data-specialty="community" data-search="azure networking design bc gov azure landing zone subnets network security groups service delegations private endpoints">
+            <span class="prototype-tag">Community / Skill</span>
+            <button type="button" data-detail="azure">Azure Networking</button>
+            <p>Design BC Gov Azure Landing Zone subnets, network security groups, service delegations, and private endpoints.</p>
+          </li>
+          <li data-specialty="community" data-search="github actions author github actions workflows security">
+            <span class="prototype-tag">Community / Skill</span>
+            <button type="button" data-detail="actions">GitHub Actions</button>
+            <p>Author GitHub Actions workflows for repository automation.</p>
+          </li>
+          <li data-specialty="security" data-search="repo hardening apply baseline repository hardening branch protection secret handling review gates deterministic validation">
+            <span class="prototype-tag">Security / Skill</span>
+            <button type="button" data-detail="hardening">Repo Hardening</button>
+            <p>Apply a baseline repository hardening recipe for branch protection, secret handling, review gates, and deterministic validation.</p>
+          </li>
+        </ul>
+        <p id="browse-empty" hidden>No matches. Try another task or Specialty.</p>
+      </section>
+      <aside class="browse-detail" aria-live="polite" aria-label="Extension evidence">
+        <h2 id="detail-title">Select an Extension</h2>
+        <p id="detail-summary">Choose a result to inspect its current review evidence and published revision.</p>
+        <dl id="detail-fields" hidden>
+          <dt>Automated policy</dt><dd id="detail-policy"></dd>
+          <dt>Review status</dt><dd id="detail-review"></dd>
+          <dt>Maintainers</dt><dd id="detail-maintainers"></dd>
+          <dt>Published revision</dt><dd id="detail-revision"></dd>
+          <dt>Popularity</dt><dd>Not measured. Opens and copies are not installs.</dd>
+        </dl>
+        <a id="detail-history" href="catalog.html" hidden>See source history on GitHub</a>
+        <button id="detail-copy" type="button" hidden>Copy example install command</button>
+        <p id="detail-local-count" class="prototype-small" role="status"></p>
+        <p class="prototype-small">Prior revision scan reports are not in today's catalogue. Do not imply that historic commits were scanned.</p>
+      </aside>
+    </div>
+  </section>
 </div>
 
 <nav class="prototype-switcher" aria-label="Prototype variant selector">
@@ -2008,7 +2089,7 @@
 </nav>
 <script>
   (() => {
-    const names = { A: 'A / Field guide', B: 'B / Release desk', C: 'C / Specialty workbench' };
+    const names = { A: 'A / Field guide', B: 'B / Release desk', C: 'C / Specialty workbench', D: 'D / Browse + evidence' };
     const keys = Object.keys(names);
     const label = document.getElementById('prototype-current');
     let active = keys.includes(new URLSearchParams(location.search).get('variant'))
@@ -2038,6 +2119,90 @@
     window.addEventListener('popstate', () => {
       const key = new URLSearchParams(location.search).get('variant');
       show(keys.includes(key) ? key : 'A');
+    });
+    const search = document.getElementById('browse-search');
+    const results = [...document.querySelectorAll('.browse-results li')];
+    function filter() {
+      const specialty = document.querySelector('[name="browse-specialty"]:checked').value;
+      const query = search.value.trim().toLowerCase();
+      let shown = 0;
+      results.forEach(row => {
+        row.hidden = (specialty && row.dataset.specialty !== specialty) || !row.dataset.search.includes(query);
+        if (!row.hidden) shown++;
+      });
+      document.getElementById('browse-count').textContent = `${shown} example Extensions shown`;
+      document.getElementById('browse-empty').hidden = shown !== 0;
+    }
+    search.addEventListener('input', filter);
+    document.querySelectorAll('[name="browse-specialty"]').forEach(radio => radio.addEventListener('change', filter));
+    filter();
+    const examples = {
+      azure: {
+        title: 'Azure Networking', summary: 'Design BC Gov Azure Landing Zone subnets, network security groups, service delegations, and private endpoints.',
+        policy: 'Passed at current revision; no policy findings published.', review: 'Auto-checked; no human review claimed.',
+        maintainers: '@mishraomp, @DerekRoberts', revision: '2046da7b0de0',
+        path: 'skills/community/azure-networking'
+      },
+      actions: {
+        title: 'GitHub Actions', summary: 'Repository automation guidance.',
+        policy: 'Inspect the current catalogue record.', review: 'Inspect the current catalogue record.',
+        maintainers: 'See current catalogue record', revision: 'See current catalogue record',
+        path: 'skills/community/github-actions'
+      },
+      hardening: {
+        title: 'Repo Hardening', summary: 'Apply a baseline repository hardening recipe for branch protection, secret handling, review gates, and deterministic validation.',
+        policy: 'Passed at current revision; no policy findings published.', review: 'Domain reviewed by @bcgov/security at the published revision.',
+        maintainers: '@mishraomp, @DerekRoberts', revision: '2046da7b0de0',
+        path: 'skills/security/repo-hardening'
+      }
+    };
+    let selected = null;
+    function activity(id, field, increment) {
+      try {
+        const key = `prototype-catalogue-${id}-${field}`;
+        const count = Number(localStorage.getItem(key) || '0') + increment;
+        if (increment) localStorage.setItem(key, String(count));
+        return count;
+      } catch (error) {
+        document.getElementById('detail-local-count').textContent = 'Browser storage unavailable; local activity cannot be saved.';
+        return null;
+      }
+    }
+    function showActivity() {
+      const opens = activity(selected, 'opens', 0);
+      const copies = activity(selected, 'copies', 0);
+      if (opens !== null && copies !== null) {
+        document.getElementById('detail-local-count').textContent =
+          `Your activity in this browser only: ${opens} opens, ${copies} copies. Not global installs.`;
+      }
+    }
+    document.querySelectorAll('[data-detail]').forEach(button => button.addEventListener('click', () => {
+      selected = button.dataset.detail;
+      activity(selected, 'opens', 1);
+      const item = examples[button.dataset.detail];
+      document.getElementById('detail-title').textContent = item.title;
+      document.getElementById('detail-summary').textContent = item.summary;
+      for (const field of ['policy', 'review', 'maintainers', 'revision']) {
+        document.getElementById(`detail-${field}`).textContent = item[field];
+      }
+      document.getElementById('detail-fields').hidden = false;
+      const historyLink = document.getElementById('detail-history');
+      historyLink.href = `https://github.com/bcgov/agent-marketplace/commits/main/${item.path}`;
+      historyLink.hidden = false;
+      document.getElementById('detail-copy').hidden = false;
+      showActivity();
+    }));
+    document.getElementById('detail-copy').addEventListener('click', async () => {
+      if (!selected) return;
+      const item = examples[selected];
+      const command = `apm install bcgov/agent-marketplace/${item.path}#2046da7b0de0f673bf39208b35385c1516be4c75 --target copilot`;
+      try {
+        await navigator.clipboard.writeText(command);
+        activity(selected, 'copies', 1);
+        showActivity();
+      } catch (error) {
+        document.getElementById('detail-local-count').textContent = 'Clipboard unavailable; no copy recorded.';
+      }
     });
     show(active);
   })();
