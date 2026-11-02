@@ -32,7 +32,6 @@ function readReleaseConfig() {
   return {
     version: field("version"),
     revision: field("revision"),
-    installerVersion: field("installer-version"),
     releaseState: field("release-state"),
   };
 }
@@ -91,7 +90,6 @@ for (const filename of fs.readdirSync(pagesDir).sort()) {
   content = replaceAll(content, "{{CURRENT_DATE}}", date);
   content = replaceAll(content, "{{PUBLISHED_REVISION}}", release.revision);
   content = replaceAll(content, "{{RELEASE_TAG}}", release.version || release.revision);
-  content = replaceAll(content, "{{INSTALLER_VERSION}}", release.installerVersion);
   content = replaceAll(content, "{{RELEASE_STATE}}", release.releaseState);
   content = replaceAll(
     content,

@@ -61,7 +61,7 @@
 
 <pre><code>apm install bcgov/agent-marketplace/skills/security/repo-hardening#{{PUBLISHED_REVISION}} --target copilot</code></pre>
 
-<p>If APM is unavailable, the same panel offers a pinned <code>npx skills@{{INSTALLER_VERSION}}</code> command. The marketplace finder recommends installing APM for future dependency and lockfile management. Other formats and their harness-specific import guidance are described in the <a href="asset-formats.html">asset format guide</a>.</p>
+<p>If APM is unavailable, the same panel offers a <code>npx skills</code> command. The marketplace finder recommends installing APM for future dependency and lockfile management. Other formats and their harness-specific import guidance are described in the <a href="asset-formats.html">asset format guide</a>.</p>
 
 <p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
 
@@ -98,7 +98,6 @@
     }
   })();
   const TYPE_ORDER = vocabulary.types || [];
-  const INSTALLER_VERSION = vocabulary['installer-version'] || 'latest';
 
   const TYPE_LABELS = {
     skill: 'Skill',
@@ -344,8 +343,8 @@
         ? `apm install ${repoPath}/${source.path}#${revision} --target copilot`
         : 'apm install <owner>/<repository>/<package-path>#<commit-sha> --target copilot',
       npx: sourceUrl
-        ? `npx skills@${INSTALLER_VERSION} add \\\n  ${sourceUrl} \\\n  --agent github-copilot -y`
-        : `npx skills@${INSTALLER_VERSION} add <immutable-tree-url> --agent github-copilot -y`
+        ? `npx skills add \\\n  ${sourceUrl} \\\n  --agent github-copilot -y`
+        : `npx skills add <immutable-tree-url> --agent github-copilot -y`
     };
 
     const installBlock = installable

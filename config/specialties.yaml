@@ -1,0 +1,8 @@
+schema-version: bcgov-marketplace-specialties/v1alpha1
+specialties:
+  - id: security
+    display-name: Security
+    owner-team: "@bcgov/security"
+    description: Security guidance and secure delivery practices.
+    review-rule: owning-team
+    display-flair: Security

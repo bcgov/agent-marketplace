@@ -62,6 +62,18 @@ A review-ready PR includes:
 
 CODEOWNERS and package maintainers review that exact revision. Changed bytes or capabilities invalidate prior evidence. Human reviewers and protected-branch CI alone decide publication.
 
+Specialty owners are declared in `config/specialties.yaml`, not in
+`config/marketplace.yaml`. To onboard a Specialty, submit an admin-reviewed PR
+adding its id, display name, owner team, description, `owning-team` review rule
+and display flair, then run `make generate` to commit the updated
+`.github/CODEOWNERS`. The type-first package paths receive only that team's
+ownership. A single-member team is permitted; if its sole member authors a
+change to owned paths, an admin may use the PR-only review bypass after recording
+the author, sole ownership, and merging admin on the PR. Admins also check with
+the current owner before changing an existing team's owner or review rule.
+Security alone owns `config/security-policy.yaml` and `tests/security-policy/`.
+Policy blocking-rule additions need corresponding blocking and benign tests.
+
 ## Federated candidates
 
 Third-party candidates use the issue intake path, not a branch. They must identify an approved discovery source, canonical HTTPS GitHub repository, full commit SHA, package path, and capability evidence. An expected digest is optional. Trusted CI fetches the immutable bytes, computes the package-tree digest, and scans them without execution; a supplied digest mismatch or blocking finding fails closed.

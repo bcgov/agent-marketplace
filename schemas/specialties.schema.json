@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema-version", "specialties"],
+  "properties": {
+    "schema-version": {"const": "bcgov-marketplace-specialties/v1alpha1"},
+    "specialties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "display-name", "owner-team", "description", "review-rule", "display-flair"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+          "display-name": {"type": "string", "minLength": 1},
+          "owner-team": {"type": "string", "pattern": "^@bcgov/[A-Za-z0-9][A-Za-z0-9-]*$"},
+          "description": {"type": "string", "minLength": 1},
+          "review-rule": {"const": "owning-team"},
+          "display-flair": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}
