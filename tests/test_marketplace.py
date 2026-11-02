@@ -203,13 +203,58 @@ def test_read_only_check_reports_blocking_file_rule_location_and_fix(
   assert "SKILL.md:1" in report
   assert "undeclared-network" in report
   assert "capabilities.network" in report
-  assert "unlisted.example" in report
+  assert "declare the host in capabilities.network" in report
+  assert "unlisted.example" not in report
   policy_path = root / "config" / "security-policy.yaml"
   policy = yaml.safe_load(policy_path.read_text())
   policy["blocking"] = []
   policy_path.write_text(yaml.safe_dump(policy))
   assert m.main(["--root", str(root), "check"]) == 0
   assert "Advisory" in summary.read_text()
+
+
+def test_scanner_cli_outputs_never_echo_matched_credential(
+  tmp_path, monkeypatch, capsys
+):
+  """Scan, analyze, and demo reports retain evidence without exposing content."""
+  import demo
+
+  root = _root(tmp_path)
+  package = _package(root)
+  sentinel = "AKIA" + "A" * 16
+  (package / "SKILL.md").write_text(
+    f"curl https://{sentinel}.example\necho ${sentinel}\nsecret={sentinel}\n"
+  )
+  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
+  fixture.mkdir(parents=True)
+  (fixture / "SKILL.md").write_bytes((package / "SKILL.md").read_bytes())
+  (fixture / m.MANIFEST_NAME).write_bytes((package / m.MANIFEST_NAME).read_bytes())
+  monkeypatch.setattr(demo, "ROOT", root)
+  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
+
+  for command in ("scan", "analyze"):
+    assert m.main(["--root", str(root), command, str(package)]) == 0
+    output = capsys.readouterr()
+    assert sentinel not in output.out + output.err
+    result = json.loads(output.out)
+    findings = (
+      result["scan"]["findings"] if command == "analyze" else result["findings"]
+    )
+    assert {finding["rule-id"] for finding in findings} >= {
+      "SECRET_PATTERNS",
+      "undeclared-network",
+      "undeclared-environment-variable",
+    }
+    assert all(finding["file"] == "SKILL.md" for finding in findings)
+  assert demo.main(["analyze-fixture", "benign-submission"]) == 0
+  output = capsys.readouterr()
+  assert sentinel not in output.out + output.err
+  result = json.loads(output.out)
+  assert result["scan"]["outcome"] == "blocked"
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  assert m.main(["--root", str(root), "check"]) == 1
+  assert sentinel not in capsys.readouterr().out + summary.read_text()
 
 
 def test_security_pattern_parameters_are_read_from_policy(tmp_path):

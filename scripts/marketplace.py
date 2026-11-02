@@ -380,7 +380,7 @@ def _scan_text(
             "blocking",
             "undeclared-network",
             relative,
-            f"network command targets undeclared host {host!r}",
+            "network command targets a host not declared in capabilities.network",
             line_number,
           )
         )
@@ -392,7 +392,8 @@ def _scan_text(
             "blocking",
             "undeclared-environment-variable",
             relative,
-            f"references undeclared environment variable {name!r}",
+            "references a variable not declared in capabilities.environment-variables "
+            "or capabilities.secret-names",
             line_number,
           )
         )
