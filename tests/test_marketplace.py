@@ -53,19 +53,25 @@ def _root(tmp_path: Path) -> Path:
   schema_target = tmp_path / "schemas" / schema_source.name
   schema_target.parent.mkdir()
   schema_target.write_bytes(schema_source.read_bytes())
+  for name in ("specialties", "security-policy"):
+    (tmp_path / "schemas" / f"{name}.schema.json").write_bytes(
+      (ROOT / "schemas" / f"{name}.schema.json").read_bytes()
+    )
   config = {
     "schema-version": "bcgov-marketplace/v1alpha1",
     "release-state": "published",
     "repository": "https://github.com/bcgov/agent-marketplace",
     "revision": "a" * 40,
     "version": "catalog-2026.01.01",
-    "installer-version": "1.0.0",
-    "reviewers": ["@bcgov/platform-services"],
     "approved-discovery-sources": [],
   }
   config_path = tmp_path / "config" / "marketplace.yaml"
   config_path.parent.mkdir()
   config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  for name in ("specialties", "security-policy"):
+    (tmp_path / "config" / f"{name}.yaml").write_bytes(
+      (ROOT / "config" / f"{name}.yaml").read_bytes()
+    )
   return tmp_path
 
 
@@ -98,6 +104,65 @@ def test_marketplace_config_validates_typed_sources(tmp_path):
   config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
   sources = m.load_marketplace_config(root)["approved-discovery-sources"]
   assert sources[0]["id"] == "example-skills"
+
+
+def test_new_specialty_changes_generated_ownership(tmp_path):
+  """A registry addition changes all generated specialty ownership paths."""
+  root = _root(tmp_path)
+  _package(root)
+  path = root / "config" / "specialties.yaml"
+  registry = yaml.safe_load(path.read_text())
+  registry["specialties"].append(
+    {
+      "id": "platform",
+      "display-name": "Platform",
+      "owner-team": "@bcgov/platform",
+      "description": "Platform operations.",
+      "review-rule": "owning-team",
+      "display-flair": "Platform",
+    }
+  )
+  path.write_text(yaml.safe_dump(registry))
+  m.generate(root)
+  owners = (root / ".github" / "CODEOWNERS").read_text()
+  assert "/agents/platform/ @bcgov/platform" in owners
+  assert "/agents/platform/ @bcgov/agent-marketplace-admins" not in owners
+  path.write_text((ROOT / "config" / "specialties.yaml").read_text())
+  assert ".github/CODEOWNERS" in m.generate(root, check=True)
+
+
+def test_specialty_and_security_policy_reject_invalid_data(tmp_path):
+  """Ownership and approved rules are checked against their separate schemas."""
+  root = _root(tmp_path)
+  path = root / "config" / "specialties.yaml"
+  registry = yaml.safe_load(path.read_text())
+  registry["specialties"][0]["owner-team"] = "@outside/security"
+  path.write_text(yaml.safe_dump(registry))
+  with pytest.raises(m.MarketplaceError, match="owner-team|@outside"):
+    m.load_specialties(root)
+  path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(path.read_text())
+  policy["blocking"].append("unknown-rule")
+  path.write_text(yaml.safe_dump(policy))
+  with pytest.raises(m.MarketplaceError, match="unknown-rule"):
+    m.load_security_policy(root)
+
+
+def test_unapproved_security_rule_is_advisory(tmp_path):
+  """Removing a Security approval changes a rule's disposition, not its detection."""
+  root = _root(tmp_path)
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text())
+  policy["blocking"].remove("hidden-unicode")
+  policy_path.write_text(yaml.safe_dump(policy))
+  package = _package(root)
+  (package / "SKILL.md").write_text("# Hidden\u202e\n")
+  scan = m.scan_package(package, _manifest())
+  assert scan["outcome"] == "passed"
+  assert any(
+    item["code"] == "hidden-unicode" and item["severity"] == "advisory"
+    for item in scan["findings"]
+  )
 
 
 def test_marketplace_config_rejects_unknown_source_type(tmp_path):
@@ -390,7 +455,7 @@ def test_analysis_routes_valid_submission_to_marketplace_review(tmp_path):
   assert analysis["classification"] == "needs-review"
   assert analysis["prospective-path"] == "skills/community/demo"
   assert analysis["specialty"] == "community"
-  assert analysis["reviewers"] == ["@bcgov/platform-services"]
+  assert analysis["reviewers"] == []
   assert analysis["package-tree-digest"].startswith("sha256:")
   assert analysis["files"]
 
@@ -476,6 +541,7 @@ def test_generation_is_deterministic_and_escaped(tmp_path):
   _package(root, manifest=manifest)
   drift = m.generate(root)
   assert drift == [
+    ".github/CODEOWNERS",
     "catalog/catalog.json",
     "docs/assets/catalog.json",
     "docs/_generated/catalog-cards.html",
@@ -527,8 +593,8 @@ def test_community_package_is_auto_scanned(tmp_path):
   assert review["risk"] == "low"
 
 
-def test_human_review_pins_to_content_digest(tmp_path):
-  """A human review only applies while the reviewed content-digest still matches."""
+def test_specialty_does_not_claim_human_review_from_config(tmp_path):
+  """CODEOWNERS review does not certify unchanged package bytes in the catalog."""
   root = _root(tmp_path)
   package = root / "skills" / "security" / "repo-hardening"
   package.mkdir(parents=True)
@@ -537,20 +603,8 @@ def test_human_review_pins_to_content_digest(tmp_path):
   (package / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
   )
-  digest = m.package_digest(m.package_inventory(package))
-  config_path = root / "config" / "marketplace.yaml"
-  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-  config["reviews"] = [
-    {
-      "id": "bcgov-public/repo-hardening",
-      "status": "domain-reviewed",
-      "team": "@bcgov/security",
-      "content-digest": digest,
-    }
-  ]
-  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
   catalog, _ = m.build_catalog(root)
-  assert catalog["extensions"][0]["review"]["status"] == "domain-reviewed"
+  assert catalog["extensions"][0]["review"]["status"] == "unreviewed"
   (package / "SKILL.md").write_text("# Hardening changed\n", encoding="utf-8")
   catalog, _ = m.build_catalog(root)
   assert catalog["extensions"][0]["review"]["status"] == "unreviewed"
@@ -558,7 +612,9 @@ def test_human_review_pins_to_content_digest(tmp_path):
 
 def test_intake_decision_matrix():
   """The gate rejects blocked scans and holds anything not fully cleared."""
-  config = {"community-intake": {"auto-publish-risk-ceiling": "elevated"}}
+  config = {
+    "community-intake": {"auto-publish": True, "auto-publish-risk-ceiling": "elevated"}
+  }
   reject = m.intake_decision(
     scan_outcome="blocked",
     risk="low",
@@ -601,16 +657,14 @@ def test_intake_decision_matrix():
   assert clear["decision"] == "auto-publish"
 
 
-def test_config_rejects_review_without_content_digest(tmp_path):
-  """A human review must pin to the exact content it vouched for."""
+def test_config_rejects_cut_review_fields(tmp_path):
+  """Review pins cannot be reintroduced to repository settings."""
   root = _root(tmp_path)
   config_path = root / "config" / "marketplace.yaml"
   config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-  config["reviews"] = [
-    {"id": "bcgov-public/x", "status": "domain-reviewed", "team": "@bcgov/security"}
-  ]
+  config["reviews"] = []
   config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
-  with pytest.raises(m.MarketplaceError, match="review missing keys"):
+  with pytest.raises(m.MarketplaceError, match="unexpected keys"):
     m.load_marketplace_config(root)
 
 

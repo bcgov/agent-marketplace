@@ -627,6 +627,26 @@ def test_creator_scaffolds_a_canonical_security_package(tmp_path):
   assert (tmp_path / "skills" / "security" / "security-demo" / "SKILL.md").is_file()
 
 
+def test_creator_accepts_registry_specialty(tmp_path):
+  """New specialty ids become valid authoring choices without editing the CLI."""
+  config = tmp_path / "config"
+  config.mkdir()
+  (config / "specialties.yaml").write_text(
+    "schema-version: bcgov-marketplace-specialties/v1alpha1\n"
+    "specialties:\n"
+    "  - id: platform\n"
+    "    display-name: Platform\n"
+    "    owner-team: '@bcgov/platform'\n"
+    "    description: Platform operations.\n"
+    "    review-rule: owning-team\n"
+    "    display-flair: Platform\n"
+  )
+  assert (
+    creator._package_dir(tmp_path, "demo", "skill", "platform")
+    == tmp_path / "skills" / "platform" / "demo"
+  )
+
+
 def test_getting_started_describes_portable_marketplace_workflows():
   """Shared companions install remotely and do not require maintainer tooling."""
   page = (ROOT / "docs" / "_pages" / "getting-started.html").read_text(encoding="utf-8")
@@ -634,7 +654,7 @@ def test_getting_started_describes_portable_marketplace_workflows():
   assert "bcgov-create-extension" in page
   assert "skills/community/" in page
   assert "apm install" in page
-  assert "npx skills@" in page
+  assert "npx skills add" in page
   assert "do not require a marketplace checkout" in page
   assert "--global" not in page
 

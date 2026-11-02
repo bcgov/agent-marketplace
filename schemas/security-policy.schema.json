@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema-version", "policy-version", "blocking"],
+  "properties": {
+    "schema-version": {"const": "bcgov-marketplace-security-policy/v1alpha1"},
+    "policy-version": {"type": "integer", "minimum": 1},
+    "blocking": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": ["SECRET_PATTERNS", "hidden-unicode", "undeclared-network", "undeclared-environment-variable", "undeclared-script"]
+      }
+    }
+  }
+}

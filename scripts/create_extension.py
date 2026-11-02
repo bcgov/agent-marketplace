@@ -76,8 +76,15 @@ def _package_dir(
   if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name) or len(name) > 64:
     raise CreateError("extension name must be kebab-case and at most 64 characters")
   _require_active_type(extension_type)
-  if specialty not in {"community", "security"}:
-    raise CreateError("specialty must be community or security")
+  registry = marketplace / "config" / "specialties.yaml"
+  if not registry.exists():
+    registry = Path(__file__).resolve().parents[1] / "config" / "specialties.yaml"
+  choices = {
+    item["id"]
+    for item in yaml.safe_load(registry.read_text(encoding="utf-8"))["specialties"]
+  }
+  if specialty not in {"community", *choices}:
+    raise CreateError(f"specialty must be community or one of {sorted(choices)}")
   return marketplace.resolve() / TYPE_DIRECTORIES[extension_type] / specialty / name
 
 
@@ -409,9 +416,7 @@ def _parser() -> argparse.ArgumentParser:
   initialize_parser.add_argument("--summary", required=True)
   initialize_parser.add_argument("--maintainer", action="append", required=True)
   initialize_parser.add_argument("--not-ready-on", action="append", default=[])
-  initialize_parser.add_argument(
-    "--specialty", choices=["community", "security"], default="community"
-  )
+  initialize_parser.add_argument("--specialty", default="community")
   initialize_parser.add_argument(
     "--support", default="https://github.com/bcgov/agent-marketplace/issues"
   )
@@ -421,9 +426,7 @@ def _parser() -> argparse.ArgumentParser:
   preview_parser.add_argument(
     "--extension-type", choices=sorted(EXTENSION_TYPE_STATUS), default="skill"
   )
-  preview_parser.add_argument(
-    "--specialty", choices=["community", "security"], default="community"
-  )
+  preview_parser.add_argument("--specialty", default="community")
   submit_parser = commands.add_parser("submit")
   submit_parser.add_argument("--marketplace", type=Path, required=True)
   submit_parser.add_argument("--name", required=True)
@@ -434,9 +437,7 @@ def _parser() -> argparse.ArgumentParser:
   submit_parser.add_argument("--title", required=True)
   submit_parser.add_argument("--upstream-evidence", required=True)
   submit_parser.add_argument("--yes", action="store_true")
-  submit_parser.add_argument(
-    "--specialty", choices=["community", "security"], default="community"
-  )
+  submit_parser.add_argument("--specialty", default="community")
   return parser
 
 

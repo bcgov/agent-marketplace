@@ -20,11 +20,10 @@ The repository includes two marketplace companion skills for GitHub Copilot:
 
 Use the catalog release tag from the published catalog's `version` field. Do not install from a checkout whose `release-state` is `development`. The installer lock records the exact commit and package digest resolved from the tag. APM is preferred because it records an installer manifest and lockfile.
 
-Replace the example release tag and installer version below with the published catalog's `version` and `installer-version` values before running the commands. The quoted values keep the examples valid shell syntax until you replace them.
+Replace the example release tag below with the published catalog's `version` value before running the commands.
 
 ```bash
 RELEASE_TAG="catalog-YYYY.MM.DD"
-INSTALLER_VERSION="X.Y.Z"
 
 apm install \
   "bcgov/agent-marketplace/skills/community/bcgov-find-extension#${RELEASE_TAG}" \
@@ -36,9 +35,8 @@ If APM is not available, use the catalog-pinned Skills CLI fallback:
 
 ```bash
 RELEASE_TAG="catalog-YYYY.MM.DD"
-INSTALLER_VERSION="X.Y.Z"
 
-npx skills@"${INSTALLER_VERSION}" add \
+npx skills add \
   "https://github.com/bcgov/agent-marketplace/tree/${RELEASE_TAG}" \
   --skill bcgov-find-extension --skill bcgov-create-extension \
   --agent github-copilot -y
@@ -68,7 +66,7 @@ This is the point where you decide whether the package is a match for the task.
 
 The marketplace expects an explicit confirmation step before installation guidance is provided.
 
-The preferred route is APM because it records `apm.yml` and `apm.lock.yaml`. If that is not available, the fallback installer may write `skills-lock.json` in the local project.
+The preferred route is APM because it records `apm.yml` and `apm.lock.yaml`. If that is not available, use the Skills CLI with the immutable source tree URL.
 
 The important part is not the lockfile format itself. The important part is that installation is tied to a named, reviewed, immutable package revision and a project-local record of what was installed.
 

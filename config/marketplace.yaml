@@ -7,35 +7,17 @@ revision: 2046da7b0de0f673bf39208b35385c1516be4c75
 # rewrites this field. People install by this tag; the exact revision above and
 # each package content-digest are what the installer actually verifies.
 version: catalog-2026.10.01
-installer-version: 1.5.23
-reviewers:
-  - "@mishraomp"
-  - "@DerekRoberts"
-# Human reviews are opt-in and pinned to the exact package content that was
-# reviewed. If a package's files change, its content-digest changes and the
-# review here stops applying, so the catalog falls back to "Auto-checked"
-# until a human signs off on the new content. Community packages are never
-# listed here: they publish on the automated scan alone.
-reviews:
-  - id: bcgov-public/repo-hardening
-    status: domain-reviewed
-    team: "@bcgov/security"
-    content-digest: "sha256:9fd010749fc81d20119daa1b504c89aa10ebde34f172d8277992720201d16355"
 # Additional anti-abuse limits for community auto-publishing. Organization
 # membership is a required contributor gate for every active asset type.
 community-intake:
-  # An author's GitHub account must be at least this old for community
-  # auto-publish eligibility; this is not a measurement of org tenure.
-  min-account-age-days: 30
-  # How many community submissions one author may have open at once.
-  max-open-submissions-per-author: 3
   # How many brand-new packages one author may add within the window below.
-  max-new-packages-per-window: 5
+  max-new-packages-per-window: 10
   window-days: 7
   # Submissions at or below this capability-risk band can auto-publish once the
   # scan passes and the author clears the tenure and velocity checks. Anything
   # riskier (for example wildcard capabilities) always waits for a maintainer.
   auto-publish-risk-ceiling: elevated
+  auto-publish: false
 approved-discovery-sources:
   - id: vercel-agent-skills
     name: Agent Skills Directory

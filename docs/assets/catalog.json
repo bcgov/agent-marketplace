@@ -1020,13 +1020,9 @@
       "publisher": "Province of British Columbia",
       "review": {
         "content-digest": "sha256:9fd010749fc81d20119daa1b504c89aa10ebde34f172d8277992720201d16355",
-        "method": "human-review",
-        "reviewers": [
-          "@bcgov/security"
-        ],
-        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75",
+        "reviewers": [],
         "risk": "high",
-        "status": "domain-reviewed"
+        "status": "unreviewed"
       },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
@@ -1040,7 +1036,6 @@
       "type": "skill"
     }
   ],
-  "installer-version": "1.5.23",
   "policy-version": "bcgov-marketplace-policy/1.0",
   "release-state": "development",
   "repository": "https://github.com/bcgov/agent-marketplace",

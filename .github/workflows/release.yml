@@ -21,8 +21,6 @@ on:
       - "prompts/**"
       - "instructions/**"
       - "agents/**"
-      - "hooks/**"
-      - "mcp/**"
       - "config/marketplace.yaml"
       - "schemas/**"
       - "scripts/marketplace.py"
@@ -95,7 +93,7 @@ jobs:
         run: |
           set -euo pipefail
           # Rewrite only the top-level version/revision fields in place.
-          # ^version: can't match schema-version:/installer-version:, and
+          # ^version: can't match schema-version:, and
           # ^revision: is the single fetch coordinate line.
           sed -i -E "s|^version:.*|version: ${TAG}|" config/marketplace.yaml
           sed -i -E "s|^revision:.*|revision: ${SHA}|" config/marketplace.yaml

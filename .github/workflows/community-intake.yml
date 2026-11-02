@@ -94,45 +94,12 @@ jobs:
           fi
           exit 1
 
-      - name: Resolve author trust and velocity signals
+      - name: Hold community auto-publish pending the new-package gate
         id: signals
         if: steps.changes.outputs.has_community == 'true'
         run: |
-          set -euo pipefail
-
-          # Read the thresholds straight from the single source of truth.
-          read_cfg() {
-            uv run --project . python - "$1" <<'PY'
-          import re, sys
-          key = sys.argv[1]
-          text = open("config/marketplace.yaml").read()
-          m = re.search(rf"^\s*{re.escape(key)}:\s*(\S+)\s*$", text, re.M)
-          print(m.group(1).strip('"\'') if m else "")
-          PY
-          }
-          MIN_AGE="$(read_cfg min-account-age-days)"
-          MAX_OPEN="$(read_cfg max-open-submissions-per-author)"
-
-          # Account age is measured from account creation (the public API does not
-          # expose org-join date). This is a documented proxy in
-          # docs/COMMUNITY_INTAKE_POLICY.md.
-          CREATED_AT="$(gh api "users/${AUTHOR}" --jq .created_at)"
-          AGE_DAYS=$(( ( $(date -u +%s) - $(date -u -d "$CREATED_AT" +%s) ) / 86400 ))
-
-          # Open community submissions by this author (velocity signal).
-          OPEN_PRS="$(gh api -X GET search/issues \
-            -f q="repo:${GITHUB_REPOSITORY} is:pr is:open author:${AUTHOR}" \
-            --jq .total_count)"
-
-          TRUST=yes
-          if [ "$AGE_DAYS" -lt "$MIN_AGE" ]; then TRUST=no; fi
-
-          VELOCITY=ok
-          if [ "$OPEN_PRS" -gt "$MAX_OPEN" ]; then VELOCITY=exceeded; fi
-
-          echo "trust=$TRUST" >> "$GITHUB_OUTPUT"
-          echo "velocity=$VELOCITY" >> "$GITHUB_OUTPUT"
-          echo "Author=$AUTHOR age=${AGE_DAYS}d org_member=yes open_prs=$OPEN_PRS -> trust=$TRUST velocity=$VELOCITY"
+          echo "trust=yes" >> "$GITHUB_OUTPUT"
+          echo "velocity=unknown" >> "$GITHUB_OUTPUT"
 
       - name: Decide intake for each changed community package
         id: decide

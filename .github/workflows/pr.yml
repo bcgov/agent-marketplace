@@ -120,6 +120,11 @@ jobs:
       - name: Validate marketplace packages and generated projections
         run: uv run python scripts/marketplace.py validate
 
+      - name: Regenerate and check CODEOWNERS
+        run: |
+          uv run python scripts/marketplace.py generate
+          git diff --exit-code -- .github/CODEOWNERS
+
       - name: Build documentation
         run: bash docs/build.sh
 

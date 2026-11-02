@@ -35,7 +35,6 @@ ARTIFACT_FILES = {
 }
 ROOT_FILES = {MANIFEST_NAME, *ARTIFACT_FILES.values()}
 RESOURCE_DIRECTORIES = {"agents", "assets", "references", "scripts"}
-SPECIALTIES = {"community", "security"}
 MAX_FILES = 100
 MAX_FILE_BYTES = 512 * 1024
 MAX_PACKAGE_BYTES = 2 * 1024 * 1024
@@ -216,7 +215,17 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
   if manifest.get("id") != expected_id:
     errors.append(f"{path}: id must be {expected_id!r}")
   parts = path.parts[-4:-1]
-  if len(parts) != 3 or parts[0] not in ARTIFACT_FILES or parts[1] not in SPECIALTIES:
+  root = path.parents[3]
+  registry = (
+    {item["id"] for item in load_specialties(root)}
+    if (root / "config" / "specialties.yaml").exists()
+    else {"security"}
+  )
+  if (
+    len(parts) != 3
+    or parts[0] not in ARTIFACT_FILES
+    or parts[1] not in {"community", *registry}
+  ):
     errors.append(
       f"{path.parent}: package must use a canonical type/specialty/name path"
     )
@@ -471,6 +480,8 @@ def intake_decision(
       "decision": "reject",
       "reasons": ["package failed the automated policy scan"],
     }
+  if not policy.get("auto-publish", False):
+    return {"decision": "hold-for-review", "reasons": ["auto-publish is disabled"]}
   reasons = []
   if RISK_ORDER.get(risk, len(RISK_BANDS)) > RISK_ORDER.get(ceiling, 1):
     reasons.append(
@@ -604,6 +615,25 @@ def scan_package(package_dir: Path, manifest: dict) -> dict:
         "blocking", "package-size", ".", f"package exceeds {MAX_PACKAGE_BYTES} bytes"
       )
     )
+  policy_path = package_dir.parents[2] / "config" / "security-policy.yaml"
+  if policy_path.exists():
+    approved = set(load_security_policy(package_dir.parents[2])["blocking"])
+    for finding in findings:
+      rule = (
+        "SECRET_PATTERNS" if finding["code"] in SECRET_PATTERNS else finding["code"]
+      )
+      if (
+        rule
+        in {
+          "SECRET_PATTERNS",
+          "hidden-unicode",
+          "undeclared-network",
+          "undeclared-environment-variable",
+          "undeclared-script",
+        }
+        and rule not in approved
+      ):
+        finding["severity"] = "advisory"
   findings.sort(
     key=lambda item: (
       item["severity"],
@@ -668,7 +698,15 @@ def analyze_submission(root: Path, package_dir: Path) -> dict:
   if errors or manifest is None:
     raise MarketplaceError("\n".join(errors))
   parts = prospective_path.split("/")
-  if len(parts) != 3 or parts[0] not in ARTIFACT_FILES or parts[1] not in SPECIALTIES:
+  if (
+    len(parts) != 3
+    or parts[0] not in ARTIFACT_FILES
+    or parts[1]
+    not in {
+      "community",
+      *(item["id"] for item in load_specialties(root)),
+    }
+  ):
     raise MarketplaceError("submission package must use a canonical asset path")
   scan = scan_package(package_dir, manifest)
   files, structural_findings = _regular_files(package_dir)
@@ -679,7 +717,15 @@ def analyze_submission(root: Path, package_dir: Path) -> dict:
     "classification": "blocked" if scan["outcome"] == "blocked" else "needs-review",
     "prospective-path": prospective_path,
     "specialty": parts[1],
-    "reviewers": config["reviewers"],
+    "reviewers": (
+      [specialty["owner-team"]]
+      if (
+        specialty := next(
+          (item for item in load_specialties(root) if item["id"] == parts[1]), None
+        )
+      )
+      else []
+    ),
     "risk": risk,
     "intake": intake_decision(
       scan_outcome=scan["outcome"],
@@ -738,16 +784,13 @@ def load_marketplace_config(root: Path) -> dict:
     "repository",
     "revision",
     "version",
-    "installer-version",
-    "reviewers",
-    "reviews",
     "community-intake",
     "approved-discovery-sources",
   }
   unexpected = sorted(set(config) - allowed)
   if unexpected:
     raise MarketplaceError(f"{path}: unexpected keys: {', '.join(unexpected)}")
-  required = allowed - {"approved-discovery-sources", "reviews", "community-intake"}
+  required = allowed - {"approved-discovery-sources", "community-intake"}
   missing = sorted(required - set(config))
   if missing:
     raise MarketplaceError(f"{path}: missing keys: {', '.join(missing)}")
@@ -806,45 +849,63 @@ def load_marketplace_config(root: Path) -> dict:
         f"{path}: unknown discovery source types for {source_id}: "
         f"{', '.join(unknown_types)}"
       )
-  _validate_reviews(path, config.get("reviews", []))
   _validate_community_intake(path, config.get("community-intake"))
   return config
 
 
-REVIEW_STATUSES = {"domain-reviewed", "marketplace-reviewed"}
+def _validated_config(root: Path, name: str, schema_name: str) -> dict:
+  path = root / "config" / name
+  data = load_yaml(path)
+  schema = json.loads((root / "schemas" / schema_name).read_text(encoding="utf-8"))
+  errors = sorted(Draft202012Validator(schema).iter_errors(data), key=str)
+  if errors:
+    raise MarketplaceError(f"{path}: {errors[0].message}")
+  return data
+
+
+def load_specialties(root: Path) -> list[dict]:
+  """Read the authoritative admin-owned namespace registry."""
+  specialties = _validated_config(root, "specialties.yaml", "specialties.schema.json")[
+    "specialties"
+  ]
+  ids = [item["id"] for item in specialties]
+  if len(ids) != len(set(ids)) or "community" in ids:
+    raise MarketplaceError(
+      "config/specialties.yaml: duplicate or reserved specialty id"
+    )
+  return specialties
+
+
+def load_security_policy(root: Path) -> dict:
+  """Validate Security's independently owned blocking-rule dispositions."""
+  return _validated_config(root, "security-policy.yaml", "security-policy.schema.json")
+
+
+def render_codeowners(specialties: list[dict]) -> str:
+  """Render GitHub ownership with the last matching rule winning."""
+  lines = [
+    "# Generated from config/specialties.yaml; run scripts/marketplace.py generate.",
+    "* @bcgov/agent-marketplace-admins",
+    "",
+    "# Community paths are intentionally ownerless.",
+    *[f"/{kind}/community/" for kind in ARTIFACT_FILES],
+    "",
+    "# Specialty packages require their owning team's approval.",
+    *[
+      f"/{kind}/{entry['id']}/ {entry['owner-team']}"
+      for entry in specialties
+      for kind in ARTIFACT_FILES
+    ],
+    "",
+    "# Security owns policy and its fixtures exclusively.",
+    "/config/security-policy.yaml @bcgov/security",
+    "/tests/security-policy/ @bcgov/security",
+  ]
+  return "\n".join(lines) + "\n"
+
+
 RISK_BANDS = ("low", "elevated", "high")
 RISK_ORDER = {band: index for index, band in enumerate(RISK_BANDS)}
-MAINTAINER_RE = re.compile(
-  r"^@[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:/[A-Za-z0-9_.-]+)?$"
-)
-
-
-def _validate_reviews(path: Path, reviews: object) -> None:
-  """Validate the maintainer-controlled human-review pin list."""
-  if not isinstance(reviews, list):
-    raise MarketplaceError(f"{path}: reviews must be a list")
-  seen = set()
-  for review in reviews:
-    if not isinstance(review, dict):
-      raise MarketplaceError(f"{path}: each review must be a mapping")
-    missing = sorted({"id", "status", "team", "content-digest"} - set(review))
-    if missing:
-      raise MarketplaceError(f"{path}: review missing keys: {', '.join(missing)}")
-    extra = sorted(set(review) - {"id", "status", "team", "content-digest"})
-    if extra:
-      raise MarketplaceError(f"{path}: review has unexpected keys: {', '.join(extra)}")
-    review_id = review["id"]
-    if review_id in seen:
-      raise MarketplaceError(f"{path}: duplicate review id: {review_id}")
-    seen.add(review_id)
-    if review["status"] not in REVIEW_STATUSES:
-      raise MarketplaceError(
-        f"{path}: review status must be one of {sorted(REVIEW_STATUSES)}"
-      )
-    if not MAINTAINER_RE.match(str(review["team"])):
-      raise MarketplaceError(f"{path}: review team must be a @handle or @org/team")
-    if not re.fullmatch(r"sha256:[0-9a-f]{64}", str(review["content-digest"])):
-      raise MarketplaceError(f"{path}: review content-digest must be sha256:<64 hex>")
 
 
 def _validate_community_intake(path: Path, intake: object) -> None:
@@ -854,11 +915,10 @@ def _validate_community_intake(path: Path, intake: object) -> None:
   if not isinstance(intake, dict):
     raise MarketplaceError(f"{path}: community-intake must be a mapping")
   allowed = {
-    "min-account-age-days",
-    "max-open-submissions-per-author",
     "max-new-packages-per-window",
     "window-days",
     "auto-publish-risk-ceiling",
+    "auto-publish",
   }
   extra = sorted(set(intake) - allowed)
   if extra:
@@ -866,8 +926,6 @@ def _validate_community_intake(path: Path, intake: object) -> None:
       f"{path}: community-intake has unexpected keys: {', '.join(extra)}"
     )
   for key in (
-    "min-account-age-days",
-    "max-open-submissions-per-author",
     "max-new-packages-per-window",
     "window-days",
   ):
@@ -876,6 +934,8 @@ def _validate_community_intake(path: Path, intake: object) -> None:
         f"{path}: community-intake {key} must be a non-negative integer"
       )
   ceiling = intake.get("auto-publish-risk-ceiling", "elevated")
+  if not isinstance(intake.get("auto-publish", False), bool):
+    raise MarketplaceError(f"{path}: community-intake auto-publish must be boolean")
   if ceiling not in RISK_ORDER:
     raise MarketplaceError(
       f"{path}: community-intake auto-publish-risk-ceiling must be a risk band"
@@ -889,31 +949,12 @@ EXTENSION_TYPE_ORDER = ["skill", "prompt", "instructions", "agent", "hook", "mcp
 
 
 def _review_status(
-  config: dict,
-  package_id: str,
   specialty: str,
   content_digest: str,
   risk: str,
   advisory_count: int,
 ) -> dict:
-  """Resolve the trust block for one package from central review policy.
-
-  A human review only counts when the reviewed content-digest still matches, so
-  editing a reviewed package silently drops it back to the automated tier until
-  a human signs off again. Community packages are never human-reviewed: they
-  carry the automated-scan result and their capability-risk band so a reader can
-  see exactly how far they were checked.
-  """
-  for review in config.get("reviews", []):
-    if review["id"] == package_id and review["content-digest"] == content_digest:
-      return {
-        "status": review["status"],
-        "reviewers": [review["team"]],
-        "revision": config["revision"],
-        "content-digest": content_digest,
-        "method": "human-review",
-        "risk": risk,
-      }
+  """Resolve trust without claiming a pinned human review for changed bytes."""
   if specialty == "community":
     return {
       "status": "auto-scanned",
@@ -951,6 +992,8 @@ def build_catalog(root: Path) -> tuple[dict, str]:
   """Build machine-readable and escaped HTML catalog projections."""
   schema = load_schema(root)
   config = load_marketplace_config(root)
+  load_security_policy(root)
+  specialty_ids = {item["id"] for item in load_specialties(root)}
   records = []
   errors = []
   seen_ids = set()
@@ -967,6 +1010,9 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     relative_path = package_dir.relative_to(root).as_posix()
     parts = relative_path.split("/")
     specialty = namespace_of(relative_path)
+    if specialty != "community" and specialty not in specialty_ids:
+      errors.append(f"{package_dir}: unknown specialty {specialty!r}")
+      continue
     record = {
       **manifest,
       "compatibility": manifest.get("compatibility", {"not-ready-on": []}),
@@ -996,8 +1042,6 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     record["policy"] = scan
     advisories = [item for item in scan["findings"] if item["severity"] == "advisory"]
     record["review"] = _review_status(
-      config,
-      manifest["id"],
       specialty,
       record["content-digest"],
       capability_risk(manifest),
@@ -1015,7 +1059,6 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     "repository": config["repository"],
     "revision": config["revision"],
     "version": config["version"],
-    "installer-version": str(config["installer-version"]),
     "policy-version": POLICY_VERSION,
     "approved-discovery-sources": config.get("approved-discovery-sources", []),
     "count": len(records),
@@ -1031,7 +1074,6 @@ def build_catalog(root: Path) -> tuple[dict, str]:
   vocabulary = json.dumps(
     {
       "types": EXTENSION_TYPE_ORDER,
-      "installer-version": str(config["installer-version"]),
     },
     sort_keys=True,
   ).replace("<", "\\u003c")
@@ -1166,6 +1208,7 @@ def generate(root: Path, check: bool = False) -> list[str]:
   catalog, cards = build_catalog(root)
   serialized_catalog = _serialized_catalog(catalog)
   outputs = {
+    root / ".github" / "CODEOWNERS": render_codeowners(load_specialties(root)),
     root / "catalog" / "catalog.json": serialized_catalog,
     root / "docs" / "assets" / "catalog.json": serialized_catalog,
     root / "docs" / "_generated" / "catalog-cards.html": cards,
