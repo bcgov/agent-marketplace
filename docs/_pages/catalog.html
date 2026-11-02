@@ -1,19 +1,130 @@
 <!-- TITLE: Agent Extension Catalog -->
 <!-- NAV: catalog -->
+<!-- PROTOTYPE ONLY: compare direct browsing, type-first and Specialty-first on the existing catalogue. -->
+
+<style>
+  .catalog-prototype-note {
+    background: #e5eef5;
+    border-left: 4px solid #003366;
+    padding: .8rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .catalog-type-chooser {
+    background: #fff;
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    margin: 1.5rem 0 2rem;
+  }
+  .catalog-type-chooser[hidden], .catalog-app[hidden],
+  .catalog-prototype-intro[hidden], .catalog-prototype-rest[hidden] {
+    display: none;
+  }
+  .catalog-type-chooser h2 { margin-top: 0; }
+  .catalog-type-chooser h2::before { display: none; }
+  .catalog-type-chooser > p { max-width: 62ch; }
+  .catalog-type-choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+  }
+  .catalog-type-choices li { margin: 0; }
+  .catalog-type-choice {
+    display: flex;
+    width: 100%;
+    min-height: 9rem;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1.1rem;
+    border: 2px solid #cbd5e1;
+    border-radius: .4rem;
+    background: #f5f8fa;
+    color: #003366;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+  }
+  .catalog-type-choice:hover { border-color: #003366; background: #e5eef5; }
+  .catalog-type-choice:focus-visible, .catalog-prototype-switcher button:focus-visible,
+  .catalog-all-types:focus-visible, .catalog-back-to-types:focus-visible {
+    outline: 3px solid #a35400;
+    outline-offset: 3px;
+  }
+  .catalog-type-choice strong { font-size: 1.25rem; }
+  .catalog-type-choice span { font-size: .92rem; color: #313132; }
+  .catalog-type-choice:disabled { opacity: .65; cursor: not-allowed; }
+  .catalog-all-types, .catalog-back-to-types {
+    min-height: 44px;
+    padding: .55rem .85rem;
+    border: 2px solid #003366;
+    border-radius: .3rem;
+    background: #fff;
+    color: #003366;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .catalog-back-to-types { margin: 1rem 0 0; }
+  .catalog-prototype-switcher {
+    position: fixed;
+    z-index: 1100;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    max-width: calc(100vw - 1rem);
+    padding: .4rem .6rem;
+    background: #002244;
+    border-radius: 2rem;
+    color: #fff;
+    box-shadow: 0 5px 16px #0005;
+  }
+  .catalog-prototype-switcher button {
+    min-width: 44px;
+    min-height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: #fcba19;
+    color: #002244;
+    font: 700 1.3rem sans-serif;
+    cursor: pointer;
+  }
+  .catalog-prototype-switcher strong { min-width: 10rem; text-align: center; font-size: .85rem; }
+  @media (max-width: 480px) {
+    .catalog-prototype-switcher strong { min-width: 7rem; font-size: .75rem; }
+  }
+</style>
 
 <h1>Agent Extension Catalog</h1>
 
+<p class="catalog-prototype-note"><strong>Prototype.</strong> Compare browsing directly, by type, or by Specialty using the bottom bar. The catalogue records and evidence are real.</p>
+
+<div class="catalog-prototype-intro" id="catalog-prototype-intro">
 <p>Every record here is generated from the exact package bytes at revision <code>{{PUBLISHED_REVISION}}</code>, and carries its source, digest, declared access, policy result, and how far it was checked.</p>
 
 <div class="alert alert-info">
     <div class="alert-icon" aria-hidden="true">i</div>
     <div><strong>Trust language is precise.</strong> <em>Auto-checked</em> means the exact bytes passed automated policy and content scanning. <em>Reviewed</em> means named reviewers assessed the published revision and digest. Neither is a claim that software is safe or verified secure. Third-party candidates do not appear here until review is published.</div>
 </div>
+</div>
 
-<div class="catalog-app">
+<section class="catalog-type-chooser" id="catalog-type-chooser" aria-labelledby="catalog-type-title" hidden>
+  <h2 id="catalog-type-title">What are you looking for?</h2>
+  <p id="catalog-chooser-description"></p>
+  <ul class="catalog-type-choices" id="catalog-type-choices"></ul>
+  <button type="button" class="catalog-all-types" id="catalog-all-types">Browse all Extensions</button>
+</section>
+
+<button type="button" class="catalog-back-to-types" id="catalog-back-to-types" hidden>Choose a different type</button>
+
+<div class="catalog-app" id="catalog-prototype-app">
   <form class="catalog-rail" id="catalog-rail" role="search" aria-label="Filter the catalog">
-    <label class="visually-hidden" for="catalog-search">Search the catalog</label>
-    <input id="catalog-search" class="catalog-search" type="search" placeholder="Search by task or tool" autocomplete="off" />
+    <label class="visually-hidden" for="catalog-search">Search Extension names, descriptions and tools</label>
+    <input id="catalog-search" class="catalog-search" type="search" placeholder="Search names, descriptions or tools" autocomplete="off" />
     <div id="catalog-facets"></div>
     <button type="button" id="catalog-reset" class="catalog-reset" hidden>Clear all filters</button>
 
@@ -53,6 +164,7 @@
   </aside>
 </div>
 
+<div class="catalog-prototype-rest" id="catalog-prototype-rest">
 <noscript><p>Filtering needs JavaScript. Every published extension is listed above, and <a href="assets/catalog.json"><code>catalog.json</code></a> holds the same records in machine-readable form.</p></noscript>
 
 <h2>Installing from this catalog</h2>
@@ -64,6 +176,7 @@
 <p>If APM is unavailable, the same panel offers a pinned <code>npx skills@{{INSTALLER_VERSION}}</code> command. The marketplace finder recommends installing APM for future dependency and lockfile management. Both paths require confirmation.</p>
 
 <p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
+</div>
 
 <script>
 (function () {
@@ -188,7 +301,7 @@
     if (distinct('specialty').length > 1) {
       groups.push({
         key: 'specialty',
-        title: 'Domain',
+        title: 'Specialty',
         options: distinct('specialty').map((value) => ({ value, label: value }))
       });
     }
@@ -381,6 +494,9 @@
         <div><dt>Digest</dt><dd><code>${escapeHtml(record['content-digest'] || 'not available')}</code></dd></div>
       </dl>
       ${sourceUrl ? `<p><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener">Read the source at this revision</a></p>` : ''}
+      ${source.repository && source.path
+        ? `<p><a href="${escapeHtml(`${source.repository}/commits/main/${source.path}`)}" target="_blank" rel="noopener">View source history</a> (past commits do not imply past scans)</p>`
+        : ''}
       ${installBlock}
       ${record.support ? `<p><a href="${escapeHtml(record.support)}" target="_blank" rel="noopener">Get support</a></p>` : ''}
     `;
@@ -472,5 +588,128 @@
       }
     })
     .catch(() => { /* Rows stay usable; the panel explains the gap on selection. */ });
+})();
+</script>
+
+<nav class="catalog-prototype-switcher" aria-label="Prototype variant selector">
+  <button type="button" id="catalog-prototype-prev" aria-label="Previous variant">←</button>
+  <strong id="catalog-prototype-label" aria-live="polite"></strong>
+  <button type="button" id="catalog-prototype-next" aria-label="Next variant">→</button>
+</nav>
+<script>
+(() => {
+  const chooser = document.getElementById('catalog-type-chooser');
+  const intro = document.getElementById('catalog-prototype-intro');
+  const app = document.getElementById('catalog-prototype-app');
+  const rest = document.getElementById('catalog-prototype-rest');
+  const back = document.getElementById('catalog-back-to-types');
+  const options = document.getElementById('catalog-type-choices');
+  const label = document.getElementById('catalog-prototype-label');
+  const all = document.getElementById('catalog-all-types');
+  const labels = { skill: 'Skills', instruction: 'Instructions', prompt: 'Prompts', agent: 'Agents' };
+  const descriptions = {
+    skill: 'Reusable procedures and supporting files.',
+    instruction: 'Rules that guide an agent in a workspace.',
+    prompt: 'Reusable requests for a specific task.',
+    agent: 'Specialized agent configurations.'
+  };
+  const vocabulary = JSON.parse(document.getElementById('catalog-vocabulary').textContent);
+  const counts = { type: Object.create(null), specialty: Object.create(null) };
+  document.querySelectorAll('.cat-row').forEach(row => {
+    for (const facet of ['type', 'specialty']) {
+      const value = row.dataset[facet];
+      counts[facet][value] = (counts[facet][value] || 0) + 1;
+    }
+  });
+  const types = (vocabulary.types || Object.keys(counts.type))
+    .filter(type => ['skill', 'instruction', 'prompt', 'agent'].includes(type));
+  const variants = ['direct', 'gateway', 'specialty'];
+  const requested = new URLSearchParams(location.search).get('variant');
+  let variant = variants.includes(requested) ? requested : 'direct';
+  let browsing = variant === 'direct';
+  function renderChoices() {
+    const facet = variant === 'gateway' ? 'type' : 'specialty';
+    const values = facet === 'type' ? types : Object.keys(counts.specialty).sort();
+    document.getElementById('catalog-type-title').textContent =
+      facet === 'type' ? 'Choose an Extension type' : 'Choose a Specialty';
+    document.getElementById('catalog-chooser-description').textContent =
+      facet === 'type'
+        ? 'Start with a type, then search or filter. Only published types can be opened.'
+        : 'Start with a domain team, then search or filter its Extensions.';
+    all.textContent = 'Browse all Extensions';
+    back.textContent = facet === 'type' ? 'Choose a different type' : 'Choose a different Specialty';
+    options.innerHTML = values.map(value => {
+      const count = counts[facet][value] || 0;
+      const name = facet === 'type' ? labels[value] || value : value[0].toUpperCase() + value.slice(1);
+      const description = facet === 'type' ? descriptions[value] || '' :
+        value === 'community' ? 'Shared Extensions with automated policy checks.' :
+        value === 'security' ? 'Extensions governed by Security.' : 'Extensions owned by this domain team.';
+      return `<li><button type="button" class="catalog-type-choice" data-facet="${facet}" ` +
+        `data-value="${value}" ${count ? '' : 'disabled'}>` +
+        `<strong>${name}</strong><span>${description}</span>` +
+        `<span>${count ? `${count} published` : 'None published yet'}</span></button></li>`;
+    }).join('');
+  }
+  function render() {
+    const choosing = variant !== 'direct' && !browsing;
+    if (choosing) renderChoices();
+    chooser.hidden = !choosing;
+    intro.hidden = choosing;
+    app.hidden = choosing;
+    rest.hidden = choosing;
+    back.hidden = variant === 'direct' || choosing;
+    label.textContent = {
+      direct: 'Browse immediately',
+      gateway: 'Choose type first',
+      specialty: 'Choose Specialty first'
+    }[variant];
+  }
+  function setVariant(next) {
+    variant = next;
+    browsing = next === 'direct';
+    const url = new URL(location.href);
+    url.searchParams.set('variant', next);
+    history.replaceState(null, '', url);
+    render();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+  function browse(facet, value) {
+    document.getElementById('catalog-reset').click();
+    browsing = true;
+    render();
+    if (value) {
+      document.querySelector(`.facet-option[data-facet="${facet}"][data-value="${value}"]`)?.click();
+    }
+    document.getElementById('catalog-search').focus({ preventScroll: true });
+    document.getElementById('catalog-prototype-app').scrollIntoView({ block: 'start' });
+  }
+  options.addEventListener('click', event => {
+    const choice = event.target.closest('[data-facet]');
+    if (choice && !choice.disabled) browse(choice.dataset.facet, choice.dataset.value);
+  });
+  all.addEventListener('click', () => browse('', ''));
+  back.addEventListener('click', () => {
+    browsing = false;
+    render();
+    chooser.scrollIntoView({ block: 'start' });
+    chooser.querySelector('button:not(:disabled)')?.focus();
+  });
+  function cycle(step) {
+    setVariant(variants[(variants.indexOf(variant) + step + variants.length) % variants.length]);
+  }
+  document.getElementById('catalog-prototype-prev').addEventListener('click', () => cycle(-1));
+  document.getElementById('catalog-prototype-next').addEventListener('click', () => cycle(1));
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    cycle(event.key === 'ArrowRight' ? 1 : -1);
+  });
+  window.addEventListener('popstate', () => {
+    const value = new URLSearchParams(location.search).get('variant');
+    variant = variants.includes(value) ? value : 'direct';
+    browsing = variant === 'direct';
+    render();
+  });
+  render();
 })();
 </script>
