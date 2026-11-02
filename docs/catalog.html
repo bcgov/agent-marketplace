@@ -1845,6 +1845,18 @@
     padding: .8rem 1rem;
     margin-bottom: 1.25rem;
   }
+  main:has(.catalog-app.is-direct) > .catalog-prototype-note,
+  main:has(.catalog-app.is-direct) > .catalog-prototype-intro,
+  .catalog-app.is-direct .catalog-detail,
+  .catalog-app.is-direct .catalog-legend {
+    display: none;
+  }
+  .catalog-app.is-direct {
+    grid-template-columns: 14rem minmax(0, 1fr);
+  }
+  @media (max-width: 1240px) {
+    .catalog-app.is-direct { grid-template-columns: minmax(0, 1fr); }
+  }
   .catalog-type-chooser {
     background: #fff;
     padding: clamp(1.25rem, 3vw, 2.5rem);
@@ -1935,7 +1947,7 @@
   }
 </style>
 
-<h1 id="agent-extension-catalog">Agent Extension Catalog</h1>
+<h1 id="browse-extensions">Browse Extensions</h1>
 
 <p class="catalog-prototype-note"><strong>Prototype.</strong> Compare browsing directly, by type, or by Specialty using the bottom bar. The catalogue records and evidence are real.</p>
 
@@ -2570,7 +2582,12 @@
     const node = event.target.closest('.cat-row');
     if (!node) return;
     const row = rows.find((item) => item.node === node);
-    if (row) select(row);
+    if (!row) return;
+    if (document.getElementById('catalog-prototype-app').classList.contains('is-direct')) {
+      location.assign(`catalog-detail-prototype.html?id=${encodeURIComponent(row.id)}`);
+      return;
+    }
+    select(row);
   });
 
   facetHost.addEventListener('click', (event) => {
@@ -2681,6 +2698,7 @@
     chooser.hidden = !choosing;
     intro.hidden = choosing;
     app.hidden = choosing;
+    app.classList.toggle('is-direct', variant === 'direct');
     rest.hidden = choosing;
     back.hidden = variant === 'direct' || choosing;
     label.textContent = {
