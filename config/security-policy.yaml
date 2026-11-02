@@ -1,0 +1,20 @@
+# Security-owned scan policy. Only @bcgov/security may change this file
+# (see .github/CODEOWNERS). A rule absent from this file is advisory.
+#
+# A rule listed under `blocking` stops a PR from merging and stops Community
+# auto-publish. Community auto-publish stays off until this list is non-empty
+# and an admin sets `community-intake.auto-publish: true` in
+# config/marketplace.yaml.
+schema-version: bcgov-marketplace-security-policy/v1alpha1
+policy-version: 1
+blocking:
+  # Credential-shaped strings in any Extension file.
+  - SECRET_PATTERNS
+  # Hidden or bidirectional Unicode that can disguise instructions or code.
+  - hidden-unicode
+  # Network access to a host the Manifest does not declare.
+  - undeclared-network
+  # Use of an environment variable the Manifest does not declare.
+  - undeclared-environment-variable
+  # A script the Manifest does not declare.
+  - undeclared-script

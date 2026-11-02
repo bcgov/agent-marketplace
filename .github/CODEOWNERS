@@ -25,3 +25,7 @@
 /mcp/security/ @bcgov/security
 
 # See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Security owns the scan policy and its fixtures; no other team approves changes here.
+/config/security-policy.yaml @bcgov/security
+/tests/security-policy/ @bcgov/security
