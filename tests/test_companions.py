@@ -724,7 +724,7 @@ def test_asset_format_guide_documents_supported_types_and_claim_limits():
 
 
 def test_contributor_eligibility_workflow_gates_all_active_asset_types():
-  """Every active asset PR gets the fail-closed bcgov membership check."""
+  """Every active asset PR uses GitHub's fail-closed membership association."""
   workflow = (ROOT / ".github" / "workflows" / "community-intake.yml").read_text(
     encoding="utf-8"
   )
@@ -734,6 +734,10 @@ def test_contributor_eligibility_workflow_gates_all_active_asset_types():
   assert "paths:" not in workflow
   assert "Detect active asset changes" in workflow
   assert "if: steps.changes.outputs.has_assets == 'true'" in workflow
-  assert 'gh api --include "orgs/${ORG}/members/${AUTHOR}"' in workflow
-  assert "GitHub returned 404 for the membership check" in workflow
-  assert "Members: read permission" in workflow
+  assert (
+    "AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}"
+    in workflow
+  )
+  assert 'if [ "$AUTHOR_ASSOCIATION" = "MEMBER" ]; then' in workflow
+  assert "is not MEMBER" in workflow
+  assert "ORG_READ_TOKEN" not in workflow

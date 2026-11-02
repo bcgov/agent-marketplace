@@ -17,10 +17,10 @@ unpublished package content to a public fork.
 
 The `Community intake / intake` check must be required by the protected-branch
 ruleset for changes under `skills/`, `prompts/`, `instructions/`, and `agents/`.
-Configure `ORG_READ_TOKEN` as a repository or organization Actions secret with
-the membership-read permissions documented in
-[COMMUNITY_INTAKE_POLICY.md](COMMUNITY_INTAKE_POLICY.md). Without the required
-status check, the workflow may report failure without preventing a merge.
+The workflow uses GitHub's pull-request author association to confirm
+organization membership and requires no organization-readable token. Without
+an additional repository secret. Without the required status check, the
+workflow may report failure without preventing a merge.
 
 ## Publish
 

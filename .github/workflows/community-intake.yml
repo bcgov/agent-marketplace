@@ -1,12 +1,12 @@
 name: Community intake
 
-# Every active asset contributor must be a confirmed member of the bcgov
+# Every active asset contributor must be identified by GitHub as a member of the bcgov
 # GitHub organization. Community packages also pass anti-abuse checks before
 # they may auto-publish; specialty packages still require human review. This
 # workflow never publishes anything itself.
 #
 # Community intake decisions live in Python (marketplace.py intake) and are
-# unit-tested. This workflow gathers the live GitHub signals they need.
+# unit-tested. This workflow gathers the GitHub author association used for eligibility.
 
 on:
   pull_request:
@@ -26,14 +26,10 @@ jobs:
       issues: read
       pull-requests: write
     env:
-      AUTHOR: ${{ github.event.pull_request.user.login }}
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-      ORG: bcgov
-      # Must read org membership and search the author's open PRs. The default
-      # job token is a fallback only; inability to confirm membership blocks
-      # the PR and emits a diagnostic.
-      GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}
+      AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -71,27 +67,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          set +e
-          RESPONSE="$(gh api --include "orgs/${ORG}/members/${AUTHOR}" 2>&1)"
-          API_EXIT=$?
-          set -e
-
-          if [ "$API_EXIT" -eq 0 ]; then
+          if [ "$AUTHOR_ASSOCIATION" = "MEMBER" ]; then
             echo "member=yes" >> "$GITHUB_OUTPUT"
-            echo "Contributor membership confirmed for ${ORG}."
+            echo "GitHub identifies the contributor as a bcgov organization member."
             exit 0
           fi
 
-          HTTP_STATUS="$(printf '%s\n' "$RESPONSE" \
-            | sed -nE 's#^HTTP/[0-9.]+[[:space:]]+([0-9]{3}).*#\1#p' \
-            | head -n 1)"
-          if [ "$HTTP_STATUS" = "404" ]; then
-            echo "::error::GitHub returned 404 for the membership check. This means either the author is not a bcgov member or ORG_READ_TOKEN cannot read organization membership. Configure ORG_READ_TOKEN with bcgov Members: read permission (or classic read:org scope), then rerun."
-          elif [ -n "$HTTP_STATUS" ]; then
-            echo "::error::Could not verify bcgov membership (GitHub HTTP ${HTTP_STATUS}). Check ORG_READ_TOKEN permissions, organization approval/SSO, token expiry, and GitHub API rate limits."
-          else
-            echo "::error::Could not reach the GitHub membership API. Check the workflow token and GitHub Actions network/API availability."
-          fi
+          echo "::error::GitHub author association '${AUTHOR_ASSOCIATION}' is not MEMBER; active asset contributions require a bcgov organization member."
           exit 1
 
       - name: Hold community auto-publish pending the new-package gate
