@@ -6,12 +6,15 @@
   "properties": {
     "schema-version": {"const": "bcgov-marketplace-security-policy/v1alpha1"},
     "policy-version": {"type": "integer", "minimum": 1},
+    "secret-patterns": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
     "blocking": {
       "type": "array",
       "uniqueItems": true,
-      "items": {
-        "enum": ["SECRET_PATTERNS", "hidden-unicode", "undeclared-network", "undeclared-environment-variable", "undeclared-script"]
-      }
+      "items": {"type": "string", "minLength": 1}
     }
   }
 }

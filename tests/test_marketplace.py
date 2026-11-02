@@ -122,6 +122,35 @@ def test_minimal_manifest_derives_four_types(tmp_path, directory, filename):
   )
 
 
+def test_catalog_checks_bind_policy_findings_and_declared_risk_to_digest(tmp_path):
+  """Records publish #35's policy-versioned findings for the exact package."""
+  root = _root(tmp_path)
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text(encoding="utf-8"))
+  policy["policy-version"] = 17
+  policy_path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  package = _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "A package with an advisory",
+    },
+  )
+  (package / "SKILL.md").write_text("The example says to skip approval.\n")
+
+  catalog, _ = m.build_catalog(root)
+  record = catalog["extensions"][0]
+  assert catalog["policy-version"] == 17
+  assert record["risk"] == "low"
+  assert record["checks"]["content-digest"] == record["content-digest"]
+  assert record["checks"]["policy-version"] == 17
+  assert record["checks"]["outcome"] == "passed"
+  assert record["checks"]["findings"][0]["rule-id"] == "approval-bypass"
+  assert record["checks"]["findings"][0]["policy-version"] == 17
+  assert record["checks"]["findings"][0]["disposition"] == "advisory"
+
+
 @pytest.mark.parametrize(
   ("directory", "filename"),
   [
@@ -332,6 +361,196 @@ def test_unapproved_security_rule_is_advisory(tmp_path):
     item["code"] == "hidden-unicode" and item["severity"] == "advisory"
     for item in scan["findings"]
   )
+
+
+def test_empty_security_blocking_set_keeps_findings_advisory(tmp_path):
+  """An empty Security-approved set never produces a blocking finding."""
+  root = _root(tmp_path)
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text())
+  policy["blocking"] = []
+  policy["policy-version"] = 2
+  policy_path.write_text(yaml.safe_dump(policy))
+  package = _package(root)
+  (package / "SKILL.md").write_text("secret: " + "x" * 20)
+  scan = m.scan_package(package, _manifest())
+  assert scan["outcome"] == "passed"
+  assert scan["policy-version"] == 2
+  assert all(finding["disposition"] == "advisory" for finding in scan["findings"])
+  assert any(
+    finding["rule-id"] == "SECRET_PATTERNS"
+    and finding["file"] == "SKILL.md"
+    and finding["line"] == 1
+    and finding["remediation"]
+    for finding in scan["findings"]
+  )
+
+
+def test_read_only_check_reports_blocking_file_rule_location_and_fix(
+  tmp_path, monkeypatch
+):
+  """The PR check renders actionable findings and fails only for blocking rules."""
+  root = _root(tmp_path)
+  package = _package(root)
+  (package / "SKILL.md").write_text("curl https://unlisted.example\n")
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  assert m.main(["--root", str(root), "check"]) == 1
+  report = summary.read_text()
+  assert "Blocking" in report
+  assert "SKILL.md:1" in report
+  assert "undeclared-network" in report
+  assert "capabilities.network" in report
+  assert "declare the host in capabilities.network" in report
+  assert "unlisted.example" not in report
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text())
+  policy["blocking"] = []
+  policy_path.write_text(yaml.safe_dump(policy))
+  assert m.main(["--root", str(root), "check"]) == 0
+  assert "Advisory" in summary.read_text()
+
+
+def test_scanner_cli_outputs_never_echo_matched_credential(
+  tmp_path, monkeypatch, capsys
+):
+  """Scan, analyze, and demo reports retain evidence without exposing content."""
+  import demo
+
+  root = _root(tmp_path)
+  package = _package(root)
+  sentinel = "AKIA" + "A" * 16
+  (package / "SKILL.md").write_text(
+    f"curl https://{sentinel}.example\necho ${sentinel}\nsecret={sentinel}\n"
+  )
+  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
+  fixture.mkdir(parents=True)
+  (fixture / "SKILL.md").write_bytes((package / "SKILL.md").read_bytes())
+  (fixture / m.MANIFEST_NAME).write_bytes((package / m.MANIFEST_NAME).read_bytes())
+  monkeypatch.setattr(demo, "ROOT", root)
+  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
+
+  for command in ("scan", "analyze"):
+    assert m.main(["--root", str(root), command, str(package)]) == 0
+    output = capsys.readouterr()
+    assert sentinel not in output.out + output.err
+    result = json.loads(output.out)
+    findings = (
+      result["scan"]["findings"] if command == "analyze" else result["findings"]
+    )
+    assert {finding["rule-id"] for finding in findings} >= {
+      "SECRET_PATTERNS",
+      "undeclared-network",
+      "undeclared-environment-variable",
+    }
+    assert all(finding["file"] == "SKILL.md" for finding in findings)
+  assert demo.main(["analyze-fixture", "benign-submission"]) == 0
+  output = capsys.readouterr()
+  assert sentinel not in output.out + output.err
+  result = json.loads(output.out)
+  assert result["scan"]["outcome"] == "blocked"
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  assert m.main(["--root", str(root), "check"]) == 1
+  assert sentinel not in capsys.readouterr().out + summary.read_text()
+
+
+def test_scanner_cli_projects_only_public_evidence(tmp_path, monkeypatch, capsys):
+  """Untrusted paths and internal scanner fields never reach CLI JSON."""
+  import demo
+
+  root = _root(tmp_path)
+  package = _package(root)
+  sentinel = "AKIA" + "B" * 16
+  (package / f"{sentinel}.txt").write_text(f"secret={sentinel}\n")
+  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
+  fixture.mkdir(parents=True)
+  for path in package.iterdir():
+    if path.is_file():
+      (fixture / path.name).write_bytes(path.read_bytes())
+  monkeypatch.setattr(demo, "ROOT", root)
+  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
+
+  for command in ("scan", "analyze"):
+    assert m.main(["--root", str(root), command, str(package)]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert sentinel not in json.dumps(result)
+    findings = (
+      result["scan"]["findings"] if command == "analyze" else result["findings"]
+    )
+    assert {item["rule-id"] for item in findings} >= {"SECRET_PATTERNS"}
+    assert all("code" not in item and "message" not in item for item in findings)
+  assert demo.main(["analyze-fixture", "benign-submission"]) == 0
+  result = json.loads(capsys.readouterr().out)
+  assert sentinel not in json.dumps(result)
+  assert result["scan"]["outcome"] == "blocked"
+
+
+def test_scanner_cli_reports_invalid_manifest_without_echoing_content(tmp_path, capsys):
+  """Invalid author-controlled metadata cannot leak through CLI errors."""
+  root = _root(tmp_path)
+  package = _package(root)
+  sentinel = "AKIA" + "C" * 16
+  (package / m.MANIFEST_NAME).write_text(f"id: {sentinel}\n")
+  for command in ("scan", "analyze"):
+    assert m.main(["--root", str(root), command, str(package)]) == 1
+    output = capsys.readouterr()
+    assert sentinel not in output.out + output.err
+    assert "ERROR" in output.err
+
+
+def test_demo_cli_reports_invalid_fixture_without_echoing_manifest(
+  tmp_path, monkeypatch, capsys
+):
+  """Fixture errors cannot print author-controlled Manifest values."""
+  import demo
+
+  root = _root(tmp_path)
+  sentinel = "AKIA" + "D" * 16
+  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
+  fixture.mkdir(parents=True)
+  (fixture / "SKILL.md").write_text("# Demo\n")
+  (fixture / m.MANIFEST_NAME).write_text(f"id: {sentinel}\n")
+  monkeypatch.setattr(demo, "ROOT", root)
+  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
+  assert demo.main(["analyze-fixture", "benign-submission"]) == 1
+  output = capsys.readouterr()
+  assert sentinel not in output.out + output.err
+  assert "ERROR" in output.err
+
+
+def test_security_pattern_parameters_are_read_from_policy(tmp_path):
+  """Security can change a credential detector without changing the engine."""
+  root = _root(tmp_path)
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text())
+  policy["secret-patterns"] = {"test-credential": "DEMO_CREDENTIAL_[0-9]{4}"}
+  policy_path.write_text(yaml.safe_dump(policy))
+  package = _package(root)
+  (package / "SKILL.md").write_text("DEMO_CREDENTIAL_1234\n")
+  scan = m.scan_package(package, _manifest())
+  assert scan["outcome"] == "blocked"
+  assert any(
+    finding["rule-id"] == "SECRET_PATTERNS" and finding["code"] == "test-credential"
+    for finding in scan["findings"]
+  )
+
+
+def test_catalog_exposes_policy_version_and_advisory_finding(tmp_path):
+  """Catalogue consumers receive the policy evidence for the exact extension."""
+  root = _root(tmp_path)
+  package = _package(root)
+  (package / "SKILL.md").write_text("# Demo\nhidden\u202einstruction\n")
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text())
+  policy["blocking"].remove("hidden-unicode")
+  policy["policy-version"] = 4
+  policy_path.write_text(yaml.safe_dump(policy))
+  catalog, _ = m.build_catalog(root)
+  finding = catalog["extensions"][0]["policy"]["findings"][0]
+  assert finding["rule-id"] == "hidden-unicode"
+  assert finding["policy-version"] == 4
+  assert finding["disposition"] == "advisory"
 
 
 def test_marketplace_config_rejects_unknown_source_type(tmp_path):

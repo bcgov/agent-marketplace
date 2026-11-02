@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import html
 import json
+import os
 import re
 import stat
 import sys
@@ -17,7 +18,6 @@ import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
 SCHEMA_VERSION = "bcgov-extension/v1alpha1"
-POLICY_VERSION = "bcgov-marketplace-policy/1.0"
 MANIFEST_NAME = "bcgov-extension.yaml"
 TYPE_DIRECTORIES = {
   "skills": "skill",
@@ -87,14 +87,6 @@ BIDI_CODEPOINTS = {
   "\u2069",
   "\ufeff",
 }
-SECRET_PATTERNS = {
-  "private-key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
-  "github-token": re.compile(r"\bgh[opsu]_[A-Za-z0-9]{20,}\b"),
-  "aws-access-key": re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
-  "assigned-secret": re.compile(
-    r"(?i)\b(?:api[_-]?key|password|secret|token)\s*[:=]\s*['\"]?[A-Za-z0-9+/=_-]{12,}"
-  ),
-}
 ADVISORY_PATTERNS = {
   "approval-bypass": re.compile(
     r"(?i)\b(?:skip|bypass|ignore).{0,40}\b(?:approval|confirmation|safeguard)\b"
@@ -119,6 +111,13 @@ ADVISORY_PATTERNS = {
   "unsupported-trust-claim": re.compile(
     r"(?i)\b(?:bc gov approved|verified secure|guaranteed safe)\b"
   ),
+}
+SECURITY_RULES = {
+  "SECRET_PATTERNS",
+  "hidden-unicode",
+  "undeclared-network",
+  "undeclared-environment-variable",
+  "undeclared-script",
 }
 NETWORK_COMMAND_RE = re.compile(
   r"(?i)\b(?:curl|wget|invoke-webrequest)\b[^\n]*https?://([A-Za-z0-9.-]+)"
@@ -394,7 +393,9 @@ def _regular_files(package_dir: Path) -> tuple[list[Path], list[dict]]:
   return files, findings
 
 
-def _scan_text(relative: str, text: str, manifest: dict) -> list[dict]:
+def _scan_text(
+  relative: str, text: str, manifest: dict, secret_patterns: dict
+) -> list[dict]:
   """Scan decoded package text for deterministic blocking and advisory rules."""
   findings = []
   declared_network = set(manifest.get("capabilities", {}).get("network", []))
@@ -418,7 +419,7 @@ def _scan_text(relative: str, text: str, manifest: dict) -> list[dict]:
           line_number,
         )
       )
-    for code, pattern in SECRET_PATTERNS.items():
+    for code, pattern in secret_patterns.items():
       if pattern.search(line):
         findings.append(
           _finding(
@@ -436,7 +437,7 @@ def _scan_text(relative: str, text: str, manifest: dict) -> list[dict]:
             "blocking",
             "undeclared-network",
             relative,
-            f"network command targets undeclared host {host!r}",
+            "network command targets a host not declared in capabilities.network",
             line_number,
           )
         )
@@ -448,7 +449,8 @@ def _scan_text(relative: str, text: str, manifest: dict) -> list[dict]:
             "blocking",
             "undeclared-environment-variable",
             relative,
-            f"references undeclared environment variable {name!r}",
+            "references a variable not declared in capabilities.environment-variables "
+            "or capabilities.secret-names",
             line_number,
           )
         )
@@ -563,6 +565,14 @@ def intake_decision(
 
 def scan_package(package_dir: Path, manifest: dict) -> dict:
   """Scan package bytes without importing or executing contributed content."""
+  root = package_dir.parents[2]
+  if not (root / "config" / "security-policy.yaml").exists():
+    root = Path(__file__).resolve().parents[1]
+  policy = load_security_policy(root)
+  secret_patterns = {
+    code: re.compile(expression)
+    for code, expression in policy["secret-patterns"].items()
+  }
   files, findings = _regular_files(package_dir)
   declared_commands = set(manifest.get("capabilities", {}).get("commands", []))
   type_directory = package_dir.parent.parent.name
@@ -668,32 +678,56 @@ def scan_package(package_dir: Path, manifest: dict) -> dict:
         )
       )
       continue
-    findings.extend(_scan_text(relative, text, manifest))
+    findings.extend(_scan_text(relative, text, manifest, secret_patterns))
   if total_bytes > MAX_PACKAGE_BYTES:
     findings.append(
       _finding(
         "blocking", "package-size", ".", f"package exceeds {MAX_PACKAGE_BYTES} bytes"
       )
     )
-  policy_path = package_dir.parents[2] / "config" / "security-policy.yaml"
-  if policy_path.exists():
-    approved = set(load_security_policy(package_dir.parents[2])["blocking"])
-    for finding in findings:
-      rule = (
-        "SECRET_PATTERNS" if finding["code"] in SECRET_PATTERNS else finding["code"]
-      )
-      if (
-        rule
-        in {
-          "SECRET_PATTERNS",
-          "hidden-unicode",
-          "undeclared-network",
-          "undeclared-environment-variable",
-          "undeclared-script",
-        }
-        and rule not in approved
-      ):
-        finding["severity"] = "advisory"
+  approved = set(policy["blocking"])
+  for finding in findings:
+    rule = "SECRET_PATTERNS" if finding["code"] in secret_patterns else finding["code"]
+    disposition = (
+      "blocking"
+      if rule in approved
+      else "advisory"
+      if rule in SECURITY_RULES
+      else finding["severity"]
+    )
+    field = {
+      "undeclared-network": "capabilities.network",
+      "undeclared-environment-variable": (
+        "capabilities.environment-variables or capabilities.secret-names"
+      ),
+      "undeclared-script": "capabilities.commands",
+      "wildcard-capability": "capabilities",
+    }.get(rule, "—")
+    finding.update(
+      {
+        "rule-id": rule,
+        "category": "security" if rule in SECURITY_RULES else "package",
+        "disposition": disposition,
+        "severity": disposition,
+        "file": finding["path"] if finding["path"] != "." else MANIFEST_NAME,
+        "field": field,
+        "line": finding.get("line", 1),
+        "remediation": (
+          "Remove the credential and rotate it if it is real"
+          if rule == "SECRET_PATTERNS"
+          else (
+            f"{finding['message']}; declare the host in {field}, or remove the command"
+            if rule == "undeclared-network"
+            else (
+              f"Declare the value in {field}, or remove its use"
+              if rule in {"undeclared-environment-variable", "undeclared-script"}
+              else finding["message"]
+            )
+          )
+        ),
+        "policy-version": policy["policy-version"],
+      }
+    )
   findings.sort(
     key=lambda item: (
       item["severity"],
@@ -703,7 +737,7 @@ def scan_package(package_dir: Path, manifest: dict) -> dict:
     )
   )
   return {
-    "policy-version": POLICY_VERSION,
+    "policy-version": policy["policy-version"],
     "outcome": "blocked"
     if any(item["severity"] == "blocking" for item in findings)
     else "passed",
@@ -938,7 +972,41 @@ def load_specialties(root: Path) -> list[dict]:
 
 def load_security_policy(root: Path) -> dict:
   """Validate Security's independently owned blocking-rule dispositions."""
-  return _validated_config(root, "security-policy.yaml", "security-policy.schema.json")
+  policy = _validated_config(
+    root, "security-policy.yaml", "security-policy.schema.json"
+  )
+  implemented = {
+    *SECURITY_RULES,
+    *ADVISORY_PATTERNS,
+    "wildcard-capability",
+    "file-count",
+    "hidden-path",
+    "nested-resource",
+    "unsupported-agent-metadata",
+    "blocked-extension-type",
+    "archive",
+    "unsupported-file-type",
+    "file-size",
+    "executable-bit",
+    "binary-file",
+    "package-size",
+    "case-collision",
+    "unreadable-path",
+    "symlink",
+    "special-file",
+    "hard-link",
+  }
+  unknown = set(policy["blocking"]) - implemented
+  if unknown:
+    raise MarketplaceError(
+      f"security policy contains unimplemented rules: {sorted(unknown)}"
+    )
+  for code, expression in policy.get("secret-patterns", {}).items():
+    try:
+      re.compile(expression)
+    except re.error as exc:
+      raise MarketplaceError(f"invalid secret pattern {code!r}: {exc}") from exc
+  return policy
 
 
 def render_codeowners(specialties: list[dict]) -> str:
@@ -1013,6 +1081,7 @@ def _review_status(
   content_digest: str,
   risk: str,
   advisory_count: int,
+  policy_version: int,
 ) -> dict:
   """Resolve trust without claiming a pinned human review for changed bytes."""
   if specialty == "community":
@@ -1020,7 +1089,7 @@ def _review_status(
       "status": "auto-scanned",
       "reviewers": [],
       "method": "automated-policy-scan",
-      "policy-version": POLICY_VERSION,
+      "policy-version": policy_version,
       "content-digest": content_digest,
       "risk": risk,
       "advisories": advisory_count,
@@ -1052,7 +1121,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
   """Build machine-readable and escaped HTML catalog projections."""
   schema = load_schema(root)
   config = load_marketplace_config(root)
-  load_security_policy(root)
+  policy = load_security_policy(root)
   specialty_ids = {item["id"] for item in load_specialties(root)}
   records = []
   errors = []
@@ -1112,7 +1181,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     record["content-digest"] = package_digest(inventory)
     record["files"] = inventory
     record["policy"] = scan
-    record["checks"] = scan
+    record["checks"] = {"content-digest": record["content-digest"], **scan}
     record["risk"] = capability_risk(manifest)
     advisories = [item for item in scan["findings"] if item["severity"] == "advisory"]
     record["review"] = _review_status(
@@ -1120,6 +1189,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
       record["content-digest"],
       capability_risk(manifest),
       len(advisories),
+      scan["policy-version"],
     )
     if record["lifecycle"] != "active":
       record["install-options"] = []
@@ -1139,7 +1209,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     "repository": config["repository"],
     "revision": config["revision"],
     "version": config["version"],
-    "policy-version": POLICY_VERSION,
+    "policy-version": policy["policy-version"],
     "approved-discovery-sources": config.get("approved-discovery-sources", []),
     "count": len(records),
     "extensions": records,
@@ -1325,12 +1395,150 @@ def validate(root: Path) -> None:
     )
 
 
+def check_policy(root: Path) -> bool:
+  """Render a read-only PR policy check with actionable grouped findings."""
+  load_security_policy(root)
+  groups = {"blocking": [], "advisory": []}
+  errors = []
+  for path in manifest_paths(root):
+    manifest, manifest_errors = validate_manifest(path, load_schema(root))
+    errors.extend(manifest_errors)
+    if manifest is None or manifest_errors:
+      continue
+    for finding in scan_package(path.parent, manifest)["findings"]:
+      groups[finding["disposition"]].append((path.parent.relative_to(root), finding))
+
+  def cell(value: object) -> str:
+    return html.escape(str(value)).replace("|", "&#124;").replace("\n", " ")
+
+  lines = ["## Marketplace security policy check", ""]
+  for disposition, label in (("blocking", "Blocking"), ("advisory", "Advisory")):
+    lines.extend(
+      [
+        f"### {label} findings ({len(groups[disposition])})",
+        "",
+        "| Extension | File:line | Field | Rule | Fix |",
+        "| --- | --- | --- | --- | --- |",
+      ]
+    )
+    for package, finding in groups[disposition]:
+      row = [
+        package,
+        f"{finding['file']}:{finding['line']}",
+        finding.get("field", "—"),
+        finding["rule-id"],
+        finding["remediation"],
+      ]
+      lines.append("| " + " | ".join(cell(value) for value in row) + " |")
+    lines.append("")
+  if errors:
+    lines.extend(["### Invalid manifests", *[f"- {cell(error)}" for error in errors]])
+  report = "\n".join(lines)
+  print(report)
+  if summary := os.environ.get("GITHUB_STEP_SUMMARY"):
+    with Path(summary).open("a", encoding="utf-8") as output:
+      output.write(report + "\n")
+  return not groups["blocking"] and not errors
+
+
+PUBLIC_RULE_IDS = {
+  rule: rule
+  for rule in (
+    "SECRET_PATTERNS",
+    "hidden-unicode",
+    "undeclared-network",
+    "undeclared-environment-variable",
+    "undeclared-script",
+    "wildcard-capability",
+    "file-count",
+    "hidden-path",
+    "nested-resource",
+    "unsupported-agent-metadata",
+    "blocked-extension-type",
+    "archive",
+    "unsupported-file-type",
+    "file-size",
+    "executable-bit",
+    "binary-file",
+    "package-size",
+    "case-collision",
+    "unreadable-path",
+    "symlink",
+    "special-file",
+    "hard-link",
+    *ADVISORY_PATTERNS,
+  )
+}
+PUBLIC_FILENAMES = {name: name for name in ROOT_FILES}
+PUBLIC_FIELDS = {
+  "undeclared-network": "capabilities.network",
+  "undeclared-environment-variable": "capabilities.environment-variables",
+  "undeclared-script": "capabilities.commands",
+}
+PUBLIC_FIXES = {
+  "SECRET_PATTERNS": "Remove the credential and rotate it if real.",
+  "hidden-unicode": "Remove hidden or bidirectional Unicode.",
+  "undeclared-network": "Declare the host in capabilities.network or remove its use.",
+  "undeclared-environment-variable": (
+    "Declare the variable in capabilities or remove its use."
+  ),
+  "undeclared-script": "Declare the script in capabilities.commands or remove it.",
+}
+
+
+def public_scan(scan: dict) -> dict:
+  """Project scan evidence for stdout without echoing author-controlled values."""
+  findings = []
+  for finding in scan["findings"]:
+    rule = PUBLIC_RULE_IDS.get(finding["rule-id"], "other")
+    findings.append(
+      {
+        "rule-id": rule,
+        "category": "security" if rule in SECURITY_RULES else "package",
+        "severity": (
+          "blocking" if finding["disposition"] == "blocking" else "advisory"
+        ),
+        "disposition": (
+          "blocking" if finding["disposition"] == "blocking" else "advisory"
+        ),
+        "file": PUBLIC_FILENAMES.get(finding["file"], "extension file"),
+        "line": int(finding["line"]),
+        "field": PUBLIC_FIELDS.get(rule, "—"),
+        "remediation": PUBLIC_FIXES.get(
+          rule, "Review the rule and correct the Extension package."
+        ),
+      }
+    )
+  return {
+    "outcome": "blocked" if scan["outcome"] == "blocked" else "passed",
+    "findings": findings,
+  }
+
+
+def public_analysis(analysis: dict) -> dict:
+  """Project submission evidence without publishing paths or manifest fields."""
+  return {
+    "classification": (
+      "blocked" if analysis["classification"] == "blocked" else "needs-review"
+    ),
+    "risk": (
+      "high"
+      if analysis["risk"] == "high"
+      else "elevated"
+      if analysis["risk"] == "elevated"
+      else "low"
+    ),
+    "scan": public_scan(analysis["scan"]),
+  }
+
+
 def _parser() -> argparse.ArgumentParser:
   """Build the marketplace command-line parser."""
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
   subparsers = parser.add_subparsers(dest="command", required=True)
   subparsers.add_parser("validate", help="validate packages and generated output")
+  subparsers.add_parser("check", help="report policy findings for the PR check")
   generate_parser = subparsers.add_parser("generate", help="write generated output")
   generate_parser.add_argument("--check", action="store_true")
   scan_parser = subparsers.add_parser("scan", help="scan one package directory")
@@ -1365,6 +1573,8 @@ def main(argv: list[str] | None = None) -> int:
   try:
     if args.command == "validate":
       validate(root)
+    elif args.command == "check":
+      return 0 if check_policy(root) else 1
     elif args.command == "generate":
       drift = generate(root, check=args.check)
       if args.check and drift:
@@ -1376,7 +1586,11 @@ def main(argv: list[str] | None = None) -> int:
       manifest, errors = validate_manifest(manifest_path, load_schema(root))
       if errors or manifest is None:
         raise MarketplaceError("\n".join(errors))
-      print(json.dumps(scan_package(args.package, manifest), indent=2, sort_keys=True))
+      print(
+        json.dumps(
+          public_scan(scan_package(args.package, manifest)), indent=2, sort_keys=True
+        )
+      )
     elif args.command == "intake":
       trust = {"yes": True, "no": False, "unknown": None}[args.author_trust]
       velocity = {"ok": True, "exceeded": False, "unknown": None}[args.velocity]
@@ -1389,10 +1603,17 @@ def main(argv: list[str] | None = None) -> int:
       )
     else:
       print(
-        json.dumps(analyze_submission(root, args.package), indent=2, sort_keys=True)
+        json.dumps(
+          public_analysis(analyze_submission(root, args.package)),
+          indent=2,
+          sort_keys=True,
+        )
       )
   except MarketplaceError as exc:
-    print(f"ERROR: {exc}", file=sys.stderr)
+    if args.command in {"scan", "analyze"}:
+      print("ERROR: Extension validation failed", file=sys.stderr)
+    else:
+      print(f"ERROR: {exc}", file=sys.stderr)
     return 1
   return 0
 
