@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
@@ -64,7 +65,12 @@ def main(argv: list[str] | None = None) -> int:
   )
   args = parser.parse_args(argv)
   if args.command == "analyze-fixture":
-    print(json.dumps(analyze_fixture(args.fixture), indent=2, sort_keys=True))
+    try:
+      result = marketplace.public_analysis(analyze_fixture(args.fixture))
+    except (marketplace.MarketplaceError, OSError, ValueError):
+      print("ERROR: Extension validation failed", file=sys.stderr)
+      return 1
+    print(json.dumps(result, indent=2, sort_keys=True))
   return 0
 
 

@@ -104,7 +104,7 @@
       "policy": {
         "findings": [],
         "outcome": "passed",
-        "policy-version": "bcgov-marketplace-policy/1.0"
+        "policy-version": 2
       },
       "prerequisites": [
         "Access to the target BC Gov Azure Landing Zone project"
@@ -203,7 +203,7 @@
       "policy": {
         "findings": [],
         "outcome": "passed",
-        "policy-version": "bcgov-marketplace-policy/1.0"
+        "policy-version": 2
       },
       "prerequisites": [
         "GitHub Copilot with Agent Skills support"
@@ -283,15 +283,22 @@
       "policy": {
         "findings": [
           {
+            "category": "package",
             "code": "unsupported-trust-claim",
+            "disposition": "advisory",
+            "field": "\u2014",
+            "file": "references/THIRD_PARTY.md",
             "line": 67,
             "message": "instruction requires human review",
             "path": "references/THIRD_PARTY.md",
+            "policy-version": 2,
+            "remediation": "instruction requires human review",
+            "rule-id": "unsupported-trust-claim",
             "severity": "advisory"
           }
         ],
         "outcome": "passed",
-        "policy-version": "bcgov-marketplace-policy/1.0"
+        "policy-version": 2
       },
       "prerequisites": [
         "GitHub Copilot with Agent Skills support"
@@ -380,14 +387,22 @@
       "policy": {
         "findings": [
           {
+            "category": "package",
             "code": "wildcard-capability",
+            "disposition": "advisory",
+            "field": "capabilities",
+            "file": "bcgov-extension.yaml",
+            "line": 1,
             "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
             "path": ".",
+            "policy-version": 2,
+            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "rule-id": "wildcard-capability",
             "severity": "advisory"
           }
         ],
         "outcome": "passed",
-        "policy-version": "bcgov-marketplace-policy/1.0"
+        "policy-version": 2
       },
       "prerequisites": [
         "A GitHub repository with Actions enabled"
@@ -472,14 +487,22 @@
       "policy": {
         "findings": [
           {
+            "category": "package",
             "code": "wildcard-capability",
+            "disposition": "advisory",
+            "field": "capabilities",
+            "file": "bcgov-extension.yaml",
+            "line": 1,
             "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
             "path": ".",
+            "policy-version": 2,
+            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "rule-id": "wildcard-capability",
             "severity": "advisory"
           }
         ],
         "outcome": "passed",
-        "policy-version": "bcgov-marketplace-policy/1.0"
+        "policy-version": 2
       },
       "prerequisites": [
         "GitHub CLI authenticated for the repository being assessed"
@@ -661,14 +684,22 @@
       "policy": {
         "findings": [
           {
+            "category": "package",
             "code": "wildcard-capability",
+            "disposition": "advisory",
+            "field": "capabilities",
+            "file": "bcgov-extension.yaml",
+            "line": 1,
             "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
             "path": ".",
+            "policy-version": 2,
+            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "rule-id": "wildcard-capability",
             "severity": "advisory"
           }
         ],
         "outcome": "passed",
-        "policy-version": "bcgov-marketplace-policy/1.0"
+        "policy-version": 2
       },
       "prerequisites": [
         "Python 3.12 or newer",
@@ -834,14 +865,22 @@
       "policy": {
         "findings": [
           {
+            "category": "package",
             "code": "wildcard-capability",
+            "disposition": "advisory",
+            "field": "capabilities",
+            "file": "bcgov-extension.yaml",
+            "line": 1,
             "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
             "path": ".",
+            "policy-version": 2,
+            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "rule-id": "wildcard-capability",
             "severity": "advisory"
           }
         ],
         "outcome": "passed",
-        "policy-version": "bcgov-marketplace-policy/1.0"
+        "policy-version": 2
       },
       "prerequisites": [
         "Bash and jq",
@@ -929,7 +968,7 @@
       "policy": {
         "findings": [],
         "outcome": "passed",
-        "policy-version": "bcgov-marketplace-policy/1.0"
+        "policy-version": 2
       },
       "prerequisites": [
         "Access to a BC Gov Private Cloud project for live validation"
@@ -1011,7 +1050,7 @@
       "policy": {
         "findings": [],
         "outcome": "passed",
-        "policy-version": "bcgov-marketplace-policy/1.0"
+        "policy-version": 2
       },
       "prerequisites": [
         "GitHub repository with branch protection enabled",

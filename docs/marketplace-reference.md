@@ -6,6 +6,7 @@ This is the reference document for the repository and the marketplace mechanics.
 
 ```text
 config/marketplace.yaml               centrally controlled release and source policy
+config/security-policy.yaml           Security-owned scan dispositions and secret patterns
 schemas/                              marketplace metadata schemas
 skills/<bucket>/<name>/SKILL.md      Agent Skill content
 prompts/<bucket>/<name>/prompt.prompt.md  prompt content
@@ -68,6 +69,35 @@ The repository validation path treats contributed package files as data and does
 - the canonical repo state for the published release.
 
 The `make verify` command is the repository’s launch gate.
+
+### Security policy check
+
+`uv run python scripts/marketplace.py check` scans Extension files as data and
+groups blocking and advisory findings in the output and, in CI, the GitHub job
+summary. Blocking findings fail the check; advisory-only findings do not. Each
+finding records its rule ID, category, severity, disposition, file, line,
+field, remediation and Security policy version. The same records are stored in
+the catalogue's `extensions[].policy.findings` for published Extensions.
+Capability risk is derived from declared Manifest capabilities only;
+undeclared use is reported by the `undeclared-*` rules instead.
+
+Security owns `config/security-policy.yaml` and the fixtures in
+`tests/security-policy/`. Only rule IDs in `blocking` are approved security
+blockers; removing all approved IDs is valid and leaves detected security
+findings advisory. Other package-format and filesystem safety checks still
+enforce their existing validation constraints. Unknown rule IDs and malformed
+patterns fail policy validation. Increment `policy-version` whenever Security
+changes the policy, and run `make verify` before merging. The PR workflow runs
+the Security fixtures and the read-only, secret-free policy check, including
+for fork contributions. This check is not a scanner pilot or a safety
+certification, and it does not change the Community auto-publish default.
+
+The `scan`, `analyze`, and demo command-line JSON is a deliberately limited
+public projection of the internal scan: outcome, fixed rule identifiers and
+remediation, safe file labels and line numbers (and analysis classification and
+declared risk). Arbitrary Manifest values, filenames, matched content and
+validation error details are not printed to terminal logs. The full internal
+finding contract remains available to the catalogue build and trusted callers.
 
 ## Commands used by maintainers
 
