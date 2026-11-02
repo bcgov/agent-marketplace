@@ -11,7 +11,6 @@ import tempfile
 from pathlib import Path
 
 import marketplace
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "docs" / "demos" / "fixtures"
@@ -39,12 +38,6 @@ def analyze_fixture(name: str) -> dict:
   temporary_package.rename(package)
   try:
     shutil.copytree(fixture, package, dirs_exist_ok=True)
-    manifest_path = package / marketplace.MANIFEST_NAME
-    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
-    manifest["id"] = f"bcgov-public/{package.name}"
-    manifest_path.write_text(
-      yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
-    )
     result = marketplace.analyze_submission(ROOT, package)
     result["fixture"] = name
     return result

@@ -25,7 +25,6 @@ def _manifest(name="demo"):
   """Return a complete hosted extension manifest."""
   return {
     "schema-version": m.SCHEMA_VERSION,
-    "id": f"bcgov-public/{name}",
     "display-name": "Demo skill",
     "summary": "Demonstrates the marketplace contract.",
     "publisher": "Province of British Columbia",
@@ -84,6 +83,176 @@ def _package(root: Path, name="demo", manifest=None) -> Path:
     yaml.safe_dump(manifest or _manifest(name), sort_keys=False), encoding="utf-8"
   )
   return package
+
+
+@pytest.mark.parametrize(
+  ("directory", "filename"),
+  [
+    ("skills", "SKILL.md"),
+    ("prompts", "demo.prompt.md"),
+    ("instructions", "demo.instructions.md"),
+    ("agents", "demo.agent.md"),
+  ],
+)
+def test_minimal_manifest_derives_four_types(tmp_path, directory, filename):
+  """The public catalog derives every type from its content and directory."""
+  root = _root(tmp_path)
+  package = root / directory / "community" / "demo"
+  package.mkdir(parents=True)
+  (package / filename).write_text(
+    "---\nname: Frontmatter name\ndescription: Frontmatter summary\n---\n\nContent\n"
+  )
+  (package / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump({"maintainers": ["@bcgov/platform"], "capabilities": "none"})
+  )
+  catalog, _ = m.build_catalog(root)
+  record = catalog["extensions"][0]
+  assert (
+    catalog["schema-version"],
+    record["id"],
+    record["type"],
+    record["display-name"],
+    record["summary"],
+  ) == (
+    "bcgov-marketplace/v1",
+    "bcgov-public/demo",
+    m.TYPE_DIRECTORIES[directory],
+    "Frontmatter name",
+    "Frontmatter summary",
+  )
+
+
+@pytest.mark.parametrize(
+  ("directory", "filename"),
+  [
+    ("skills", "SKILL.md"),
+    ("prompts", "demo.prompt.md"),
+    ("instructions", "demo.instructions.md"),
+    ("agents", "demo.agent.md"),
+  ],
+)
+def test_missing_summary_names_content_file_and_fix(tmp_path, directory, filename):
+  """Every type gives an actionable diagnostic instead of a body summary."""
+  root = _root(tmp_path)
+  package = root / directory / "community" / "demo"
+  package.mkdir(parents=True)
+  (package / filename).write_text("---\nname: Demo\n---\n\nContent\n")
+  (package / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump({"maintainers": ["@bcgov/platform"], "capabilities": "none"})
+  )
+  with pytest.raises(m.MarketplaceError, match=rf"{filename}.*summary.*description:"):
+    m.build_catalog(root)
+
+
+def test_removed_tombstone_and_rename_keep_records_without_install_files(tmp_path):
+  """A rename publishes a tombstone and a replacement without old content."""
+  root = _root(tmp_path)
+  old = root / "skills" / "community" / "old-name"
+  old.mkdir(parents=True)
+  (old / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump(
+      {
+        "maintainers": ["@bcgov/platform"],
+        "capabilities": "none",
+        "lifecycle": "removed",
+        "notice": "Moved to new-name",
+        "moved-to": "bcgov-public/new-name",
+        "summary": "Old summary",
+      }
+    )
+  )
+  _package(
+    root,
+    name="new-name",
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "New summary",
+    },
+  )
+  records = {record["id"]: record for record in m.build_catalog(root)[0]["extensions"]}
+  assert records["bcgov-public/old-name"]["moved-to"] == "bcgov-public/new-name"
+  assert records["bcgov-public/old-name"]["display-name"] == "old-name"
+  assert records["bcgov-public/old-name"]["files"] == [
+    record
+    for record in records["bcgov-public/old-name"]["files"]
+    if record["path"] == m.MANIFEST_NAME
+  ]
+  assert records["bcgov-public/new-name"]["lifecycle"] == "active"
+
+
+def test_quarantine_keeps_content_without_install_action(tmp_path):
+  """Quarantine publishes the content and notice but blocks installation."""
+  root = _root(tmp_path)
+  package = _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "A quarantined asset",
+      "lifecycle": "quarantined",
+      "notice": "Under investigation",
+    },
+  )
+  record = m.build_catalog(root)[0]["extensions"][0]
+  assert (package / "SKILL.md").is_file()
+  assert record["notice"] == "Under investigation"
+  assert record["install-options"] == []
+  assert any(item["path"] == "SKILL.md" for item in record["files"])
+
+
+def test_non_active_record_requires_notice(tmp_path):
+  """A reviewer cannot publish a tombstone without an explanation."""
+  root = _root(tmp_path)
+  _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "Previous asset",
+      "lifecycle": "quarantined",
+    },
+  )
+  with pytest.raises(m.MarketplaceError, match=r"notice: add a notice"):
+    m.build_catalog(root)
+
+
+def test_active_record_cannot_redirect_to_replacement(tmp_path):
+  """An old id must stop offering installs before it points to a new id."""
+  root = _root(tmp_path)
+  package = _package(root)
+  manifest = {
+    "maintainers": ["@bcgov/platform"],
+    "capabilities": "none",
+    "summary": "Old summary",
+    "moved-to": "bcgov-public/new-name",
+  }
+  (package / m.MANIFEST_NAME).write_text(yaml.safe_dump(manifest))
+  with pytest.raises(m.MarketplaceError, match=r"moved-to.*non-active"):
+    m.build_catalog(root)
+
+
+def test_manifest_overrides_frontmatter_and_path_fallback(tmp_path):
+  """Metadata override order is Manifest, frontmatter, then path for names."""
+  root = _root(tmp_path)
+  package = _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "display-name": "Explicit title",
+      "summary": "Explicit summary",
+    },
+  )
+  (package / "SKILL.md").write_text(
+    "---\nname: Frontmatter title\ndescription: Frontmatter summary\n---\nBody"
+  )
+  record = m.build_catalog(root)[0]["extensions"][0]
+  assert (record["display-name"], record["summary"], record["name"]) == (
+    "Explicit title",
+    "Explicit summary",
+    "demo",
+  )
 
 
 def test_marketplace_config_validates_typed_sources(tmp_path):
@@ -207,8 +376,9 @@ def test_manifest_id_matches_directory(tmp_path):
   """The stable public ID must derive from the package directory."""
   root = _root(tmp_path)
   package = _package(root, name="folder", manifest=_manifest("other"))
-  _, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
-  assert any("bcgov-public/folder" in error for error in errors)
+  manifest, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
+  assert manifest["id"] == "bcgov-public/folder"
+  assert not errors
 
 
 def test_manifest_paths_include_canonical_layouts(tmp_path):
@@ -257,19 +427,19 @@ def test_manifest_paths_reject_flat_legacy_layout(tmp_path):
     (
       "prompts",
       "prompt",
-      "prompt.prompt.md",
+      "demo.prompt.md",
       "name: demo\ndescription: A focused task.\nagent: agent",
     ),
     (
       "instructions",
       "instructions",
-      "instructions.instructions.md",
+      "demo.instructions.md",
       "description: Persistent project guidance.",
     ),
     (
       "agents",
       "agent",
-      "agent.agent.md",
+      "demo.agent.md",
       "name: demo\ndescription: A focused assistant role.",
     ),
   ],

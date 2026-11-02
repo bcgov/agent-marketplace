@@ -12,15 +12,15 @@ skills/<community-or-specialty>/<name>/
 └── bcgov-extension.yaml
 
 prompts/<community-or-specialty>/<name>/
-├── prompt.prompt.md
+├── <name>.prompt.md
 └── bcgov-extension.yaml
 
 instructions/<community-or-specialty>/<name>/
-├── instructions.instructions.md
+├── <name>.instructions.md
 └── bcgov-extension.yaml
 
 agents/<community-or-specialty>/<name>/
-├── agent.agent.md
+├── <name>.agent.md
 └── bcgov-extension.yaml
 ```
 
@@ -30,27 +30,39 @@ for a package to be a valid skill.
 
 ## Type-specific content
 
-Every content file is UTF-8 Markdown with non-empty content. Types other than
-skills require YAML frontmatter with a non-empty `description`.
+Every content file is UTF-8 Markdown with non-empty content. All four types
+can supply `description` in YAML frontmatter; otherwise the Manifest must
+supply `summary`. Non-skill types require YAML frontmatter.
 
 - **Skill**: `SKILL.md`; validated by [SKILL.md Spec](./SKILL_SPEC.md).
-- **Prompt**: `prompt.prompt.md`; a focused, reusable request. The `name` and
+- **Prompt**: `<name>.prompt.md`; a focused, reusable request. The `name` and
   `agent` fields are optional. A prompt's `name`, when present, is a display
   name and need not match the package name.
-- **Instructions**: `instructions.instructions.md`; persistent guidance.
+- **Instructions**: `<name>.instructions.md`; persistent guidance.
   `applyTo` is optional; when omitted, the host decides where the guidance
   applies. The `name` field is optional.
-- **Agent**: `agent.agent.md`; a focused assistant role with explicit
-  responsibility and boundaries. It requires `name` and `description`; the
-  name is a display name.
+- **Agent**: `<name>.agent.md`; a focused assistant role with explicit
+  responsibility and boundaries. Its optional frontmatter `name` is a
+  display name.
 
 ## Marketplace manifest
 
 Every manifest uses the closed
 [`bcgov-extension/v1alpha1` schema](../schemas/bcgov-extension-v1alpha1.schema.json).
-It records the stable extension ID, summary, publisher, maintainers, support,
-license, lifecycle, prerequisites, declared capabilities, and optional
-compatibility exclusions.
+Only `maintainers` and `capabilities` are required; `capabilities: none` is an
+explicit declaration of no access. The catalog derives `id`, `type`,
+`specialty`, and `name` from the directory. `display-name` comes from the
+Manifest, then frontmatter `name`, then the directory name verbatim. `summary`
+comes from the Manifest, then frontmatter `description`; there is no body
+fallback. The catalog uses `bcgov-marketplace/v1`.
+
+The default lifecycle is `active`. Set `lifecycle: quarantined` with `notice`
+to keep content visible with a warning but block installation. Set
+`lifecycle: removed` with `notice` and remove all content, leaving only the
+Manifest (including `summary`) as a tombstone. On a rename or move, retain
+the old Manifest with `moved-to: bcgov-public/<new-name>` and publish the new
+path as a separate active Extension. Non-active records remain published but
+offer no install actions; drafts are not published.
 
 `compatibility.not-ready-on` is a unique list of lower-case harness identifiers
 such as `github-copilot-vscode`, `claude-code`, or `openai-codex`. It records

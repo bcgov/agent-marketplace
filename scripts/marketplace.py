@@ -33,6 +33,14 @@ ARTIFACT_FILES = {
   "instructions": "instructions.instructions.md",
   "agents": "agent.agent.md",
 }
+EMPTY_CAPABILITIES = {
+  "filesystem": {"read": [], "write": []},
+  "network": [],
+  "commands": [],
+  "environment-variables": [],
+  "secret-names": [],
+  "data-classes": [],
+}
 ROOT_FILES = {MANIFEST_NAME, *ARTIFACT_FILES.values()}
 RESOURCE_DIRECTORIES = {"agents", "assets", "references", "scripts"}
 MAX_FILES = 100
@@ -211,9 +219,6 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
   ):
     location = ".".join(str(part) for part in error.path) or "<root>"
     errors.append(f"{path}: {location}: {error.message}")
-  expected_id = f"bcgov-public/{path.parent.name}"
-  if manifest.get("id") != expected_id:
-    errors.append(f"{path}: id must be {expected_id!r}")
   parts = path.parts[-4:-1]
   root = path.parents[3]
   registry = (
@@ -230,8 +235,64 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
       f"{path.parent}: package must use a canonical type/specialty/name path"
     )
   else:
-    artifact_path = path.parent / ARTIFACT_FILES[parts[0]]
-    errors.extend(_validate_artifact(artifact_path, TYPE_DIRECTORIES[parts[0]], path))
+    name = parts[2]
+    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name):
+      errors.append(f"{path.parent}: name must be kebab-case")
+    filename = (
+      "SKILL.md" if parts[0] == "skills" else f"{name}.{TYPE_DIRECTORIES[parts[0]]}.md"
+    )
+    artifact_path = path.parent / filename
+    lifecycle = manifest.get("lifecycle", "active")
+    if lifecycle != "removed":
+      errors.extend(_validate_artifact(artifact_path, TYPE_DIRECTORIES[parts[0]], path))
+    elif any(item.name != MANIFEST_NAME for item in path.parent.iterdir()):
+      errors.append(
+        f"{path.parent}: removed: delete content files; keep only the Manifest"
+      )
+    if lifecycle != "active" and not manifest.get("notice"):
+      errors.append(f"{path}: notice: add a notice for non-active lifecycle")
+    if lifecycle == "active" and manifest.get("moved-to"):
+      errors.append(f"{path}: moved-to: use a non-active lifecycle for the old id")
+    if manifest.get("moved-to") and manifest["moved-to"] == f"bcgov-public/{name}":
+      errors.append(f"{path}: moved-to: replacement must have a different id")
+    frontmatter = {}
+    if artifact_path.is_file():
+      text = artifact_path.read_text(encoding="utf-8")
+      match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)", text, re.DOTALL)
+      if match:
+        try:
+          frontmatter = yaml.load(match.group(1), Loader=StrictSafeLoader) or {}
+        except yaml.YAMLError:
+          pass
+    if not isinstance(frontmatter, dict):
+      frontmatter = {}
+    if not manifest.get("summary") and not frontmatter.get("description"):
+      if lifecycle == "removed":
+        errors.append(f"{path}: summary: add `summary:` to the Manifest")
+      else:
+        errors.append(
+          f"{artifact_path}: summary: add `description:` to the frontmatter "
+          "or `summary:` to the Manifest"
+        )
+    manifest = {
+      "schema-version": SCHEMA_VERSION,
+      "id": f"bcgov-public/{name}",
+      "name": name,
+      "display-name": frontmatter.get("name") or name,
+      "summary": frontmatter.get("description", ""),
+      "publisher": "Province of British Columbia",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "prerequisites": [],
+      "compatibility": {"not-ready-on": []},
+      **manifest,
+    }
+    if manifest.get("capabilities") == "none":
+      manifest["capabilities"] = {
+        **EMPTY_CAPABILITIES,
+        "filesystem": {"read": [], "write": []},
+      }
   return manifest, errors
 
 
@@ -246,7 +307,7 @@ def _validate_artifact(
     text = path.read_text(encoding="utf-8")
   except (OSError, UnicodeError) as exc:
     return [f"{path}: cannot read UTF-8 content: {exc}"]
-  if extension_type == "skill":
+  if extension_type == "skill" and not text.startswith("---"):
     return [] if text.strip() else [f"{path}: content must not be empty"]
   match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)", text, re.DOTALL)
   if not match:
@@ -258,13 +319,10 @@ def _validate_artifact(
   if not isinstance(frontmatter, dict):
     return [f"{path}: frontmatter must be a mapping"]
 
-  required = {
-    "prompt": {"description"},
-    "instructions": {"description"},
-    "agent": {"name", "description"},
-  }[extension_type]
-  for field in sorted(required):
-    if not isinstance(frontmatter.get(field), str) or not frontmatter[field].strip():
+  for field in ("name", "description"):
+    if field in frontmatter and (
+      not isinstance(frontmatter[field], str) or not frontmatter[field].strip()
+    ):
       errors.append(f"{path}: frontmatter field {field!r} must be a non-empty string")
   if not text[match.end() :].strip():
     errors.append(f"{path}: content after frontmatter must not be empty")
@@ -510,7 +568,9 @@ def scan_package(package_dir: Path, manifest: dict) -> dict:
   type_directory = package_dir.parent.parent.name
   expected_root_files = {
     MANIFEST_NAME,
-    ARTIFACT_FILES.get(type_directory, "SKILL.md"),
+    "SKILL.md"
+    if type_directory not in ARTIFACT_FILES or type_directory == "skills"
+    else f"{package_dir.name}.{TYPE_DIRECTORIES.get(type_directory, 'skill')}.md",
   }
   for field in capability_wildcards(manifest.get("capabilities", {}) or {}):
     findings.append(
@@ -1027,6 +1087,18 @@ def build_catalog(root: Path) -> tuple[dict, str]:
       "files": [],
       "policy": {},
       "review": {},
+      "route": (
+        {"type": "community"}
+        if specialty == "community"
+        else {
+          "type": "specialty-review",
+          "owner-team": next(
+            item["owner-team"]
+            for item in load_specialties(root)
+            if item["id"] == specialty
+          ),
+        }
+      ),
     }
     scan = scan_package(package_dir, manifest)
     blocking = [item for item in scan["findings"] if item["severity"] == "blocking"]
@@ -1040,6 +1112,8 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     record["content-digest"] = package_digest(inventory)
     record["files"] = inventory
     record["policy"] = scan
+    record["checks"] = scan
+    record["risk"] = capability_risk(manifest)
     advisories = [item for item in scan["findings"] if item["severity"] == "advisory"]
     record["review"] = _review_status(
       specialty,
@@ -1047,14 +1121,20 @@ def build_catalog(root: Path) -> tuple[dict, str]:
       capability_risk(manifest),
       len(advisories),
     )
+    if record["lifecycle"] != "active":
+      record["install-options"] = []
     records.append(record)
+  ids = {record["id"] for record in records}
+  for record in records:
+    if record.get("moved-to") and record["moved-to"] not in ids:
+      errors.append(f"{record['id']}: moved-to: replacement must exist in the catalog")
   if not records:
     errors.append("no hosted marketplace manifests found")
   if errors:
     raise MarketplaceError("\n".join(errors))
   records.sort(key=lambda item: item["id"])
   catalog = {
-    "schema-version": "bcgov-marketplace-catalog/v1alpha1",
+    "schema-version": "bcgov-marketplace/v1",
     "release-state": config["release-state"],
     "repository": config["repository"],
     "revision": config["revision"],
@@ -1139,6 +1219,9 @@ def _catalog_row(record: dict) -> str:
     [
       record["display-name"],
       record["summary"],
+      record["id"],
+      record.get("notice", ""),
+      record.get("moved-to", ""),
       specialty,
       record.get("type") or "",
       " ".join(record.get("maintainers") or []),
@@ -1171,6 +1254,15 @@ def _catalog_row(record: dict) -> str:
       f'    <h3><button type="button" class="cat-row-open">'
       f"{html.escape(record['display-name'])}</button></h3>",
       f'    <p class="cat-row-summary">{html.escape(record["summary"])}</p>',
+      *(
+        [
+          '    <p class="cat-row-summary">Unavailable: '
+          f"{html.escape(record['lifecycle'])}. "
+          "Installation is blocked.</p>"
+        ]
+        if record["lifecycle"] != "active"
+        else []
+      ),
       "  </div>",
       f'  <p class="cat-row-domain">{html.escape(specialty)}</p>',
       f'  <ul class="cat-slots" aria-label="{html.escape(sentence, quote=True)}">',

@@ -33,9 +33,9 @@ TYPE_DIRECTORIES = {
 }
 ARTIFACT_FILENAMES = {
   "skill": "SKILL.md",
-  "prompt": "prompt.prompt.md",
-  "instructions": "instructions.instructions.md",
-  "agent": "agent.agent.md",
+  "prompt": "{name}.prompt.md",
+  "instructions": "{name}.instructions.md",
+  "agent": "{name}.agent.md",
 }
 
 
@@ -156,27 +156,14 @@ def _artifact_template(
 
 def _manifest(args) -> dict:
   """Build author-controlled marketplace metadata for a new package."""
-  return {
-    "schema-version": "bcgov-extension/v1alpha1",
-    "id": f"bcgov-public/{args.name}",
-    "display-name": args.display_name,
-    "summary": args.summary,
-    "publisher": "Province of British Columbia",
-    "maintainers": args.maintainer,
-    "support": args.support,
-    "license": "Apache-2.0",
-    "lifecycle": "active",
-    "prerequisites": [],
-    "compatibility": {"not-ready-on": getattr(args, "not_ready_on", [])},
-    "capabilities": {
-      "filesystem": {"read": [], "write": []},
-      "network": [],
-      "commands": [],
-      "environment-variables": [],
-      "secret-names": [],
-      "data-classes": ["PUBLIC"],
-    },
-  }
+  manifest = {"maintainers": args.maintainer, "capabilities": "none"}
+  if args.display_name != args.name:
+    manifest["display-name"] = args.display_name
+  if args.summary != args.description:
+    manifest["summary"] = args.summary
+  if getattr(args, "not_ready_on", []):
+    manifest["compatibility"] = {"not-ready-on": args.not_ready_on}
+  return manifest
 
 
 def initialize(args) -> dict:
@@ -189,7 +176,7 @@ def initialize(args) -> dict:
     if existing.exists():
       raise CreateError(f"extension id is already in use: bcgov-public/{args.name}")
   package.mkdir(parents=True)
-  artifact_filename = ARTIFACT_FILENAMES[extension_type]
+  artifact_filename = ARTIFACT_FILENAMES[extension_type].format(name=args.name)
   (package / artifact_filename).write_text(
     _artifact_template(extension_type, args.name, args.description, args.display_name),
     encoding="utf-8",
