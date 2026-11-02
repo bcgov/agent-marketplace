@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prototype: extension security checks</title>
+  <style>
+    :root {
+      font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: #17293d;
+      background: #edf2f6;
+      --blue: #003366;
+      --gold: #fcba19;
+      --line: #bbcbd9;
+      --muted: #40566d;
+      --paper: #fff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding-bottom: 6rem; }
+    button { font: inherit; cursor: pointer; }
+    button:focus-visible, a:focus-visible { outline: 3px solid #006bb6; outline-offset: 3px; }
+    header { background: var(--blue); color: #fff; border-bottom: 5px solid var(--gold); padding: 1.1rem max(1.25rem, calc((100vw - 72rem)/2)); }
+    header strong { font-size: 1.1rem; }
+    header span { opacity: .8; margin-left: .7rem; }
+    main { max-width: 72rem; margin: auto; padding: 2rem 1.25rem 4rem; }
+    h1 { font-size: clamp(1.8rem, 3.8vw, 2.8rem); line-height: 1.15; margin: .4rem 0 1rem; max-width: 28ch; }
+    h2 { font-size: 1.35rem; line-height: 1.25; margin: 0 0 .8rem; }
+    h3 { font-size: 1.05rem; margin: 1rem 0 .35rem; }
+    p { margin: .3rem 0 1rem; max-width: 75ch; }
+    small, .small { font-size: .85rem; }
+    .muted { color: var(--muted); }
+    .intro { max-width: 65ch; margin-bottom: 1.5rem; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin: 1.5rem 0; }
+    .toolbar button, .tabs button { background: #fff; color: var(--blue); border: 2px solid var(--blue); border-radius: .2rem; padding: .5rem .85rem; min-height: 44px; }
+    .toolbar button[aria-pressed=true], .tabs button[aria-pressed=true] { background: var(--blue); color: #fff; }
+    .surface { background: var(--paper); border: 1px solid var(--line); padding: 1.35rem; }
+    .surface + .surface { margin-top: 1rem; }
+    .step { border-left: 5px solid var(--blue); padding-left: 1.3rem; margin: 0 0 1.4rem; }
+    .step:last-child { margin-bottom: 0; }
+    .tag { display: inline-block; font-size: .8rem; font-weight: 700; border: 1px solid currentColor; padding: .12rem .45rem; border-radius: .2rem; margin: .15rem .3rem .15rem 0; }
+    .hold { color: #8d291c; background: #fff2ef; }
+    .advisory { color: #785200; background: #fff5da; }
+    .ok { color: #17613a; background: #e8f4ec; }
+    .info { color: #174e81; background: #ebf4fc; }
+    .evidence { font: .9rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+    .rule { border-top: 1px solid var(--line); padding: .7rem 0; }
+    .rule:first-child { border-top: none; }
+    .rule p { margin: .3rem 0; }
+    .callout { background: #edf4fa; border-left: 4px solid var(--blue); padding: .75rem 1rem; margin: 1rem 0; }
+    .warn { background: #fff4e0; border-left-color: #9c6100; }
+    .failure { background: #fff2ef; border-left-color: #a23225; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .wide { grid-column: 1 / -1; }
+    .workspace { display: grid; grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr); gap: 1rem; }
+    .workspace nav { background: var(--blue); color: #fff; padding: 1.2rem; }
+    .workspace nav a { display: block; padding: .65rem 0; color: #fff; border-bottom: 1px solid #ffffff55; }
+    .record { border-top: 1px solid var(--line); padding: 1.1rem 0; }
+    .record:first-child { border: 0; }
+    .record .label { font-weight: 700; color: var(--blue); display: block; }
+    .tabs { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+    .switcher { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: .7rem; background: #122a43; color: #fff; padding: .55rem; border-radius: .5rem; box-shadow: 0 3px 14px #0006; max-width: calc(100vw - 1rem); z-index: 3; }
+    .switcher button { background: #fff; color: #123457; border: 0; border-radius: .3rem; min-width: 44px; min-height: 44px; }
+    .switcher output { min-width: 12rem; text-align: center; font-weight: 700; }
+    @media (max-width: 700px) {
+      .grid, .workspace { grid-template-columns: 1fr; }
+      .workspace nav { display: none; }
+      header span { display: block; margin-left: 0; }
+      .switcher output { min-width: 8rem; font-size: .85rem; }
+    }
+  </style>
+</head>
+<body>
+  <header><strong>BC Gov Agent Marketplace</strong><span>Security checks / throwaway prototype, not a live check</span></header>
+  <main>
+    <h1>What happens to an Extension after a PR?</h1>
+    <p class="intro">Compare three ways to explain rule ownership, actionable findings and revision-specific Catalogue evidence. All data below is illustrative; no submitted content is executed or scanned here.</p>
+    <div class="toolbar" role="group" aria-label="Example submission">
+      <strong>Example revision:</strong>
+      <button type="button" id="held" aria-pressed="true">Held: missing declaration</button>
+      <button type="button" id="eligible" aria-pressed="false">Eligible: corrected declaration</button>
+    </div>
+    <div id="prototype" aria-live="polite"></div>
+  </main>
+  <div class="switcher" role="group" aria-label="Prototype layout switcher">
+    <button id="previous" type="button" aria-label="Previous layout">&#8592;</button>
+    <output id="variant-label" aria-live="polite"></output>
+    <button id="next" type="button" aria-label="Next layout">&#8594;</button>
+  </div>
+  <script>
+    // Three layouts of the same hypothetical flow, switchable with ?variant=A|B|C.
+    const variants = { A: "Contribution journey", B: "Review workspace", C: "Evidence record" };
+    const params = new URLSearchParams(location.search);
+    let variant = variants[params.get("variant")] ? params.get("variant") : "A";
+    let held = true;
+
+    function governance() {
+      return `<h2>Shared rules, independent engine</h2>
+        <p>Security owns a versioned marketplace security policy in the repo. A rule change is proposed by PR and approved by Security before it can block. Marketplace maintainers own pinned scanner versions, adapters and the normalized finding contract; they cannot silently promote a new detection to blocking.</p>
+        <div class="rule"><span class="tag info">Policy approval</span> <strong>SEC-CAP-02</strong>: undeclared network use is a high-confidence, deterministic block. Security approval required for a rule or disposition change.</div>
+        <div class="rule"><span class="tag info">Replaceable scanners</span> GHAS secret scanning stays native. Cisco skill-scanner and NVIDIA SkillSpector are piloted in static-only modes. Either adapter can change while the finding fields and policy decision stay stable.</div>
+        <div class="rule"><span class="tag advisory">Advisory only</span> Heuristic / model-based signals may inform a human but never become a blocking result without a separately approved deterministic rule.</div>`;
+    }
+    function author() {
+      return `<h2>Author view: PR #48 at revision <span class="evidence">${held ? "a31f0c7" : "b74e231"}</span></h2>
+        <p>${held ? `<span class="tag hold">Held: fix and push</span> A detected network capability is missing from the Manifest. This is a declared-versus-detected mismatch, not a risk-tier calculated from scanner output.` : `<span class="tag ok">Eligible for Community auto-publish gate</span> Network is now declared; risk tier is calculated from author-declared capabilities, not scanner guesses. Other required gates still apply.`}</p>
+        <div class="rule"><span class="tag ${held ? "hold" : "ok"}">${held ? "Blocking / high" : "Resolved on this revision"}</span> <strong>SEC-CAP-02</strong> · <span class="evidence">skills/community/service-helper/SKILL.md:27</span><br>
+        ${held ? "Network access referenced, but Manifest capabilities list none. Declare the hostname under capabilities.network or remove the instruction; push a new commit to retry." : "Manifest now declares the relevant network host. Prior finding belongs only to a31f0c7, not this revision."}</div>
+        <div class="rule"><span class="tag advisory">Advisory / medium</span> <strong>SCN-PROMPT-07</strong> · <span class="evidence">skills/community/service-helper/SKILL.md:44</span><br>Possible instruction override in quoted sample text. Review the quote and remove or explain it; this heuristic does not fail the check.</div>
+        <div class="callout warn">Quality evals are optional and author-run locally. They measure task quality, not security, and do not count as a safety review or CI approval.</div>`;
+    }
+    function checks() {
+      return `<h2>PR checks and merge conditions</h2>
+        <div class="rule"><span class="tag ${held ? "hold" : "ok"}">Marketplace policy ${held ? "failed" : "passed"}</span> 1 ${held ? "blocking" : "resolved"} finding · 1 advisory · policy <span class="evidence">v1.3</span> · adapter <span class="evidence">skill-scanner 0.9</span> · revision <span class="evidence">${held ? "a31f0c7" : "b74e231"}</span>. Category: capability mismatch; severity: high; location: SKILL.md:27.</div>
+        <div class="rule"><span class="tag info">Read-only validation</span> Fork PR jobs can publish checks and job summaries, but cannot apply labels or comments. A separate trusted post-validation stage handles workflow labels and any comments after verifying the exact revision.</div>
+        <div class="rule"><span class="tag info">Separate GitHub condition</span> “Require secret scanning alerts are resolved” appears in GitHub’s merge box, alongside—not inside—the marketplace policy check. A green marketplace check cannot override it.</div>
+        <div class="callout">Passing checks means no approved blocking finding was detected for these bytes under this policy. It is not a security certification.</div>`;
+    }
+    function catalogue() {
+      return `<h2>Catalogue result</h2>
+        <p>${held ? `<span class="tag hold">Not published</span> Held PRs have no new published Catalogue result. The previous published revision, if any, keeps its own evidence.` : `<span class="tag ok">Published / checked revision</span> Community Extension may publish after the trusted gate and all required conditions pass.`}</p>
+        <div class="rule"><strong>${held ? "Illustrative entry after a passing revision (not published)" : "Service helper"}</strong> · Skill · Community<br>
+        <span class="tag info">Checks passed for revision b74e231</span> <span class="tag advisory">Advisory finding: 1</span><br>
+        Evidence: policy <span class="evidence">v1.3</span>; tool <span class="evidence">skill-scanner 0.9</span>; category <span class="evidence">instruction override</span>; severity <span class="evidence">medium</span>; location <span class="evidence">SKILL.md:44</span>; trust status <strong>BC Gov hosted / checked, not certified safe</strong>.</div>
+        <div class="callout">Proposed filters: Extension type, Specialty, hosted versus External source, and check status. A badge indicates provenance and revision-specific evidence; External-source links must not inherit hosted-check badges.</div>`;
+    }
+    function journey() {
+      return `<section class="surface"><h2>From rule to result</h2>
+        <div class="step"><strong>1. Approve a shared policy</strong>${governance()}</div>
+        <div class="step"><strong>2. Submit and correct</strong>${author()}</div>
+        <div class="step"><strong>3. Inspect the merge box</strong>${checks()}</div>
+        <div class="step"><strong>4. Publish revision evidence</strong>${catalogue()}</div></section>`;
+    }
+    function workspace() {
+      return `<div class="workspace"><nav aria-label="Mock workspace sections">
+        <strong>Review workspace</strong><a href="#policy">Rule ownership</a><a href="#submission">Submission</a><a href="#checks">PR gates</a><a href="#catalogue">Catalogue</a></nav>
+        <div class="grid">
+          <section class="surface wide" id="submission">${author()}</section>
+          <section class="surface" id="checks">${checks()}</section>
+          <section class="surface" id="catalogue">${catalogue()}</section>
+          <section class="surface wide" id="policy">${governance()}</section>
+        </div></div>`;
+    }
+    let activeTab = "Finding";
+    const records = { Policy: governance, Finding: author, "PR checks": checks, Catalogue: catalogue };
+    function record() {
+      return `<section class="surface"><h2>Revision evidence sheet</h2>
+        <p>One record connects policy to the exact PR revision and, only after publishing, to its Catalogue entry. Select a record section to inspect its evidence.</p>
+        <div class="tabs" role="group" aria-label="Evidence section">${Object.keys(records).map(name => `<button type="button" aria-pressed="${activeTab === name}" data-tab="${name}">${name}</button>`).join("")}</div>
+        <div class="record" id="record-panel">${records[activeTab]()}</div></section>`;
+    }
+    function render() {
+      document.getElementById("prototype").innerHTML = ({ A: journey, B: workspace, C: record })[variant]();
+      document.querySelectorAll("[data-tab]").forEach(button => button.addEventListener("click", () => { activeTab = button.dataset.tab; render(); }));
+      document.getElementById("variant-label").textContent = `${variant} / ${variants[variant]}`;
+      document.getElementById("held").setAttribute("aria-pressed", String(held));
+      document.getElementById("eligible").setAttribute("aria-pressed", String(!held));
+    }
+    function switchVariant(direction) {
+      const keys = Object.keys(variants);
+      variant = keys[(keys.indexOf(variant) + direction + keys.length) % keys.length];
+      params.set("variant", variant);
+      history.replaceState(null, "", `${location.pathname}?${params}${location.hash}`);
+      render();
+    }
+    document.getElementById("previous").addEventListener("click", () => switchVariant(-1));
+    document.getElementById("next").addEventListener("click", () => switchVariant(1));
+    document.getElementById("held").addEventListener("click", () => { held = true; render(); });
+    document.getElementById("eligible").addEventListener("click", () => { held = false; render(); });
+    document.addEventListener("keydown", event => {
+      if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.target.closest("input, textarea, select, [contenteditable]")) return;
+      switchVariant(event.key === "ArrowLeft" ? -1 : 1);
+    });
+    render();
+  </script>
+</body>
+</html>
