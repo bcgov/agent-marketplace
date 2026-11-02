@@ -25,6 +25,10 @@ if [ -n "$NODE_BIN" ]; then
         $NODE_BIN "$SCRIPT_DIR/build-pages.js" "$SCRIPT_DIR"
     fi
 
+    if [ -f "$SCRIPT_DIR/_pages/catalog-detail-prototype.html" ]; then
+        $NODE_BIN "$SCRIPT_DIR/generate-skill-previews-prototype.js"
+    fi
+
     echo "Build complete! Generated files:"
     ls -la "$SCRIPT_DIR"/*.html 2>/dev/null || echo "  No HTML files generated"
 

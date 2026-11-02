@@ -1840,89 +1840,99 @@
         <div id="search-breadcrumb" aria-label="Search breadcrumb"></div>
 <style>
   .extension-prototype-detail {
-    max-width: 76rem;
+    max-width: 78rem;
     margin: 0 auto;
   }
   .extension-prototype-detail .back-link {
     display: inline-block;
-    padding: .5rem 0;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
   }
-  .extension-prototype-detail .detail-identity {
-    font-size: .95rem;
-    color: #475569;
-    margin-bottom: .6rem;
-  }
+  .extension-prototype-detail h1 { margin: 0 0 .4rem; }
   .extension-prototype-detail .detail-intro {
-    max-width: 68ch;
-    font-size: 1.14rem;
-    margin-bottom: 1.8rem;
+    max-width: 70ch;
+    font-size: 1.1rem;
+    margin: 0 0 1.5rem;
   }
-  .extension-prototype-detail .install-band {
-    background: #003366;
-    color: #fff;
-    padding: clamp(1.25rem, 3vw, 2rem);
-    border-bottom: 5px solid #fcba19;
-  }
-  .extension-prototype-detail .install-band h2,
-  .extension-prototype-detail .install-band h2::before { color: #fff; background: none; }
-  .extension-prototype-detail .install-band h2::before { display: none; }
-  .extension-prototype-detail .install-band p { color: #e7eef7; }
-  .extension-prototype-detail .install-band pre {
-    margin: 1rem 0 .65rem;
-    background: #eaf0f6;
-    color: #172f49;
-  }
-  .extension-prototype-detail .install-band button { background: #fcba19; color: #003366; font-weight: 700; }
-  .extension-prototype-detail .install-band [role="status"] { min-height: 1.5rem; }
-  .extension-prototype-detail .detail-section { margin: 2rem 0; }
-  .extension-prototype-detail .detail-section h2::before { display: none; }
-  .extension-prototype-detail .detail-section h2 { margin: 0 0 .8rem; }
-  .extension-prototype-detail .detail-section > p { max-width: 74ch; }
-  .extension-prototype-detail .review-result {
-    font-size: 1.14rem;
-    font-weight: 700;
-    color: #003366;
-    margin-bottom: .45rem;
-  }
-  .extension-prototype-detail .evidence-layout {
+  .extension-prototype-detail .detail-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(17rem, 1fr);
-    gap: 1.5rem;
-    margin-top: 1.5rem;
+    grid-template-columns: minmax(0, 1fr) minmax(17rem, 19rem);
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    align-items: start;
   }
-  .extension-prototype-detail .evidence-panel {
-    background: white;
-    padding: clamp(1.25rem, 2.5vw, 2rem);
-    border-radius: .4rem;
+  .extension-prototype-detail .detail-main,
+  .extension-prototype-detail .detail-rail { min-width: 0; }
+  .extension-prototype-detail .detail-rail {
+    display: grid;
+    gap: 1.25rem;
   }
-  .extension-prototype-detail .evidence-panel h2:first-child { margin-top: 0; }
-  .extension-prototype-detail .evidence-panel h2::before { display: none; }
-  .extension-prototype-detail .evidence-panel + .evidence-panel { margin-top: 1.5rem; }
-  .extension-prototype-detail dl > div {
-    padding: .7rem 0;
-    border-bottom: 1px solid #dfe5e9;
+  .extension-prototype-detail .preview-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: .25rem 1rem;
+    margin: 0 0 1rem;
   }
-  .extension-prototype-detail dt { font-weight: 700; color: #003366; }
-  .extension-prototype-detail dd { margin: .2rem 0 0; overflow-wrap: anywhere; }
-  .extension-prototype-detail .evidence-note {
-    background: #e5eef5;
-    padding: 1rem;
-    border-left: 4px solid #003366;
-    margin-top: 1rem;
+  .extension-prototype-detail .preview-heading h2 { margin: 0; }
+  .extension-prototype-detail .preview-heading h2::before,
+  .extension-prototype-detail .detail-rail h2::before,
+  .extension-prototype-detail .detail-main h2::before { display: none; }
+  .extension-prototype-detail .skill-preview {
+    background: #fff;
+    padding: clamp(1.25rem, 3vw, 2.25rem);
+    border-top: 5px solid #fcba19;
   }
-  .extension-prototype-detail .extension-links a { display: block; margin: .65rem 0; }
-  .extension-prototype-detail pre { overflow: auto; padding: 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
-  .extension-prototype-detail button {
-    background: #003366;
-    color: #fff;
-    border: 0;
-    border-radius: .25rem;
-    min-height: 44px;
-    padding: .6rem 1rem;
-    font: inherit;
-    cursor: pointer;
+  .extension-prototype-detail .skill-preview h3 { margin: 0 0 .9rem; }
+  .extension-prototype-detail .skill-preview h4 { margin: 1.5rem 0 .4rem; }
+  .extension-prototype-detail .skill-preview p { margin: 0 0 .8rem; }
+  .extension-prototype-detail .skill-preview ul,
+  .extension-prototype-detail .skill-preview ol { margin: .4rem 0 1.2rem; padding-left: 1.5rem; }
+  .extension-prototype-detail .skill-preview li { margin: .35rem 0; }
+  .extension-prototype-detail .detail-rail section { background: #fff; padding: 1.25rem; }
+  .extension-prototype-detail .detail-rail h2 { font-size: 1.3rem; margin: 0 0 .7rem; }
+  .extension-prototype-detail .detail-rail p { margin: .35rem 0; }
+  .extension-prototype-detail .install-card { border-top: 5px solid #003366; }
+  .extension-prototype-detail .install-card pre {
+    background: #eaf0f6; color: #172f49; margin: .75rem 0;
+    white-space: pre-wrap; overflow-wrap: anywhere; padding: .75rem;
+    font-size: .88rem; line-height: 1.45;
+    box-shadow: none; /* taste-skill-ignore: override shared documentation shadow. */
   }
+  .extension-prototype-detail .install-card button {
+    background: #003366; color: #fff; border: 0; padding: .55rem .85rem;
+    font: inherit; font-weight: 700; cursor: pointer; min-height: 44px;
+  }
+  .extension-prototype-detail .install-card [role="status"]:empty { display: none; }
+  .extension-prototype-detail .review-result { font-weight: 700; color: #003366; }
+  .extension-prototype-detail .rail-note { font-size: .9rem; color: #334155; }
+  .extension-prototype-detail .detail-main > section + section { margin-top: 2.5rem; }
+  .extension-prototype-detail .detail-main > section > h2 { margin: 0 0 .8rem; }
+  .extension-prototype-detail .detail-main > section > p { max-width: 68ch; }
+  .extension-prototype-detail .detail-grid + section { margin-top: 2.5rem; }
+  .extension-prototype-detail .access-summary {
+    margin: 1rem 0 0;
+    padding-left: 1.25rem;
+  }
+  .extension-prototype-detail .access-summary li { margin: .3rem 0; }
+  .extension-prototype-detail .detail-rail details {
+    margin: .6rem 0 0; border: 0; border-radius: 0;
+    box-shadow: none; overflow: visible; /* taste-skill-ignore: override shared accordion shadow. */
+  }
+  .extension-prototype-detail .detail-rail details:hover { box-shadow: none; /* taste-skill-ignore */ }
+  .extension-prototype-detail .detail-rail summary {
+    padding: .25rem 0; cursor: pointer; font-weight: 600;
+  }
+  .extension-prototype-detail .detail-rail details[open] summary {
+    border: 0; background: none;
+  }
+  .extension-prototype-detail dl { margin-bottom: 0; }
+  .extension-prototype-detail dt { font-weight: 700; color: #003366; margin-top: .65rem; }
+  .extension-prototype-detail dd { margin: 0; overflow-wrap: anywhere; }
+  .extension-prototype-detail .activity-counts {
+    display: flex; gap: 1.5rem; margin: .75rem 0;
+  }
+  .extension-prototype-detail .activity-counts strong { display: block; font-size: 1.4rem; color: #003366; }
+  .extension-prototype-detail .activity-demo { margin-top: 2rem; }
   .extension-prototype-detail :focus-visible { outline: 3px solid #a35400; outline-offset: 3px; }
   .extension-prototype-detail .related-list {
     padding: 0; list-style: none; display: grid; gap: .75rem;
@@ -1932,8 +1942,11 @@
   .extension-prototype-detail .related-list a { display: block; font-size: 1.12rem; font-weight: 700; }
   .extension-prototype-detail .related-list span { display: block; margin-top: .35rem; color: #475569; }
   @media (max-width: 760px) {
-    .extension-prototype-detail .evidence-layout,
+    .extension-prototype-detail .detail-grid,
     .extension-prototype-detail .related-list { grid-template-columns: 1fr; }
+    .extension-prototype-detail .detail-rail { grid-row: 1; }
+    .extension-prototype-detail .detail-main { grid-row: 2; }
+    .extension-prototype-detail .detail-rail .install-card { order: 2; }
   }
 </style>
 
@@ -1952,16 +1965,26 @@
     host.textContent = 'No Extension selected. Return to the catalogue and choose one.';
     return;
   }
-  fetch('assets/catalog.json')
-    .then(response => {
-      if (!response.ok) throw new Error('Catalogue data did not load');
-      return response.json();
-    })
-    .then(data => {
+  const load = url => fetch(url).then(response => {
+    if (!response.ok) throw new Error(`${url} could not be loaded`);
+    return response.json();
+  });
+  const inline = text => escape(text).replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  const list = (items, tag) => items.length
+    ? `<${tag}>${items.map(item => `<li>${inline(item)}</li>`).join('')}</${tag}>`
+    : '';
+  Promise.all([load('assets/catalog.json'), load('assets/skill-previews-prototype.json')])
+    .then(([data, previews]) => {
       const record = data.extensions.find(item => item.id === id);
       if (!record) {
         host.textContent = 'Extension not found in the published catalogue. Return to the catalogue to choose another.';
         return;
+      }
+      const preview = previews[id];
+      if (!preview || preview.digest !== record.files?.find(item => item.path === 'SKILL.md')?.sha256) {
+        throw new Error(`Checked SKILL.md preview is missing or outdated for ${id}`);
       }
       const source = record.source || {};
       const review = record.review || {};
@@ -1969,14 +1992,14 @@
       const revision = source.revision || review.revision;
       const repository = source.repository;
       const path = source.path;
-      const sourceLink = repository && revision && path ? `${repository}/tree/${revision}/${path}` : '';
-      const historyLink = repository && path ? `${repository}/commits/main/${path}` : '';
+      const sourceLink = repository && revision && path ? `${repository}/blob/${revision}/${path}/SKILL.md` : '';
+      const historyLink = repository && path ? `${repository}/commits/main/${path}/SKILL.md` : '';
       const status = review.status === 'domain-reviewed'
         ? 'Domain reviewed at this revision'
         : review.status === 'marketplace-reviewed'
           ? 'Reviewed at this revision'
           : review.status === 'auto-scanned'
-            ? 'Auto-checked; no human review published'
+            ? 'Automated only; no human review published'
             : 'No review evidence published';
       const findings = policy.findings || [];
       const capabilities = record.capabilities || {};
@@ -1988,78 +2011,126 @@
         ['Data classes', capabilities['data-classes']],
         ['Secrets', capabilities['secret-names']],
         ['Environment', capabilities['environment-variables']]
-      ];
-      const installable = record.type === 'skill' && record.lifecycle === 'active' && repository && path && revision;
+      ].filter(([, values]) => values?.length);
+      const installable = record.type === 'skill' && record.lifecycle === 'active'
+        && /^https:\/\/github\.com\/[^/]+\/[^/]+$/.test(repository || '') && path && revision;
       const repoPath = repository?.replace(/^https:\/\/github\.com\//, '');
-      const command = `apm install ${repoPath}/${path}#${revision} --target copilot`;
-      const publisher = record.publisher || 'Not published';
-      const sharedMaintainers = data.extensions
-        .filter(item => item.id !== record.id && item.maintainers?.some(name => record.maintainers?.includes(name)));
-      const related = sharedMaintainers
-        .sort((a, b) => Number(b.specialty === record.specialty) - Number(a.specialty === record.specialty))
+      const command = installable ? `apm install ${repoPath}/${path}#${revision} --target copilot` : '';
+      const related = data.extensions
+        .filter(item => item.id !== id && item.specialty === record.specialty)
         .slice(0, 3);
       const advisoryCount = findings.filter(finding => finding.severity === 'advisory').length;
       const result = policy.outcome === 'passed'
-        ? `Automated checks passed${advisoryCount ? ` with ${advisoryCount} ${advisoryCount === 1 ? 'advisory' : 'advisories'}` : ''}`
+        ? `Automated checks passed${advisoryCount ? ` · ${advisoryCount} ${advisoryCount === 1 ? 'advisory' : 'advisories'}` : ''}`
         : 'No passing automated check published';
       host.removeAttribute('role');
       host.removeAttribute('aria-live');
       host.innerHTML = `
-        <p class="detail-identity">${escape(record.specialty)} / ${escape(record.type)}</p>
         <h1 id="escaperecorddisplay-name">${escape(record['display-name'])}</h1>
         <p class="detail-intro">${escape(record.summary || '')}</p>
-        <section class="install-band" aria-labelledby="install-title">
-          <h2 id="install-title">Install this Extension</h2>
-          ${installable
-            ? `<p>Use a command pinned to the checked revision. Installation still requires your confirmation.</p><pre><code id="extension-install-command">${escape(command)}</code></pre><button type="button" id="extension-copy">Copy install command</button><p id="extension-copy-status" role="status"></p>`
-            : '<p>No install command is published for this Extension type or lifecycle state.</p>'}
-        </section>
-        <section class="detail-section" aria-labelledby="summary-title">
-          <h2 id="summary-title">Before you install</h2>
-          <p>${escape(record.prerequisites?.length ? record.prerequisites.join('; ') : 'No prerequisites declared.')}</p>
-          ${sourceLink ? `<p><a href="${escape(sourceLink)}">Read its content at the published revision</a></p>` : ''}
-        </section>
-        <div class="evidence-layout">
-          <section class="evidence-panel">
-            <h2 id="what-it-can-access">What it can access</h2>
-            <dl>${declared.map(([name, values]) => `<div><dt>${name}</dt><dd>${escape(values?.length ? values.join(', ') : 'None declared')}</dd></div>`).join('')}</dl>
-          </section>
-          <aside class="evidence-panel">
-            <h2 id="review-and-provenance">Review and provenance</h2>
-            <p class="review-result">${escape(result)}</p>
-            <p>${escape(status)}. Neither result guarantees safety.</p>
-            <dl>
-              <div><dt>Access level</dt><dd>${escape(review.risk || 'Not available')}</dd></div>
-              <div><dt>Reviewers</dt><dd>${escape((review.reviewers || []).join(', ') || 'No human reviewer published')}</dd></div>
-              <div><dt>Publisher</dt><dd>${escape(publisher)}</dd></div>
-              <div><dt>Maintainers</dt><dd>${escape((record.maintainers || []).join(', ') || 'Not published')}</dd></div>
-              <div><dt>Published revision</dt><dd><code>${escape(revision || 'Not available')}</code></dd></div>
-              <div><dt>Content digest</dt><dd><code>${escape(record['content-digest'] || 'Not available')}</code></dd></div>
-              <div><dt>License</dt><dd>${escape(record.license || 'Not published')}</dd></div>
-            </dl>
-            <div class="extension-links">
-              ${historyLink ? `<a href="${escape(historyLink)}">View source history</a>` : ''}
-            </div>
-            <p class="evidence-note">Evidence covers this revision only. Source history is not a scan archive. Maintainers are contacts, not verified original authors.</p>
+        <div class="detail-grid">
+          <div class="detail-main">
+            <section aria-labelledby="preview-title">
+              <div class="preview-heading">
+                <h2 id="preview-title">Inside the skill</h2>
+                ${sourceLink ? `<a href="${escape(sourceLink)}">Read the full SKILL.md</a>` : ''}
+              </div>
+              <div class="skill-preview">
+                <h3 id="escapepreviewtitle">${escape(preview.title)}</h3>
+                ${preview.intro ? `<p>${inline(preview.intro)}</p>` : ''}
+                ${preview.useWhen.length ? `<h4>Use when</h4>${list(preview.useWhen, 'ul')}` : ''}
+                ${preview.dontUseWhen.length ? `<h4>Do not use when</h4>${list(preview.dontUseWhen, 'ul')}` : ''}
+                ${preview.workflow.length ? `<h4>First steps</h4>${list(preview.workflow, 'ol')}` : ''}
+                <p class="rail-note">Excerpt from the checked SKILL.md. Follow the link above for the full file.</p>
+              </div>
+            </section>
+            <section aria-labelledby="prerequisites-title">
+              <h2 id="prerequisites-title">Before you use it</h2>
+              ${list(record.prerequisites || [], 'ul') || '<p>No prerequisites declared.</p>'}
+            </section>
+          </div>
+          <aside class="detail-rail" aria-label="Install and review">
+            <section aria-labelledby="review-title">
+              <h2 id="review-title">Review at a glance</h2>
+              <p class="review-result">${escape(result)}</p>
+              <p>${escape(status)}</p>
+              <p>Access level: ${escape(review.risk || 'Not available')}</p>
+              ${advisoryCount ? `<details><summary>Read ${advisoryCount} ${advisoryCount === 1 ? 'advisory' : 'advisories'}</summary><ul>${findings.filter(finding => finding.severity === 'advisory').map(finding => `<li>${escape(finding.message)}</li>`).join('')}</ul></details>` : ''}
+              ${declared.length ? `<details><summary>Declared access</summary><ul class="access-summary">${declared.map(([name, values]) => `<li><strong>${name}:</strong> ${escape(values.join(', '))}</li>`).join('')}</ul></details>` : ''}
+              <details><summary>Publication details</summary>
+                <dl>
+                  <dt>Publisher</dt><dd>${escape(record.publisher || 'Not published')}</dd>
+                  <dt>Maintainers</dt><dd>${escape((record.maintainers || []).join(', ') || 'Not published')}</dd>
+                  ${review.reviewers?.length ? `<dt>Reviewers</dt><dd>${escape(review.reviewers.join(', '))}</dd>` : ''}
+                  <dt>License</dt><dd>${escape(record.license || 'Not published')}</dd>
+                  <dt>Revision</dt><dd>${escape(revision || 'Not available')}</dd>
+                </dl>
+                ${historyLink ? `<p><a href="${escape(historyLink)}">Source history</a></p>` : ''}
+                <p class="rail-note">History is not a scan archive. Maintainers are not verified authors.</p>
+              </details>
+            </section>
+            <section class="install-card" aria-labelledby="install-title">
+              <h2 id="install-title">Install</h2>
+              ${installable
+                ? `<pre><code id="extension-install-command">${escape(command)}</code></pre><button type="button" id="extension-copy">Copy command</button><p id="extension-copy-status" role="status"></p>`
+                : '<p>Installation is not available for this Extension.</p>'}
+              <p class="rail-note">Pinned to the checked revision. Installation requires confirmation.</p>
+            </section>
           </aside>
         </div>
-        ${related.length ? `<section class="detail-section" aria-labelledby="related-title">
-          <h2 id="related-title">More from these maintainers</h2>
-          <p>These Extensions share a listed maintainer with ${escape(record['display-name'])}.</p>
+        ${related.length ? `<section class="detail-main" aria-labelledby="related-title">
+          <h2 id="related-title">Other ${escape(record.specialty)} skills</h2>
           <ul class="related-list">${related.map(item => `<li>
             <a href="catalog-detail-prototype.html?id=${encodeURIComponent(item.id)}">${escape(item['display-name'])}</a>
             <span>${escape(item.summary || '')}</span>
           </li>`).join('')}</ul>
-        </section>` : ''}`;
+        </section>` : ''}
+        <section class="activity-demo" aria-labelledby="activity-title">
+          <h2 id="activity-title">Popularity signals to compare</h2>
+          <p>Your activity in this browser only. These are working interaction counters, not site-wide popularity.</p>
+          <div class="activity-counts" aria-live="polite">
+            <div><strong id="activity-views">—</strong>Detail views</div>
+            <div><strong id="activity-copies">—</strong>Command copies</div>
+          </div>
+          <p class="rail-note" id="activity-note">Shared totals need approved analytics or a service. Neither signal proves an install.</p>
+        </section>`;
       document.title = `${record['display-name']} | BC Gov Agent Marketplace`;
+      const activityKey = kind => `catalogue-prototype:${id}:${kind}`;
+      const updateActivity = kind => {
+        try {
+          const key = activityKey(kind);
+          const previous = Number(localStorage.getItem(key) || '0');
+          if (!Number.isSafeInteger(previous) || previous < 0) throw new Error('Activity count is invalid');
+          const count = previous + 1;
+          localStorage.setItem(key, String(count));
+          host.querySelector(`#activity-${kind}`).textContent = String(count);
+        } catch (error) {
+          console.warn('Browser-only activity could not be recorded', error);
+          host.querySelector('#activity-note').textContent = 'Browser-only activity is unavailable here. Shared totals still require approved analytics or a service.';
+        }
+      };
+      for (const kind of ['views', 'copies']) {
+        try {
+          const value = Number(localStorage.getItem(activityKey(kind)) || '0');
+          host.querySelector(`#activity-${kind}`).textContent = Number.isSafeInteger(value) && value >= 0 ? String(value) : '—';
+        } catch (error) {
+          console.warn('Browser-only activity could not be read', error);
+          host.querySelector('#activity-note').textContent = 'Browser-only activity is unavailable here. Shared totals still require approved analytics or a service.';
+        }
+      }
+      updateActivity('views');
       host.querySelector('#extension-copy')?.addEventListener('click', () => {
         navigator.clipboard.writeText(command)
-          .then(() => { host.querySelector('#extension-copy-status').textContent = 'Install command copied.'; })
+          .then(() => {
+            host.querySelector('#extension-copy-status').textContent = 'Install command copied.';
+            updateActivity('copies');
+          })
           .catch(() => { host.querySelector('#extension-copy-status').textContent = 'Could not copy the command. Select and copy the text above.'; });
       });
     })
-    .catch(() => {
-      host.textContent = 'Catalogue data could not be loaded. Reload this page or return to the catalogue.';
+    .catch(error => {
+      console.error('Extension details could not be loaded', error);
+      host.textContent = 'Catalogue or checked skill preview could not be loaded. Reload this page or return to the catalogue.';
     });
 })();
 </script>
