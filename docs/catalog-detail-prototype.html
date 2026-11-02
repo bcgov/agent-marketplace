@@ -1846,17 +1846,50 @@
   .extension-prototype-detail .back-link {
     display: inline-block;
     padding: .5rem 0;
-    margin-bottom: 1.4rem;
+    margin-bottom: 1rem;
   }
-  .extension-prototype-detail .extension-summary {
-    max-width: 72ch;
-    font-size: 1.1rem;
+  .extension-prototype-detail .detail-identity {
+    font-size: .95rem;
+    color: #475569;
+    margin-bottom: .6rem;
+  }
+  .extension-prototype-detail .detail-intro {
+    max-width: 68ch;
+    font-size: 1.14rem;
+    margin-bottom: 1.8rem;
+  }
+  .extension-prototype-detail .install-band {
+    background: #003366;
+    color: #fff;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    border-bottom: 5px solid #fcba19;
+  }
+  .extension-prototype-detail .install-band h2,
+  .extension-prototype-detail .install-band h2::before { color: #fff; background: none; }
+  .extension-prototype-detail .install-band h2::before { display: none; }
+  .extension-prototype-detail .install-band p { color: #e7eef7; }
+  .extension-prototype-detail .install-band pre {
+    margin: 1rem 0 .65rem;
+    background: #eaf0f6;
+    color: #172f49;
+  }
+  .extension-prototype-detail .install-band button { background: #fcba19; color: #003366; font-weight: 700; }
+  .extension-prototype-detail .install-band [role="status"] { min-height: 1.5rem; }
+  .extension-prototype-detail .detail-section { margin: 2rem 0; }
+  .extension-prototype-detail .detail-section h2::before { display: none; }
+  .extension-prototype-detail .detail-section h2 { margin: 0 0 .8rem; }
+  .extension-prototype-detail .detail-section > p { max-width: 74ch; }
+  .extension-prototype-detail .review-result {
+    font-size: 1.14rem;
+    font-weight: 700;
+    color: #003366;
+    margin-bottom: .45rem;
   }
   .extension-prototype-detail .evidence-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 1fr);
+    grid-template-columns: minmax(0, 1.5fr) minmax(17rem, 1fr);
     gap: 1.5rem;
-    margin-top: 2rem;
+    margin-top: 1.5rem;
   }
   .extension-prototype-detail .evidence-panel {
     background: white;
@@ -1879,7 +1912,7 @@
     margin-top: 1rem;
   }
   .extension-prototype-detail .extension-links a { display: block; margin: .65rem 0; }
-  .extension-prototype-detail pre { overflow: auto; padding: 1rem; background: #e5eef5; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .extension-prototype-detail pre { overflow: auto; padding: 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
   .extension-prototype-detail button {
     background: #003366;
     color: #fff;
@@ -1891,8 +1924,16 @@
     cursor: pointer;
   }
   .extension-prototype-detail :focus-visible { outline: 3px solid #a35400; outline-offset: 3px; }
+  .extension-prototype-detail .related-list {
+    padding: 0; list-style: none; display: grid; gap: .75rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .extension-prototype-detail .related-list li { background: #fff; padding: 1rem; }
+  .extension-prototype-detail .related-list a { display: block; font-size: 1.12rem; font-weight: 700; }
+  .extension-prototype-detail .related-list span { display: block; margin-top: .35rem; color: #475569; }
   @media (max-width: 760px) {
-    .extension-prototype-detail .evidence-layout { grid-template-columns: 1fr; }
+    .extension-prototype-detail .evidence-layout,
+    .extension-prototype-detail .related-list { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -1952,57 +1993,64 @@
       const repoPath = repository?.replace(/^https:\/\/github\.com\//, '');
       const command = `apm install ${repoPath}/${path}#${revision} --target copilot`;
       const publisher = record.publisher || 'Not published';
+      const sharedMaintainers = data.extensions
+        .filter(item => item.id !== record.id && item.maintainers?.some(name => record.maintainers?.includes(name)));
+      const related = sharedMaintainers
+        .sort((a, b) => Number(b.specialty === record.specialty) - Number(a.specialty === record.specialty))
+        .slice(0, 3);
+      const advisoryCount = findings.filter(finding => finding.severity === 'advisory').length;
+      const result = policy.outcome === 'passed'
+        ? `Automated checks passed${advisoryCount ? ` with ${advisoryCount} ${advisoryCount === 1 ? 'advisory' : 'advisories'}` : ''}`
+        : 'No passing automated check published';
       host.removeAttribute('role');
       host.removeAttribute('aria-live');
       host.innerHTML = `
+        <p class="detail-identity">${escape(record.specialty)} / ${escape(record.type)}</p>
         <h1 id="escaperecorddisplay-name">${escape(record['display-name'])}</h1>
-        <p class="extension-summary">${escape(record.summary || '')}</p>
+        <p class="detail-intro">${escape(record.summary || '')}</p>
+        <section class="install-band" aria-labelledby="install-title">
+          <h2 id="install-title">Install this Extension</h2>
+          ${installable
+            ? `<p>Use a command pinned to the checked revision. Installation still requires your confirmation.</p><pre><code id="extension-install-command">${escape(command)}</code></pre><button type="button" id="extension-copy">Copy install command</button><p id="extension-copy-status" role="status"></p>`
+            : '<p>No install command is published for this Extension type or lifecycle state.</p>'}
+        </section>
+        <section class="detail-section" aria-labelledby="summary-title">
+          <h2 id="summary-title">Before you install</h2>
+          <p>${escape(record.prerequisites?.length ? record.prerequisites.join('; ') : 'No prerequisites declared.')}</p>
+          ${sourceLink ? `<p><a href="${escape(sourceLink)}">Read its content at the published revision</a></p>` : ''}
+        </section>
         <div class="evidence-layout">
-          <div>
-            <section class="evidence-panel">
-              <h2 id="review-and-scan-evidence">Review and scan evidence</h2>
-              <p>${escape(status)}. A passed check is not a guarantee of safety.</p>
-              <dl>
-                <div><dt>Policy result</dt><dd>${escape(policy.outcome || 'Not available')}</dd></div>
-                <div><dt>Findings on this revision</dt><dd>${findings.length
-                  ? `<ul>${findings.map(finding => `<li>${escape(finding.severity || 'Finding')}: ${escape(finding.code || '')} — ${escape(finding.message || '')} (${escape(finding.path || 'path unavailable')}${finding.line ? `:${escape(finding.line)}` : ''})</li>`).join('')}</ul>`
-                  : 'None published'}</dd></div>
-                <div><dt>Access level</dt><dd>${escape(review.risk || 'Not available')}</dd></div>
-                <div><dt>Reviewers</dt><dd>${escape((review.reviewers || []).join(', ') || 'No human reviewer published')}</dd></div>
-                <div><dt>Scan method</dt><dd>${escape(review.method || 'Not available')}</dd></div>
-                <div><dt>Policy version</dt><dd>${escape(policy['policy-version'] || 'Not available')}</dd></div>
-                <div><dt>Content digest</dt><dd><code>${escape(record['content-digest'] || 'Not available')}</code></dd></div>
-              </dl>
-              <p class="evidence-note">Evidence applies to the published revision and digest above. Git history lists changes, not previous scan results.</p>
-            </section>
-            <section class="evidence-panel">
-              <h2 id="declared-access">Declared access</h2>
-              <dl>${declared.map(([name, values]) => `<div><dt>${name}</dt><dd>${escape(values?.length ? values.join(', ') : 'None declared')}</dd></div>`).join('')}</dl>
-            </section>
-            <section class="evidence-panel">
-              <h2 id="install">Install</h2>
-              ${installable
-                ? `<p>Pin the checked revision. Installation still requires your confirmation.</p><pre><code id="extension-install-command">${escape(command)}</code></pre><button type="button" id="extension-copy">Copy install command</button><p id="extension-copy-status" role="status"></p>`
-                : '<p>No install command is published for this Extension type or lifecycle state.</p>'}
-            </section>
-          </div>
+          <section class="evidence-panel">
+            <h2 id="what-it-can-access">What it can access</h2>
+            <dl>${declared.map(([name, values]) => `<div><dt>${name}</dt><dd>${escape(values?.length ? values.join(', ') : 'None declared')}</dd></div>`).join('')}</dl>
+          </section>
           <aside class="evidence-panel">
-            <h2 id="about-this-extension">About this Extension</h2>
+            <h2 id="review-and-provenance">Review and provenance</h2>
+            <p class="review-result">${escape(result)}</p>
+            <p>${escape(status)}. Neither result guarantees safety.</p>
             <dl>
-              <div><dt>Type</dt><dd>${escape(record.type)}</dd></div>
-              <div><dt>Specialty</dt><dd>${escape(record.specialty)}</dd></div>
+              <div><dt>Access level</dt><dd>${escape(review.risk || 'Not available')}</dd></div>
+              <div><dt>Reviewers</dt><dd>${escape((review.reviewers || []).join(', ') || 'No human reviewer published')}</dd></div>
               <div><dt>Publisher</dt><dd>${escape(publisher)}</dd></div>
               <div><dt>Maintainers</dt><dd>${escape((record.maintainers || []).join(', ') || 'Not published')}</dd></div>
               <div><dt>Published revision</dt><dd><code>${escape(revision || 'Not available')}</code></dd></div>
+              <div><dt>Content digest</dt><dd><code>${escape(record['content-digest'] || 'Not available')}</code></dd></div>
               <div><dt>License</dt><dd>${escape(record.license || 'Not published')}</dd></div>
             </dl>
             <div class="extension-links">
-              ${sourceLink ? `<a href="${escape(sourceLink)}">Read source at this revision</a>` : ''}
               ${historyLink ? `<a href="${escape(historyLink)}">View source history</a>` : ''}
             </div>
-            <p class="evidence-note">A maintainer is a contact, not necessarily the original author. An author by revision would require verified contribution provenance.</p>
+            <p class="evidence-note">Evidence covers this revision only. Source history is not a scan archive. Maintainers are contacts, not verified original authors.</p>
           </aside>
-        </div>`;
+        </div>
+        ${related.length ? `<section class="detail-section" aria-labelledby="related-title">
+          <h2 id="related-title">More from these maintainers</h2>
+          <p>These Extensions share a listed maintainer with ${escape(record['display-name'])}.</p>
+          <ul class="related-list">${related.map(item => `<li>
+            <a href="catalog-detail-prototype.html?id=${encodeURIComponent(item.id)}">${escape(item['display-name'])}</a>
+            <span>${escape(item.summary || '')}</span>
+          </li>`).join('')}</ul>
+        </section>` : ''}`;
       document.title = `${record['display-name']} | BC Gov Agent Marketplace`;
       host.querySelector('#extension-copy')?.addEventListener('click', () => {
         navigator.clipboard.writeText(command)
