@@ -257,6 +257,70 @@ def test_scanner_cli_outputs_never_echo_matched_credential(
   assert sentinel not in capsys.readouterr().out + summary.read_text()
 
 
+def test_scanner_cli_projects_only_public_evidence(tmp_path, monkeypatch, capsys):
+  """Untrusted paths and internal scanner fields never reach CLI JSON."""
+  import demo
+
+  root = _root(tmp_path)
+  package = _package(root)
+  sentinel = "AKIA" + "B" * 16
+  (package / f"{sentinel}.txt").write_text(f"secret={sentinel}\n")
+  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
+  fixture.mkdir(parents=True)
+  for path in package.iterdir():
+    if path.is_file():
+      (fixture / path.name).write_bytes(path.read_bytes())
+  monkeypatch.setattr(demo, "ROOT", root)
+  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
+
+  for command in ("scan", "analyze"):
+    assert m.main(["--root", str(root), command, str(package)]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert sentinel not in json.dumps(result)
+    findings = (
+      result["scan"]["findings"] if command == "analyze" else result["findings"]
+    )
+    assert {item["rule-id"] for item in findings} >= {"SECRET_PATTERNS"}
+    assert all("code" not in item and "message" not in item for item in findings)
+  assert demo.main(["analyze-fixture", "benign-submission"]) == 0
+  result = json.loads(capsys.readouterr().out)
+  assert sentinel not in json.dumps(result)
+  assert result["scan"]["outcome"] == "blocked"
+
+
+def test_scanner_cli_reports_invalid_manifest_without_echoing_content(tmp_path, capsys):
+  """Invalid author-controlled metadata cannot leak through CLI errors."""
+  root = _root(tmp_path)
+  package = _package(root)
+  sentinel = "AKIA" + "C" * 16
+  (package / m.MANIFEST_NAME).write_text(f"id: {sentinel}\n")
+  for command in ("scan", "analyze"):
+    assert m.main(["--root", str(root), command, str(package)]) == 1
+    output = capsys.readouterr()
+    assert sentinel not in output.out + output.err
+    assert "ERROR" in output.err
+
+
+def test_demo_cli_reports_invalid_fixture_without_echoing_manifest(
+  tmp_path, monkeypatch, capsys
+):
+  """Fixture errors cannot print author-controlled Manifest values."""
+  import demo
+
+  root = _root(tmp_path)
+  sentinel = "AKIA" + "D" * 16
+  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
+  fixture.mkdir(parents=True)
+  (fixture / "SKILL.md").write_text("# Demo\n")
+  (fixture / m.MANIFEST_NAME).write_text(f"id: {sentinel}\n")
+  monkeypatch.setattr(demo, "ROOT", root)
+  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
+  assert demo.main(["analyze-fixture", "benign-submission"]) == 1
+  output = capsys.readouterr()
+  assert sentinel not in output.out + output.err
+  assert "ERROR" in output.err
+
+
 def test_security_pattern_parameters_are_read_from_policy(tmp_path):
   """Security can change a credential detector without changing the engine."""
   root = _root(tmp_path)

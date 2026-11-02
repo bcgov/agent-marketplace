@@ -92,6 +92,13 @@ the Security fixtures and the read-only, secret-free policy check, including
 for fork contributions. This check is not a scanner pilot or a safety
 certification, and it does not change the Community auto-publish default.
 
+The `scan`, `analyze`, and demo command-line JSON is a deliberately limited
+public projection of the internal scan: outcome, fixed rule identifiers and
+remediation, safe file labels and line numbers (and analysis classification and
+declared risk). Arbitrary Manifest values, filenames, matched content and
+validation error details are not printed to terminal logs. The full internal
+finding contract remains available to the catalogue build and trusted callers.
+
 ## Commands used by maintainers
 
 ```bash

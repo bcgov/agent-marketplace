@@ -1348,6 +1348,97 @@ def check_policy(root: Path) -> bool:
   return not groups["blocking"] and not errors
 
 
+PUBLIC_RULE_IDS = {
+  rule: rule
+  for rule in (
+    "SECRET_PATTERNS",
+    "hidden-unicode",
+    "undeclared-network",
+    "undeclared-environment-variable",
+    "undeclared-script",
+    "wildcard-capability",
+    "file-count",
+    "hidden-path",
+    "nested-resource",
+    "unsupported-agent-metadata",
+    "blocked-extension-type",
+    "archive",
+    "unsupported-file-type",
+    "file-size",
+    "executable-bit",
+    "binary-file",
+    "package-size",
+    "case-collision",
+    "unreadable-path",
+    "symlink",
+    "special-file",
+    "hard-link",
+    *ADVISORY_PATTERNS,
+  )
+}
+PUBLIC_FILENAMES = {name: name for name in ROOT_FILES}
+PUBLIC_FIELDS = {
+  "undeclared-network": "capabilities.network",
+  "undeclared-environment-variable": "capabilities.environment-variables",
+  "undeclared-script": "capabilities.commands",
+}
+PUBLIC_FIXES = {
+  "SECRET_PATTERNS": "Remove the credential and rotate it if real.",
+  "hidden-unicode": "Remove hidden or bidirectional Unicode.",
+  "undeclared-network": "Declare the host in capabilities.network or remove its use.",
+  "undeclared-environment-variable": (
+    "Declare the variable in capabilities or remove its use."
+  ),
+  "undeclared-script": "Declare the script in capabilities.commands or remove it.",
+}
+
+
+def public_scan(scan: dict) -> dict:
+  """Project scan evidence for stdout without echoing author-controlled values."""
+  findings = []
+  for finding in scan["findings"]:
+    rule = PUBLIC_RULE_IDS.get(finding["rule-id"], "other")
+    findings.append(
+      {
+        "rule-id": rule,
+        "category": "security" if rule in SECURITY_RULES else "package",
+        "severity": (
+          "blocking" if finding["disposition"] == "blocking" else "advisory"
+        ),
+        "disposition": (
+          "blocking" if finding["disposition"] == "blocking" else "advisory"
+        ),
+        "file": PUBLIC_FILENAMES.get(finding["file"], "extension file"),
+        "line": int(finding["line"]),
+        "field": PUBLIC_FIELDS.get(rule, "—"),
+        "remediation": PUBLIC_FIXES.get(
+          rule, "Review the rule and correct the Extension package."
+        ),
+      }
+    )
+  return {
+    "outcome": "blocked" if scan["outcome"] == "blocked" else "passed",
+    "findings": findings,
+  }
+
+
+def public_analysis(analysis: dict) -> dict:
+  """Project submission evidence without publishing paths or manifest fields."""
+  return {
+    "classification": (
+      "blocked" if analysis["classification"] == "blocked" else "needs-review"
+    ),
+    "risk": (
+      "high"
+      if analysis["risk"] == "high"
+      else "elevated"
+      if analysis["risk"] == "elevated"
+      else "low"
+    ),
+    "scan": public_scan(analysis["scan"]),
+  }
+
+
 def _parser() -> argparse.ArgumentParser:
   """Build the marketplace command-line parser."""
   parser = argparse.ArgumentParser(description=__doc__)
@@ -1402,7 +1493,11 @@ def main(argv: list[str] | None = None) -> int:
       manifest, errors = validate_manifest(manifest_path, load_schema(root))
       if errors or manifest is None:
         raise MarketplaceError("\n".join(errors))
-      print(json.dumps(scan_package(args.package, manifest), indent=2, sort_keys=True))
+      print(
+        json.dumps(
+          public_scan(scan_package(args.package, manifest)), indent=2, sort_keys=True
+        )
+      )
     elif args.command == "intake":
       trust = {"yes": True, "no": False, "unknown": None}[args.author_trust]
       velocity = {"ok": True, "exceeded": False, "unknown": None}[args.velocity]
@@ -1415,10 +1510,17 @@ def main(argv: list[str] | None = None) -> int:
       )
     else:
       print(
-        json.dumps(analyze_submission(root, args.package), indent=2, sort_keys=True)
+        json.dumps(
+          public_analysis(analyze_submission(root, args.package)),
+          indent=2,
+          sort_keys=True,
+        )
       )
   except MarketplaceError as exc:
-    print(f"ERROR: {exc}", file=sys.stderr)
+    if args.command in {"scan", "analyze"}:
+      print("ERROR: Extension validation failed", file=sys.stderr)
+    else:
+      print(f"ERROR: {exc}", file=sys.stderr)
     return 1
   return 0
 
