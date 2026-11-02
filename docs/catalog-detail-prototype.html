@@ -1888,6 +1888,18 @@
   .extension-prototype-detail .skill-preview ul,
   .extension-prototype-detail .skill-preview ol { margin: .4rem 0 1.2rem; padding-left: 1.5rem; }
   .extension-prototype-detail .skill-preview li { margin: .35rem 0; }
+  .extension-prototype-detail .skill-preview details {
+    margin-top: 1rem; border: 0; border-radius: 0;
+    box-shadow: none; overflow: visible; /* taste-skill-ignore: override shared accordion shadow. */
+  }
+  .extension-prototype-detail .skill-preview details:hover { box-shadow: none; /* taste-skill-ignore */ }
+  .extension-prototype-detail .skill-preview details summary {
+    display: inline-block; padding: 0; color: #003366; text-decoration: underline;
+  }
+  .extension-prototype-detail .skill-preview details summary::after { display: none; }
+  .extension-prototype-detail .skill-preview details[open] summary {
+    border: 0; background: none;
+  }
   .extension-prototype-detail .detail-rail section { background: #fff; padding: 1.25rem; }
   .extension-prototype-detail .detail-rail h2 { font-size: 1.3rem; margin: 0 0 .7rem; }
   .extension-prototype-detail .detail-rail p { margin: .35rem 0; }
@@ -1903,6 +1915,25 @@
     font: inherit; font-weight: 700; cursor: pointer; min-height: 44px;
   }
   .extension-prototype-detail .install-card [role="status"]:empty { display: none; }
+  .extension-prototype-detail .install-switch {
+    display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .75rem;
+  }
+  .extension-prototype-detail .install-card .shell-option {
+    background: #eaf0f6; color: #003366; min-height: 40px;
+    padding: .35rem .65rem; font-weight: 500;
+  }
+  .extension-prototype-detail .install-card .shell-option.active {
+    background: #003366; color: #fff; font-weight: 700;
+  }
+  .extension-prototype-detail .install-card .install-note { margin: .65rem 0; }
+  .extension-prototype-detail .scan-badges {
+    display: flex; flex-wrap: wrap; gap: .4rem; margin: .65rem 0;
+  }
+  .extension-prototype-detail .scan-badges span {
+    padding: .25rem .5rem; background: #eaf0f6; color: #003366;
+    font-weight: 700; font-size: .85rem;
+  }
+  .extension-prototype-detail .scan-badges .planned { font-weight: 500; background: #f2f2f2; color: #334155; }
   .extension-prototype-detail .review-result { font-weight: 700; color: #003366; }
   .extension-prototype-detail .rail-note { font-size: .9rem; color: #334155; }
   .extension-prototype-detail .detail-main > section + section { margin-top: 2.5rem; }
@@ -1993,6 +2024,7 @@
       const repository = source.repository;
       const path = source.path;
       const sourceLink = repository && revision && path ? `${repository}/blob/${revision}/${path}/SKILL.md` : '';
+      const sourceTree = repository && revision && path ? `${repository}/tree/${revision}/${path}` : '';
       const historyLink = repository && path ? `${repository}/commits/main/${path}/SKILL.md` : '';
       const status = review.status === 'domain-reviewed'
         ? 'Domain reviewed at this revision'
@@ -2015,13 +2047,16 @@
       const installable = record.type === 'skill' && record.lifecycle === 'active'
         && /^https:\/\/github\.com\/[^/]+\/[^/]+$/.test(repository || '') && path && revision;
       const repoPath = repository?.replace(/^https:\/\/github\.com\//, '');
-      const command = installable ? `apm install ${repoPath}/${path}#${revision} --target copilot` : '';
+      const commands = installable ? {
+        apm: `apm install ${repoPath}/${path}#${revision} --target copilot`,
+        npx: `npx skills@${data['installer-version']} add \\\n  ${sourceTree} \\\n  --agent github-copilot -y`
+      } : {};
       const related = data.extensions
         .filter(item => item.id !== id && item.specialty === record.specialty)
         .slice(0, 3);
       const advisoryCount = findings.filter(finding => finding.severity === 'advisory').length;
       const result = policy.outcome === 'passed'
-        ? `Automated checks passed${advisoryCount ? ` · ${advisoryCount} ${advisoryCount === 1 ? 'advisory' : 'advisories'}` : ''}`
+        ? `Marketplace policy passed${advisoryCount ? ` · ${advisoryCount} ${advisoryCount === 1 ? 'advisory' : 'advisories'}` : ''}`
         : 'No passing automated check published';
       host.removeAttribute('role');
       host.removeAttribute('aria-live');
@@ -2038,10 +2073,13 @@
               <div class="skill-preview">
                 <h3 id="escapepreviewtitle">${escape(preview.title)}</h3>
                 ${preview.intro ? `<p>${inline(preview.intro)}</p>` : ''}
-                ${preview.useWhen.length ? `<h4>Use when</h4>${list(preview.useWhen, 'ul')}` : ''}
-                ${preview.dontUseWhen.length ? `<h4>Do not use when</h4>${list(preview.dontUseWhen, 'ul')}` : ''}
-                ${preview.workflow.length ? `<h4>First steps</h4>${list(preview.workflow, 'ol')}` : ''}
-                <p class="rail-note">Excerpt from the checked SKILL.md. Follow the link above for the full file.</p>
+                ${preview.useWhen.length ? `<h4>Use when</h4>${list(preview.useWhen.slice(0, 2), 'ul')}` : ''}
+                <details><summary>View more of this skill</summary>
+                  ${preview.useWhen.length > 2 ? list(preview.useWhen.slice(2), 'ul') : ''}
+                  ${preview.dontUseWhen.length ? `<h4>Do not use when</h4>${list(preview.dontUseWhen, 'ul')}` : ''}
+                  ${preview.workflow.length ? `<h4>First steps</h4>${list(preview.workflow, 'ol')}` : ''}
+                  <p class="rail-note">Excerpt from the checked SKILL.md. Read the full file for all steps and references.</p>
+                </details>
               </div>
             </section>
             <section aria-labelledby="prerequisites-title">
@@ -2053,6 +2091,12 @@
             <section aria-labelledby="review-title">
               <h2 id="review-title">Review at a glance</h2>
               <p class="review-result">${escape(result)}</p>
+              <div class="scan-badges" aria-label="Scanner status">
+                <span>${policy.outcome === 'passed' ? 'Policy: passed' : 'Policy: no pass'}</span>
+                <span class="planned">Cisco skill-scanner: planned</span>
+                <span class="planned">NVIDIA SkillSpector: planned</span>
+              </div>
+              <p class="rail-note">Planned scanners have no results yet.</p>
               <p>${escape(status)}</p>
               <p>Access level: ${escape(review.risk || 'Not available')}</p>
               ${advisoryCount ? `<details><summary>Read ${advisoryCount} ${advisoryCount === 1 ? 'advisory' : 'advisories'}</summary><ul>${findings.filter(finding => finding.severity === 'advisory').map(finding => `<li>${escape(finding.message)}</li>`).join('')}</ul></details>` : ''}
@@ -2072,9 +2116,19 @@
             <section class="install-card" aria-labelledby="install-title">
               <h2 id="install-title">Install</h2>
               ${installable
-                ? `<pre><code id="extension-install-command">${escape(command)}</code></pre><button type="button" id="extension-copy">Copy command</button><p id="extension-copy-status" role="status"></p>`
+                ? `<div class="install-switch" role="group" aria-label="Choose installation method">
+                    <button type="button" class="shell-option active" aria-pressed="true" data-installer="apm">APM</button>
+                    <button type="button" class="shell-option" aria-pressed="false" data-installer="npx">npx</button>
+                    <button type="button" class="shell-option" aria-pressed="false" data-installer="manual">Manual</button>
+                  </div>
+                  <div id="installer-command"><pre><code id="extension-install-command">${escape(commands.apm)}</code></pre><button type="button" id="extension-copy">Copy command</button><p id="extension-copy-status" role="status"></p></div>
+                  <div id="installer-manual" hidden>
+                    <p><a href="${escape(`${repository}/archive/${revision}.zip`)}">Download the checked revision</a>, then copy the entire <code>${escape(path)}</code> folder into your workspace's <code>.agents/skills/</code> folder.</p>
+                    <p><a href="${escape(sourceTree)}">Inspect the source folder</a> before copying. Manual installation does not create an APM lockfile.</p>
+                  </div>
+                  <p class="rail-note install-note" id="install-rationale">APM records the resolved source in a manifest and lockfile.</p>`
                 : '<p>Installation is not available for this Extension.</p>'}
-              <p class="rail-note">Pinned to the checked revision. Installation requires confirmation.</p>
+              <p class="rail-note">Use the checked revision. Confirm before installing.</p>
             </section>
           </aside>
         </div>
@@ -2119,7 +2173,28 @@
         }
       }
       updateActivity('views');
+      const installerNotes = {
+        apm: 'APM records the resolved source in a manifest and lockfile.',
+        npx: 'Skills CLI installs from the immutable tree. It does not create an APM lockfile.',
+        manual: 'Copy every file from the pinned skill folder. Review the content first.'
+      };
+      for (const tab of host.querySelectorAll('[data-installer]')) {
+        tab.addEventListener('click', () => {
+          const method = tab.dataset.installer;
+          host.querySelector('#installer-command').hidden = method === 'manual';
+          host.querySelector('#installer-manual').hidden = method !== 'manual';
+          if (method !== 'manual') host.querySelector('#extension-install-command').textContent = commands[method];
+          host.querySelector('#install-rationale').textContent = installerNotes[method];
+          host.querySelector('#extension-copy-status').textContent = '';
+          for (const other of host.querySelectorAll('[data-installer]')) {
+            const active = other === tab;
+            other.classList.toggle('active', active);
+            other.setAttribute('aria-pressed', String(active));
+          }
+        });
+      }
       host.querySelector('#extension-copy')?.addEventListener('click', () => {
+        const command = host.querySelector('#extension-install-command').textContent;
         navigator.clipboard.writeText(command)
           .then(() => {
             host.querySelector('#extension-copy-status').textContent = 'Install command copied.';
