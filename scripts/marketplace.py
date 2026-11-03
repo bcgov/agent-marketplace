@@ -1716,7 +1716,11 @@ def build_catalog(
 
 def render_catalog_cards(catalog: dict) -> str:
   """Render the selected Catalogue records, including their complete type vocabulary."""
-  cards = [_catalog_row(record) for record in catalog["extensions"]]
+  specialties = {item["id"]: item for item in catalog.get("specialties", [])}
+  cards = [
+    _catalog_row(record, specialties.get(record.get("specialty"), {}))
+    for record in catalog["extensions"]
+  ]
   # The page builds its facets from the rendered rows, so the canonical type
   # vocabulary travels with them. Types absent from the catalog still appear,
   # disabled, which shows the reader what this marketplace intends to carry.
@@ -1766,7 +1770,7 @@ def _access_signals(capabilities: dict) -> dict[str, list[str]]:
   }
 
 
-def _catalog_row(record: dict) -> str:
+def _catalog_row(record: dict, registry: dict | None = None) -> str:
   """Render one catalog row, escaping every author-controlled value."""
   capabilities = record["capabilities"]
   signals = _access_signals(capabilities)
@@ -1776,6 +1780,12 @@ def _catalog_row(record: dict) -> str:
   risk = record.get("risk") or ""
   risk_label = RISK_LABELS.get(risk, "")
   specialty = record.get("specialty") or "community"
+  registry = registry or {}
+  flair = registry.get("display-flair") or registry.get("display-name") or specialty
+  source_updated = (record.get("source") or {}).get("updated")
+  date_label = (
+    html.escape(source_updated[:10]) + " UTC" if source_updated else "Not recorded"
+  )
 
   granted = [phrase for key, _label, phrase in ACCESS_SIGNALS if signals[key]]
   withheld = [phrase for key, _label, phrase in ACCESS_SIGNALS if not signals[key]]
@@ -1815,7 +1825,8 @@ def _catalog_row(record: dict) -> str:
   return "\n".join(
     [
       '<article class="cat-row" '
-      f'data-extension-id="{html.escape(record["id"], quote=True)}"',
+      + ("hidden " if record.get("lifecycle") != "active" else "")
+      + f'data-extension-id="{html.escape(record["id"], quote=True)}"',
       f'  data-type="{html.escape(record.get("type") or "", quote=True)}"',
       f'  data-specialty="{html.escape(specialty, quote=True)}"',
       f'  data-lifecycle="{html.escape(record.get("lifecycle") or "", quote=True)}"',
@@ -1827,6 +1838,9 @@ def _catalog_row(record: dict) -> str:
       f'    <h3><button type="button" class="cat-row-open">'
       f"{html.escape(record['display-name'])}</button></h3>",
       f'    <p class="cat-row-summary">{html.escape(record["summary"])}</p>',
+      '    <p class="cat-row-date">'
+      f"{html.escape((record.get('type') or 'Extension').title())}"
+      f" · Source updated: {date_label}</p>",
       *(
         [
           '    <p class="cat-row-summary">Unavailable: '
@@ -1837,7 +1851,8 @@ def _catalog_row(record: dict) -> str:
         else []
       ),
       "  </div>",
-      f'  <p class="cat-row-domain">{html.escape(specialty)}</p>',
+      f'  <p class="cat-row-domain" data-specialty="{html.escape(specialty)}">'
+      f"{html.escape(flair.title() if specialty == 'community' else flair)}</p>",
       f'  <ul class="cat-slots" aria-label="{html.escape(sentence, quote=True)}">',
       *slots,
       "  </ul>",

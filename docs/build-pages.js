@@ -44,6 +44,21 @@ function releaseBanner(state, revision) {
   ].join("\n");
 }
 
+function buildCoordinates(catalog, meta) {
+  const escape = (value) => String(value ?? "Not recorded").replace(/[&<>"']/g, (c) => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));
+  const repository = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?$/.test(catalog.repository || "") ? catalog.repository.replace(/\/$/, "") : null;
+  const source = (sha) => repository && /^[a-f0-9]{40}$/.test(sha || "") ? `<a href="${repository}/tree/${sha}"><code>${sha}</code></a>` : escape(sha);
+  const site = meta.site || {};
+  const snapshot = meta.catalogue || {};
+  const run = repository && /^\d+$/.test(String(site.run))
+    ? `<a href="${repository}/actions/runs/${site.run}${/^\d+$/.test(String(site.attempt)) ? `/attempts/${site.attempt}` : ""}">Build run ${site.run}${site.attempt ? `, attempt ${escape(site.attempt)}` : ""}</a>` : escape(site.run);
+  const release = snapshot.release?.published_at && /^https:\/\//.test(snapshot.release.url || "")
+    ? `<a href="${escape(snapshot.release.url)}">Recorded release</a> · published ${escape(snapshot.release.published_at)}` : "Not recorded";
+  const deployment = site.deployment?.status === "succeeded" && /^https:\/\//.test(site.deployment.url || "")
+    ? `<a href="${escape(site.deployment.url)}">Recorded successful deployment</a>` : "Not recorded for this build";
+  return `<div class="build-coordinates" style="overflow-wrap:anywhere"><p><strong>Current site</strong> · source ${source(site.source)} · ${run} · <a href="assets/site-build.json">Build metadata</a></p><p><strong>Catalogue ${catalog.version === "source" ? "Source preview" : "snapshot " + escape(catalog.version)}</strong> · source ${source(catalog.revision)} · asset digest <code>${escape(snapshot["asset-digest"])}</code> · <a href="assets/catalog.json">Exact Catalogue asset</a></p><p>Release: ${release}</p><p>Successful deployment: ${deployment}${repository ? ` · <a href="${repository}/deployments">Actual deployment history</a>` : ""}</p><p>Site build/run coordinates do not establish a successful deployment. Catalogue source and site source can differ.</p></div>`;
+}
+
 const release = readReleaseConfig();
 
 for (const filename of fs.readdirSync(pagesDir).sort()) {
@@ -88,8 +103,7 @@ for (const filename of fs.readdirSync(pagesDir).sort()) {
   );
 
   const meta = JSON.parse(fs.readFileSync(path.join(docsDir, "assets", "site-build.json"), "utf8"));
-  const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));
-  const coordinates = `<p class="build-coordinates" style="overflow-wrap:anywhere">Catalogue ${escape(release.version)} ? source ${escape(release.revision)} ? asset ${escape(meta.catalogue["asset-digest"])}<br>Site source ${escape(meta.site.source)} ? run ${escape(meta.site.run)}${meta.catalogue.release?.published_at ? ` ? release published ${escape(meta.catalogue.release.published_at)}` : ""}</p>`;
+  const coordinates = buildCoordinates(JSON.parse(fs.readFileSync(path.join(docsDir, "assets", "catalog.json"), "utf8")), meta);
   footer = footer.replace("{{BUILD_COORDINATES}}", coordinates);
   const output = `${header.trimEnd()}\n${content}\n${footer.trimStart()}`;
   fs.writeFileSync(path.join(docsDir, filename), output, "utf8");
