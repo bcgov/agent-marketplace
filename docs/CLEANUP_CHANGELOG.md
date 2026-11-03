@@ -12,7 +12,8 @@ validation, or companion workflows.
 | `.github/skills/bcgov-find-extension` and `bcgov-create-extension` | Moved | Published companions now live under `skills/community/`; `.github/skills/` is reserved for ignored local-only skills. |
 | Flat `skills/<name>/` packages | Remove from supported surface | `scripts/marketplace.py` and `scripts/validate_skill.py` only discover canonical `community` and `security` paths. |
 | Root catalog and generated website projections | Keep and regenerate | `make generate` and `make docs` are required by validation, GUI browsing, and demos. |
-| `scripts/marketplace.py`, `find_extension.py`, `create_extension.py`, `rescan_candidate.py` | Keep | They implement validation, discovery, authoring, and federated candidate intake used by the MVP. |
+| `scripts/marketplace.py`, `find_extension.py`, `create_extension.py` | Keep | They implement validation, BC Gov-only discovery and native placement, and authoring. |
+| Federated candidate workflow, issue form and `scripts/rescan_candidate.py` | Removed in v1 | External-source search and candidate intake are deferred; the approved site-link registry and hosted Extensions remain. |
 | `docs/demos/` walkthroughs | Move to `AI-security/projects/marketplace/` | Phase 5 demos are consumer-facing workflows for the security project; scanner fixtures remain in the marketplace checkout for automated tests. |
 | `.mcp.json` | Keep | Repository-level codegraph authoring configuration uses a command lookup and does not affect marketplace publication or distribution. |
 | `.vscode/mcp.json` | Remove | Tracked editor configuration hard-coded `/Users/lkraak/Repos/ai-marketplace`; it is machine-specific and unused by validation, catalog generation, GUI, demos, or marketplace workflows. |

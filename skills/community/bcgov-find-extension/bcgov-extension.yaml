@@ -13,8 +13,8 @@ capabilities:
       - explicitly selected native project or personal skill destinations
   network:
     - bcgov.github.io
-    - raw.githubusercontent.com
     - github.com
+    - codeload.github.com
   commands: []
   environment-variables: []
   secret-names: []

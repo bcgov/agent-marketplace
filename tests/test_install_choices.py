@@ -209,6 +209,11 @@ def test_finder_verifies_explicit_catalog_bytes_without_receipts(tmp_path, capsy
     },
   }
   record["install-options"] = installs.build_install_choices(record, package)
+  record.update(
+    {"display-name": "Demo", "summary": "Demo guidance", "prerequisites": []}
+  )
+  record["files"] = finder.inventory(package)
+  record["content-digest"] = finder.tree_digest(record["files"])
   catalog = {
     "schema-version": "bcgov-marketplace/v1",
     "extensions": [record],
@@ -221,6 +226,8 @@ def test_finder_verifies_explicit_catalog_bytes_without_receipts(tmp_path, capsy
   base = [
     "--catalog",
     str(catalog_path),
+    "--current-catalog",
+    str(catalog_path),
     "verify",
     record["id"],
     "--project",
@@ -231,7 +238,7 @@ def test_finder_verifies_explicit_catalog_bytes_without_receipts(tmp_path, capsy
   (project / ".github/prompts/demo.prompt.md").write_bytes(b"changed\n")
   assert finder.main(base) == 1
   assert json.loads(capsys.readouterr().out)[0]["valid"] is False
-  base[3] = "bcgov-public/demo"
+  base[5] = "bcgov-public/demo"
   assert finder.main(base) == 1
   assert "canonical ID or --allow-alias" in capsys.readouterr().err
   assert not (project / ".github/agent-marketplace").exists()
@@ -386,6 +393,9 @@ def test_finder_installs_immutable_archive_and_checks_bytes_at_public_cli(
   ]
   record["content-digest"] = finder.tree_digest(record["files"])
   record["install-options"] = installs.build_install_choices(record, package)
+  record.update(
+    {"display-name": "Demo", "summary": "Demo guidance", "prerequisites": []}
+  )
   catalog_path = tmp_path / "catalog.json"
   catalog_path.write_text(
     json.dumps(
@@ -409,6 +419,8 @@ def test_finder_installs_immutable_archive_and_checks_bytes_at_public_cli(
   def download(url):
     """Supply one immutable HTTP boundary fixture without replacing local logic."""
     downloads.append(url)
+    if url == finder.DEFAULT_CATALOG:
+      return catalog_path.read_bytes()
     return archive_bytes.getvalue()
 
   monkeypatch.setattr(finder, "_download", download)
@@ -431,7 +443,8 @@ def test_finder_installs_immutable_archive_and_checks_bytes_at_public_cli(
   assert (project / destination).read_bytes() == native
   assert not (project / ".github/skills/demo/bcgov-extension.yaml").exists()
   assert downloads == [
-    "https://github.com/example/marketplace/archive/1234567890abcdef1234567890abcdef12345678.zip"
+    "https://bcgov.github.io/agent-marketplace/assets/catalog.json",
+    "https://github.com/example/marketplace/archive/1234567890abcdef1234567890abcdef12345678.zip",
   ]
   assert '"verified": true' in capsys.readouterr().out
   # Same immutable coordinates with different downloaded bytes must not place.

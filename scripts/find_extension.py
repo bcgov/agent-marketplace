@@ -8,16 +8,13 @@ import hashlib
 import json
 import re
 import stat
-import subprocess
 import sys
 import tempfile
-import unicodedata
 import urllib.parse
 import urllib.request
 import zipfile
 from pathlib import Path, PurePosixPath
 
-import yaml
 from install_choices import (
   PlacementError,
   build_install_choices,
@@ -25,121 +22,174 @@ from install_choices import (
   remove_choice,
   verify_choice,
 )
+from jsonschema import Draft202012Validator
 
-POLICY_VERSION = "bcgov-finder-policy/1.0"
 DEFAULT_CATALOG = "https://bcgov.github.io/agent-marketplace/assets/catalog.json"
 MAX_DOWNLOAD_BYTES = 25 * 1024 * 1024
 MAX_PACKAGE_BYTES = 2 * 1024 * 1024
 MAX_FILE_BYTES = 512 * 1024
 MAX_FILES = 100
-# A candidate must clear this score before it is offered as a match. The scorer
-# awards 100 for an exact name, 12 per matching name token, 4 per summary token,
-# and 1 per prerequisite token, so this floor requires at least one name-token
-# hit or two summary-token hits. It stops unrelated skills being presented as
-# weak matches for a request the marketplace does not actually serve.
 MIN_MATCH_SCORE = 8
-KNOWN_EXTENSION_TYPES = {"skill", "prompt", "instructions", "agent", "hook", "mcp"}
-PUBLISHABLE_EXTENSION_TYPES = {"skill", "prompt", "instructions", "agent"}
-RESOURCE_DIRECTORIES = {"agents", "assets", "references", "scripts"}
-ALLOWED_SUFFIXES = {
-  ".css",
-  ".html",
-  ".js",
-  ".json",
-  ".md",
-  ".py",
-  ".sh",
-  ".toml",
-  ".ts",
-  ".txt",
-  ".yaml",
-  ".yml",
-}
-BLOCKED_NAMES = {".mcp.json", "hooks.json", "mcp.json", "package.json"}
-HIDDEN_CONTROLS = {
-  "\u061c",
-  "\u200b",
-  "\u200c",
-  "\u200d",
-  "\u200e",
-  "\u200f",
-  "\u202a",
-  "\u202b",
-  "\u202c",
-  "\u202d",
-  "\u202e",
-  "\u2060",
-  "\u2066",
-  "\u2067",
-  "\u2068",
-  "\u2069",
-  "\ufeff",
-}
-SECRET_PATTERNS = {
-  "private-key": re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
-  "github-token": re.compile(r"\bgh[opsu]_[A-Za-z0-9]{20,}\b"),
-  "aws-access-key": re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"),
-  "assigned-secret": re.compile(
-    r"(?i)\b(?:api[_-]?key|password|secret|token)\s*[:=]\s*['\"]?[A-Za-z0-9+/=_-]{12,}"
-  ),
-}
-ADVISORY_PATTERNS = {
-  "approval-bypass": re.compile(
-    r"(?i)\b(?:skip|bypass|ignore).{0,40}\b(?:approval|confirmation|safeguard)\b"
-  ),
-  "security-weakening": re.compile(
-    r"(?i)\b(?:disable|turn off|weaken).{0,40}"
-    r"\b(?:security|validation|scanner|firewall)\b"
-  ),
-  "concealment": re.compile(
-    r"(?i)\b(?:hide|conceal).{0,30}\b(?:activity|change|command|file)\b"
-  ),
-  "exfiltration": re.compile(
-    r"(?i)\b(?:upload|send|post|exfiltrate).{0,50}"
-    r"\b(?:credential|repository|secret|user data)\b"
-  ),
-  "mutable-download-execution": re.compile(
-    r"(?i)(?:curl|wget|invoke-webrequest).{0,160}(?:\||;|&&).{0,40}(?:sh|bash|python|iex)\b"
-  ),
-  "instruction-override": re.compile(
-    r"(?i)\bignore (?:all |any )?(?:previous|prior|marketplace|scanner) instructions\b"
-  ),
-  "unsupported-trust-claim": re.compile(
-    r"(?i)\b(?:bc gov approved|verified secure|guaranteed safe)\b"
-  ),
-}
-NETWORK_COMMAND_RE = re.compile(
-  r"(?i)\b(?:curl|wget|invoke-webrequest)\b[^\n]*https?://([A-Za-z0-9.-]+)"
-)
-ENVIRONMENT_RE = re.compile(
-  r"(?:\$\{?([A-Z][A-Z0-9_]{2,})\}?|\$env:([A-Z][A-Z0-9_]{2,})|%([A-Z][A-Z0-9_]{2,})%)"
-)
+KNOWN_EXTENSION_TYPES = {"skill", "prompt", "instructions", "agent"}
+PUBLISHABLE_EXTENSION_TYPES = KNOWN_EXTENSION_TYPES
 
 
 class FinderError(Exception):
   """Represent a finder failure that is safe to show to the user."""
 
 
-def load_catalog(source: str) -> dict:
-  """Load a generated marketplace catalog."""
-  candidates = [source]
-  failures = []
-  for candidate in candidates:
-    try:
-      if candidate.startswith("https://"):
-        content = _download(candidate).decode("utf-8")
-      else:
-        content = Path(candidate).read_text(encoding="utf-8")
-      catalog = json.loads(content)
-      if catalog.get("schema-version") not in {
-        "bcgov-marketplace/v1",
-        "bcgov-marketplace-catalog/v1alpha1",
-      }:
-        raise FinderError(f"unsupported catalog schema in {candidate}")
-      return catalog
-    except (FinderError, OSError, UnicodeError, json.JSONDecodeError) as exc:
-      failures.append(str(exc))
-  raise FinderError(f"cannot load catalog {source}: {'; '.join(failures)}")
+def load_catalog(source: str, *, historical: bool = False) -> dict:
+  """Load only the selected v1 Catalogue, failing closed without source fallback."""
+  try:
+    content = (
+      _download(source).decode("utf-8")
+      if source.startswith("https://")
+      else Path(source).read_text(encoding="utf-8")
+    )
+    catalog = json.loads(content)
+    legacy = (
+      historical
+      and isinstance(catalog, dict)
+      and catalog.get("schema-version") == "bcgov-marketplace-catalog/v1alpha1"
+    )
+    source_schema = {
+      "type": "object",
+      "required": ["repository", "revision", "path"],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+        },
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "path": {"type": "string", "minLength": 1},
+      },
+    }
+    file_schema = {
+      "type": "object",
+      "required": ["path", "sha256", "size"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "size": {"type": "integer", "minimum": 0},
+      },
+    }
+    choice_schema = {
+      "type": "object",
+      "required": [
+        "id",
+        "extension-id",
+        "scope",
+        "source",
+        "destination",
+        "placements",
+        "installer",
+      ],
+      "properties": {
+        "id": {"type": "string"},
+        "extension-id": {"type": "string"},
+        "scope": {"enum": ["project", "global"]},
+        "source": source_schema,
+        "destination": {"type": "string"},
+        "installer": {"type": "string"},
+        "placements": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["source", "destination", "sha256"],
+            "properties": {
+              key: {"type": "string"} for key in ("source", "destination", "sha256")
+            },
+          },
+        },
+      },
+    }
+    schema = {
+      "type": "object",
+      "required": ["schema-version", "extensions"],
+      "properties": {
+        "schema-version": {"const": "bcgov-marketplace/v1"},
+        "legacy-ids": {"type": "object", "additionalProperties": {"type": "string"}},
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "type",
+              "lifecycle",
+              "display-name",
+              "summary",
+              "prerequisites",
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": (
+                  r"^bcgov-public/(skill|instructions|prompt|agent)/"
+                  r"[a-z0-9]+(?:-[a-z0-9]+)*$"
+                ),
+              },
+              "type": {"enum": sorted(KNOWN_EXTENSION_TYPES)},
+              "lifecycle": {"enum": ["active", "quarantined", "removed"]},
+              "display-name": {"type": "string"},
+              "summary": {"type": "string"},
+              "prerequisites": {"type": "array", "items": {"type": "string"}},
+              "legacy-ids": {"type": "array", "items": {"type": "string"}},
+              "maintainers": {"type": "array", "items": {"type": "string"}},
+              "support": {"type": "string"},
+              "notice": {"type": "string"},
+              "moved-to": {"type": "string"},
+              "install-options": {"type": "array", "items": choice_schema},
+              "source": source_schema,
+              "files": {"type": "array", "items": file_schema},
+              "content-digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+            },
+            "if": {
+              "required": ["install-options"],
+              "properties": {"install-options": {"minItems": 1}},
+            },
+            "then": {"required": ["source", "files", "content-digest"]},
+          },
+        },
+      },
+    }
+    if legacy:
+      # Preserve historical identities/evidence. Only current finite aliases may
+      # supply a canonical identity; legacy installer fields grant no authority.
+      schema["properties"]["schema-version"] = {
+        "const": "bcgov-marketplace-catalog/v1alpha1"
+      }
+      schema["properties"]["extensions"]["items"]["properties"]["id"] = {
+        "type": "string",
+        "pattern": r"^bcgov-public/[a-z0-9]+(?:-[a-z0-9]+)*$",
+      }
+    error = next(Draft202012Validator(schema).iter_errors(catalog), None)
+    if error:
+      raise FinderError("invalid catalog schema; obtain a published v1 Catalogue")
+    records = catalog["extensions"]
+    identities = {item["id"] for item in records}
+    if len(identities) != len(records) or any(
+      not legacy and item["id"].split("/")[1] != item["type"] for item in records
+    ):
+      raise FinderError("invalid catalog identities")
+    if any(
+      alias in identities or target not in identities
+      for alias, target in catalog.get("legacy-ids", {}).items()
+    ):
+      raise FinderError("invalid catalog legacy alias mapping")
+    if legacy:
+      catalog = {
+        **catalog,
+        "historical-inspection-only": True,
+        "extensions": [
+          {**record, "install-options": [], "historical-inspection-only": True}
+          for record in records
+        ],
+      }
+    return catalog
+  except (FinderError, OSError, UnicodeError, json.JSONDecodeError) as exc:
+    raise FinderError(f"cannot load catalog {source}: {exc}") from exc
 
 
 def _tokens(value: str) -> set[str]:
@@ -150,9 +200,92 @@ def _tokens(value: str) -> set[str]:
 def lookup_extension(catalog: dict, identity: str) -> dict | None:
   """Resolve exact IDs or explicit current aliases without guessing by name."""
   canonical = catalog.get("legacy-ids", {}).get(identity, identity)
-  return next(
+  record = next(
     (record for record in catalog["extensions"] if record["id"] == canonical), None
   )
+  if record is None:
+    return None
+  resolution = {
+    "requested-id": identity,
+    "canonical-id": canonical,
+    "alias": identity != canonical,
+    "chain": [],
+    "installable": record.get("lifecycle") == "active"
+    and bool(record.get("install-options")),
+  }
+  current = record
+  visited = set()
+  by_id = {item["id"]: item for item in catalog["extensions"]}
+  while True:
+    if current["id"] in visited:
+      resolution["error"] = "malformed replacement cycle; installation unavailable"
+      break
+    visited.add(current["id"])
+    resolution["chain"].append(
+      {
+        key: current[key]
+        for key in ("id", "lifecycle", "notice", "moved-to")
+        if key in current
+      }
+    )
+    target = current.get("moved-to")
+    if not target:
+      resolution["terminal"] = {
+        "id": current["id"],
+        "lifecycle": current.get("lifecycle", "unknown"),
+      }
+      break
+    resolution["installable"] = False
+    if target not in by_id:
+      resolution["error"] = "replacement target unavailable; installation unavailable"
+      break
+    current = by_id[target]
+  if "error" in resolution:
+    resolution["installable"] = False
+  status = record.get("current-status")
+  if status and status.get("record"):
+    if record.get("historical-inspection-only"):
+      resolution["historical-id"] = canonical
+      resolution["canonical-id"] = status["record"]["id"]
+      resolution["alias"] = canonical != status["record"]["id"]
+    current_resolution = status["record"]["resolution"]
+    if not current_resolution["installable"]:
+      resolution["installable"] = False
+  return {**record, "resolution": resolution}
+
+
+def check_current_notices(catalog: dict, current_source: str) -> dict:
+  """Annotate a historical selection with current identity notices or uncertainty."""
+  try:
+    current = load_catalog(current_source)
+    diagnostic = None
+  except FinderError as exc:
+    current = None
+    diagnostic = (
+      f"Current status unavailable: {exc}. Historical bytes are not current status."
+    )
+  records = []
+  for record in catalog["extensions"]:
+    latest = lookup_extension(current, record["id"]) if current else None
+    status = {
+      "available": latest is not None,
+      "source": current_source,
+      "diagnostic": diagnostic
+      if current is None
+      else (
+        None
+        if latest
+        else "Current status unavailable: identity absent from current Catalogue."
+      ),
+    }
+    if latest:
+      status["record"] = {
+        key: latest[key]
+        for key in ("id", "lifecycle", "notice", "moved-to", "source", "resolution")
+        if key in latest
+      }
+    records.append({**record, "current-status": status})
+  return {**catalog, "extensions": records}
 
 
 def search(catalog: dict, query: str, extension_type: str | None = None) -> list[dict]:
@@ -160,20 +293,30 @@ def search(catalog: dict, query: str, extension_type: str | None = None) -> list
   if extension_type is not None and extension_type not in KNOWN_EXTENSION_TYPES:
     raise FinderError(f"unsupported extension type: {extension_type}")
   query_tokens = _tokens(query)
-  requested = (
-    lookup_extension(catalog, query.strip())
-    if query.strip().startswith("bcgov-public/")
-    else None
-  )
+  requested = lookup_extension(catalog, query.strip())
   if query.strip().startswith("bcgov-public/") and requested is None:
     return []
   ranked = []
   for record in catalog["extensions"]:
-    if record["lifecycle"] != "active" and record is not requested:
+    is_requested = requested is not None and record["id"] == requested["id"]
+    if record["lifecycle"] != "active" and not is_requested:
+      continue
+    current_record = record.get("current-status", {}).get("record")
+    if not is_requested and (
+      record.get("moved-to")
+      or (
+        current_record
+        and (
+          current_record["lifecycle"] != "active"
+          or current_record.get("moved-to")
+          or current_record["resolution"].get("error")
+        )
+      )
+    ):
       continue
     if extension_type is not None and record.get("type") != extension_type:
       continue
-    if requested is not None and record is not requested:
+    if requested is not None and not is_requested:
       continue
     name_tokens = _tokens(
       record["id"]
@@ -181,6 +324,10 @@ def search(catalog: dict, query: str, extension_type: str | None = None) -> list
       + record["display-name"]
       + " "
       + " ".join(record.get("legacy-ids", []))
+      + " "
+      + " ".join(record.get("maintainers", []))
+      + " "
+      + record.get("support", "")
     )
     summary_tokens = _tokens(record["summary"])
     prerequisite_tokens = _tokens(" ".join(record["prerequisites"]))
@@ -196,36 +343,17 @@ def search(catalog: dict, query: str, extension_type: str | None = None) -> list
       + 4 * len(query_tokens & summary_tokens)
       + len(query_tokens & prerequisite_tokens)
     )
-    if score >= MIN_MATCH_SCORE:
+    if score >= MIN_MATCH_SCORE or is_requested:
       why = sorted(query_tokens & (name_tokens | summary_tokens | prerequisite_tokens))
       ranked.append((score, record["id"], why, record))
   ranked.sort(key=lambda item: (-item[0], item[1]))
   return [
-    {**item[3], "match": {"score": item[0], "terms": item[2]}} for item in ranked[:3]
+    {
+      **lookup_extension(catalog, query.strip() if requested else item[1]),
+      "match": {"score": item[0], "terms": item[2]},
+    }
+    for item in ranked[:3]
   ]
-
-
-def approved_sources(config: dict, extension_type: str) -> list[dict]:
-  """Return active approved sources that declare support for one type."""
-  if extension_type not in KNOWN_EXTENSION_TYPES:
-    raise FinderError(f"unsupported extension type: {extension_type}")
-  sources = []
-  for source in config.get("approved-discovery-sources", []):
-    declared_types = source.get("extension-types", ["skill"])
-    if source.get("status", "active") == "active" and extension_type in declared_types:
-      sources.append(source)
-  return sorted(sources, key=lambda source: source.get("id", source["name"]))
-
-
-def load_marketplace_config(path: str | Path) -> dict:
-  """Load the versioned local marketplace source policy."""
-  try:
-    config = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-  except (OSError, UnicodeError, yaml.YAMLError) as exc:
-    raise FinderError(f"cannot load marketplace config {path}: {exc}") from exc
-  if not isinstance(config, dict):
-    raise FinderError(f"marketplace config {path} must contain a mapping")
-  return config
 
 
 def _download(url: str) -> bytes:
@@ -240,7 +368,7 @@ def _download(url: str) -> bytes:
         raise FinderError("repository archive exceeds the download limit")
       content = response.read(MAX_DOWNLOAD_BYTES + 1)
   except (OSError, ValueError) as exc:
-    raise FinderError(f"cannot download immutable source: {exc}") from exc
+    raise FinderError(f"cannot download selected data: {exc}") from exc
   if len(content) > MAX_DOWNLOAD_BYTES:
     raise FinderError("repository archive exceeds the download limit")
   return content
@@ -274,6 +402,7 @@ def stage_package(
     raise FinderError("package path must be a non-empty repository-relative path")
   archive = _download(_github_archive_url(repository, revision))
   seen = set()
+  total = 0
   with zipfile.ZipFile(__import__("io").BytesIO(archive)) as source:
     for entry in source.infolist():
       parts = PurePosixPath(entry.filename).parts
@@ -294,6 +423,13 @@ def stage_package(
       if folded in seen:
         raise FinderError(f"archive contains a case-colliding path: {relative}")
       seen.add(folded)
+      total += entry.file_size
+      if (
+        entry.file_size > MAX_FILE_BYTES
+        or total > MAX_PACKAGE_BYTES
+        or len(seen) > MAX_FILES
+      ):
+        raise FinderError("archive package exceeds bounded file/size limits")
       destination = target.joinpath(*relative.parts)
       destination.parent.mkdir(parents=True, exist_ok=True)
       content = source.read(entry)
@@ -342,121 +478,6 @@ def tree_digest(file_inventory: list[dict]) -> str:
   return f"sha256:{digest.hexdigest()}"
 
 
-def scan_staged(
-  package: Path,
-  capabilities: dict | None = None,
-  extension_type: str = "skill",
-  package_name: str | None = None,
-) -> dict:
-  """Apply deterministic local policy without executing staged content."""
-  findings = []
-  total = 0
-  if extension_type not in PUBLISHABLE_EXTENSION_TYPES:
-    raise FinderError(f"unsupported extension type: {extension_type}")
-  artifact_file = (
-    "SKILL.md"
-    if extension_type == "skill"
-    else f"{package_name or package.name}.{extension_type}.md"
-  )
-  expected_root_files = {artifact_file, "bcgov-extension.yaml"}
-  files = inventory(package)
-  if len(files) > MAX_FILES:
-    findings.append(_finding("blocking", "file-count", ".", 0))
-  declared_network = set((capabilities or {}).get("network", []))
-  declared_environment = set(
-    (capabilities or {}).get("environment-variables", [])
-  ) | set((capabilities or {}).get("secret-names", []))
-  declared_commands = set((capabilities or {}).get("commands", []))
-  for item in files:
-    relative = item["path"]
-    path = package / relative
-    total += item["size"]
-    parts = PurePosixPath(relative).parts
-    if any(part.startswith(".") for part in parts):
-      findings.append(_finding("blocking", "hidden-path", relative, 0))
-    if (len(parts) == 1 and relative not in expected_root_files) or (
-      len(parts) > 1 and (len(parts) != 2 or parts[0] not in RESOURCE_DIRECTORIES)
-    ):
-      findings.append(_finding("blocking", "nested-resource", relative, 0))
-    if parts[0] == "agents" and (
-      extension_type != "skill" or relative != "agents/openai.yaml"
-    ):
-      findings.append(_finding("blocking", "unsupported-agent-metadata", relative, 0))
-    if path.name.lower() in BLOCKED_NAMES:
-      findings.append(_finding("blocking", "blocked-extension-type", relative, 0))
-    if path.suffix.lower() not in ALLOWED_SUFFIXES:
-      findings.append(_finding("blocking", "unsupported-file-type", relative, 0))
-    if path.stat().st_mode & 0o111:
-      findings.append(_finding("blocking", "executable-bit", relative, 0))
-    if (
-      capabilities is not None
-      and parts[0] == "scripts"
-      and path.name not in declared_commands
-      and relative not in declared_commands
-      and "*" not in declared_commands
-    ):
-      findings.append(_finding("blocking", "undeclared-script", relative, 0))
-    try:
-      text = path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-      findings.append(_finding("blocking", "binary-file", relative, 0))
-      continue
-    for line_number, line in enumerate(text.splitlines(), start=1):
-      if any(
-        character in HIDDEN_CONTROLS or unicodedata.category(character) == "Cf"
-        for character in line
-      ):
-        findings.append(_finding("blocking", "hidden-unicode", relative, line_number))
-      for code, pattern in SECRET_PATTERNS.items():
-        if pattern.search(line):
-          findings.append(_finding("blocking", code, relative, line_number))
-      for code, pattern in ADVISORY_PATTERNS.items():
-        if pattern.search(line):
-          findings.append(_finding("advisory", code, relative, line_number))
-      if capabilities is not None:
-        for host in NETWORK_COMMAND_RE.findall(line):
-          if host not in declared_network and "*" not in declared_network:
-            findings.append(
-              _finding("blocking", "undeclared-network", relative, line_number)
-            )
-        for match in ENVIRONMENT_RE.finditer(line):
-          name = next(group for group in match.groups() if group)
-          if name not in declared_environment and "*" not in declared_environment:
-            findings.append(
-              _finding(
-                "blocking",
-                "undeclared-environment-variable",
-                relative,
-                line_number,
-              )
-            )
-  if total > MAX_PACKAGE_BYTES:
-    findings.append(_finding("blocking", "package-size", ".", 0))
-  artifact_path = package / artifact_file
-  asset_text = artifact_path.read_text(encoding="utf-8", errors="replace")
-  if not re.match(
-    r"^---\s*\n(?:(?!\n---\s*$).)*\n---\s*\n",
-    asset_text,
-    re.DOTALL | re.MULTILINE,
-  ):
-    findings.append(_finding("blocking", "malformed-asset-metadata", artifact_file, 1))
-  findings.sort(
-    key=lambda item: (item["severity"], item["path"], item["line"], item["code"])
-  )
-  return {
-    "policy-version": POLICY_VERSION,
-    "outcome": "blocked"
-    if any(item["severity"] == "blocking" for item in findings)
-    else "passed",
-    "findings": findings,
-  }
-
-
-def _finding(severity: str, code: str, path: str, line: int) -> dict:
-  """Create one cited scanner finding."""
-  return {"severity": severity, "code": code, "path": path, "line": line}
-
-
 def _confirm(message: str, assume_yes: bool) -> None:
   """Require one explicit confirmation unless the calling agent already obtained it."""
   if assume_yes:
@@ -465,150 +486,13 @@ def _confirm(message: str, assume_yes: bool) -> None:
     raise FinderError("operation cancelled")
 
 
-def _capabilities(args) -> dict:
-  """Build structured capability declarations from third-party CLI arguments."""
-  return {
-    "filesystem": {"read": args.read, "write": args.write},
-    "network": args.network,
-    "commands": args.command,
-    "environment-variables": args.environment_variable,
-    "secret-names": args.secret_name,
-    "data-classes": args.data_class,
-  }
-
-
-def _register_candidate(args, digest: str, capabilities: dict) -> dict:
-  """Create or update one deduplicated GitHub candidate issue."""
-  fingerprint = hashlib.sha256(
-    f"{args.repository}\0{args.revision}\0{args.path}".encode()
-  ).hexdigest()
-  body = "\n".join(
-    [
-      "### Discovery catalog",
-      "",
-      args.discovery_catalog,
-      "",
-      "### Source repository",
-      "",
-      args.repository,
-      "",
-      "### Full commit SHA",
-      "",
-      f"`{args.revision}`",
-      "",
-      "### Package path",
-      "",
-      f"`{args.path}`",
-      "",
-      "### Package-tree digest",
-      "",
-      f"`{digest}`",
-      "",
-      "### Declared capabilities",
-      "",
-      "```json",
-      json.dumps(capabilities, indent=2, sort_keys=True),
-      "```",
-      "",
-      "### Trust acknowledgement",
-      "",
-      "Unreviewed candidate - trusted CI and human review are pending",
-      f"<!-- candidate-fingerprint:{fingerprint} -->",
-    ]
-  )
-  try:
-    found = subprocess.run(
-      [
-        "gh",
-        "issue",
-        "list",
-        "--repo",
-        args.registration_repository,
-        "--state",
-        "all",
-        "--search",
-        f'"candidate-fingerprint:{fingerprint}" in:body',
-        "--json",
-        "number,url",
-      ],
-      check=True,
-      capture_output=True,
-      text=True,
-    )
-    matches = json.loads(found.stdout)
-    if matches:
-      issue = matches[0]
-      subprocess.run(
-        [
-          "gh",
-          "issue",
-          "comment",
-          str(issue["number"]),
-          "--repo",
-          args.registration_repository,
-          "--body",
-          "Candidate re-registered with the same immutable fingerprint.",
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-      )
-      return {"status": "linked", "url": issue["url"], "fingerprint": fingerprint}
-    created = subprocess.run(
-      [
-        "gh",
-        "issue",
-        "create",
-        "--repo",
-        args.registration_repository,
-        "--title",
-        f"Federated candidate: {PurePosixPath(args.path).name}",
-        "--body",
-        body,
-      ],
-      check=True,
-      capture_output=True,
-      text=True,
-    )
-    return {
-      "status": "created",
-      "url": created.stdout.strip(),
-      "fingerprint": fingerprint,
-    }
-  except (
-    FileNotFoundError,
-    subprocess.CalledProcessError,
-    json.JSONDecodeError,
-  ) as exc:
-    return {"status": "failed", "error": str(exc), "fingerprint": fingerprint}
-
-
-def _scan_source(args) -> dict:
-  """Independently stage and scan one immutable third-party source."""
-  with tempfile.TemporaryDirectory(prefix="bcgov-rescan-") as directory:
-    staged = Path(directory) / "package"
-    staged.mkdir()
-    stage_package(
-      args.repository, args.revision, args.path, staged, args.extension_type
-    )
-    file_inventory = inventory(staged)
-    capabilities = getattr(args, "capabilities", None)
-    if capabilities is None and hasattr(args, "read"):
-      capabilities = _capabilities(args)
-    return {
-      "source": {
-        "repository": args.repository,
-        "revision": args.revision,
-        "path": args.path,
-      },
-      "package-tree-digest": tree_digest(file_inventory),
-      "files": file_inventory,
-      "scan": scan_staged(staged, capabilities, args.extension_type),
-    }
-
-
 def _selected_choice(
-  catalog: dict, identity: str, allow_alias: bool = False, scope: str = "project"
+  catalog: dict,
+  identity: str,
+  allow_alias: bool = False,
+  scope: str = "project",
+  *,
+  installing: bool = True,
 ) -> tuple[dict, dict]:
   """Resolve one explicit identity without treating aliases as placement authority."""
   record = lookup_extension(catalog, identity)
@@ -620,14 +504,37 @@ def _selected_choice(
       "explicitly use the canonical ID or --allow-alias"
     )
   options = record.get("install-options", [])
+  status = record.get("current-status", {})
+  current = status.get("record")
+  if (
+    installing
+    and current
+    and (
+      current["lifecycle"] != "active"
+      or current.get("moved-to")
+      or current["resolution"].get("error")
+    )
+  ):
+    raise FinderError(
+      "current lifecycle prevents installation of this historical pin: "
+      + json.dumps(current, sort_keys=True)
+      + "; inspect replacement notices and explicitly select an active identity"
+    )
+  if installing and (record.get("moved-to") or record["resolution"].get("error")):
+    raise FinderError(
+      "replacement is lookup evidence only; explicitly select its canonical identity"
+    )
   if record.get("lifecycle") != "active" or not options:
     raise FinderError(
       "no tested install choice for this type/client or lifecycle; "
-      "inspect the notice and source history"
+      "inspect the notice and source history: "
+      + json.dumps(record["resolution"], sort_keys=True)
     )
   choice = next((option for option in options if option["scope"] == scope), None)
   if choice is None:
     raise FinderError(f"no tested VS Code {scope} placement choice")
+  if choice["extension-id"] != record["id"] or choice["source"] != record.get("source"):
+    raise FinderError("install choice does not match selected identity/source")
   return record, choice
 
 
@@ -645,12 +552,18 @@ def _selection(args, catalog: dict) -> tuple[dict, dict]:
     args.id,
     getattr(args, "allow_alias", False),
     getattr(args, "scope", "project"),
+    installing=getattr(args, "command", "install") == "install",
   )
 
 
 def _reviewed_install(args, catalog: dict) -> dict:
   """Verify Catalogue bytes and explicitly place the shared native client layout."""
   record, choice = _selection(args, catalog)
+  expected_revision = getattr(args, "expected_revision", None)
+  if expected_revision and choice["source"]["revision"] != expected_revision:
+    raise FinderError(
+      "selected source revision changed; review the new plan before confirming"
+    )
   project = _placement_root(args)
   previous = None
   if getattr(args, "previous_catalog", None):
@@ -666,11 +579,18 @@ def _reviewed_install(args, catalog: dict) -> dict:
         "capabilities": record.get("capabilities"),
         "lifecycle": record["lifecycle"],
         "destination-root": str(project),
+        "action": "overwrite" if previous else "install",
+        "migration-approved": getattr(args, "allow_migration", False),
+        "current-status": record.get("current-status"),
         "publication": (
           "Catalogue source (preview)"
           if catalog.get("release-state") != "published"
           or catalog.get("version") == "source"
-          else "latest published Catalogue source"
+          else (
+            "latest published Catalogue source (full-SHA pin)"
+            if getattr(args, "catalog", DEFAULT_CATALOG) == DEFAULT_CATALOG
+            else "selected published snapshot source (full-SHA pin)"
+          )
         ),
       },
       indent=2,
@@ -695,8 +615,16 @@ def _reviewed_install(args, catalog: dict) -> dict:
       raise FinderError(
         "Catalogue choice does not match actual native client requirements/layout"
       )
-    _confirm(f"Copy native files into {project} ({choice['scope']})?", args.yes)
-    return place_choice(
+    action = (
+      "Overwrite selected previous native files" if previous else "Install native files"
+    )
+    _confirm(
+      f"{action}: {record['id']} at {choice['source']['revision']}; "
+      f"scope={choice['scope']}; destination={project / choice['destination']}; "
+      f"migration={getattr(args, 'allow_migration', False)}?",
+      args.yes,
+    )
+    result = place_choice(
       choice,
       staged,
       project,
@@ -704,6 +632,11 @@ def _reviewed_install(args, catalog: dict) -> dict:
       previous=previous,
       allow_migration=getattr(args, "allow_migration", False),
     )
+    result["targets-exist"] = all(Path(path).is_file() for path in result["installed"])
+    result["byte-verification"] = (
+      "downloaded inventory/tree digest and installed SHA-256 compared"
+    )
+    return result
 
 
 def _verify_selected(args, catalog: dict) -> list[dict]:
@@ -716,38 +649,24 @@ def _remove_selected(args, catalog: dict) -> dict:
   """Delete selected native files only after explicit consent and byte comparison."""
   _, choice = _selection(args, catalog)
   print(json.dumps(choice, indent=2, sort_keys=True))
-  _confirm("Delete only these native files with matching installed bytes?", args.yes)
-  return remove_choice(choice, _placement_root(args), confirmed=True)
-
-
-def _add_capability_arguments(parser: argparse.ArgumentParser) -> None:
-  """Add repeatable structured capability options to a parser."""
-  parser.add_argument("--read", action="append", default=[])
-  parser.add_argument("--write", action="append", default=[])
-  parser.add_argument("--network", action="append", default=[])
-  parser.add_argument("--command", action="append", default=[])
-  parser.add_argument("--environment-variable", action="append", default=[])
-  parser.add_argument("--secret-name", action="append", default=[])
-  parser.add_argument(
-    "--data-class",
-    action="append",
-    default=[],
-    choices=["PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"],
+  _confirm(
+    f"Delete matching native files at {choice['source']['revision']}; "
+    f"scope={choice['scope']}; "
+    f"destination={_placement_root(args) / choice['destination']}?",
+    args.yes,
   )
+  return remove_choice(choice, _placement_root(args), confirmed=True)
 
 
 def _parser() -> argparse.ArgumentParser:
   """Build the finder command-line interface."""
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--catalog", default=DEFAULT_CATALOG)
+  parser.add_argument("--current-catalog", default=DEFAULT_CATALOG)
   commands = parser.add_subparsers(dest="command", required=True)
   search_parser = commands.add_parser("search")
   search_parser.add_argument("query", nargs="+")
   search_parser.add_argument("--extension-type", choices=sorted(KNOWN_EXTENSION_TYPES))
-  sources_parser = commands.add_parser("sources")
-  sources_parser.add_argument(
-    "--extension-type", choices=sorted(KNOWN_EXTENSION_TYPES), default="skill"
-  )
   install_parser = commands.add_parser("install")
   install_parser.add_argument("id")
   install_parser.add_argument("--project", type=Path, default=Path.cwd())
@@ -755,6 +674,9 @@ def _parser() -> argparse.ArgumentParser:
   install_parser.add_argument("--allow-alias", action="store_true")
   install_parser.add_argument("--allow-migration", action="store_true")
   install_parser.add_argument("--previous-catalog", type=Path)
+  install_parser.add_argument(
+    "--expected-revision", help="Refuse a changed selected full source SHA"
+  )
   install_parser.add_argument(
     "--scope", choices=["project", "global"], default="project"
   )
@@ -768,14 +690,6 @@ def _parser() -> argparse.ArgumentParser:
     selected.add_argument("--home", type=Path, default=Path.home())
     if action == "remove":
       selected.add_argument("--yes", action="store_true")
-  scan_source = commands.add_parser("scan-source")
-  scan_source.add_argument("--repository", required=True)
-  scan_source.add_argument("--revision", required=True)
-  scan_source.add_argument("--path", required=True)
-  scan_source.add_argument(
-    "--extension-type", choices=sorted(PUBLISHABLE_EXTENSION_TYPES), default="skill"
-  )
-  _add_capability_arguments(scan_source)
   commands.add_parser("list")
   return parser
 
@@ -784,27 +698,24 @@ def main(argv: list[str] | None = None) -> int:
   """Run the finder command and return a process exit status."""
   args = _parser().parse_args(argv)
   try:
+    catalog = load_catalog(args.catalog, historical=args.catalog != DEFAULT_CATALOG)
+    if args.catalog != args.current_catalog:
+      catalog = check_current_notices(catalog, args.current_catalog)
     if args.command == "search":
-      result = search(
-        load_catalog(args.catalog), " ".join(args.query), args.extension_type
-      )
-    elif args.command == "sources":
-      result = approved_sources(load_catalog(args.catalog), args.extension_type)
+      result = search(catalog, " ".join(args.query), args.extension_type)
     elif args.command == "list":
-      result = load_catalog(args.catalog)["extensions"]
+      result = [lookup_extension(catalog, item["id"]) for item in catalog["extensions"]]
     elif args.command == "install":
-      result = _reviewed_install(args, load_catalog(args.catalog))
-    elif args.command == "scan-source":
-      result = _scan_source(args)
+      result = _reviewed_install(args, catalog)
     elif args.command == "remove":
-      result = _remove_selected(args, load_catalog(args.catalog))
+      result = _remove_selected(args, catalog)
     else:
-      result = _verify_selected(args, load_catalog(args.catalog))
+      result = _verify_selected(args, catalog)
       if not all(item["valid"] for item in result):
         print(json.dumps(result, indent=2, sort_keys=True))
         return 1
     print(json.dumps(result, indent=2, sort_keys=True))
-  except (FinderError, PlacementError, OSError) as exc:
+  except (FinderError, PlacementError, OSError, zipfile.BadZipFile, EOFError) as exc:
     print(f"ERROR: {exc}", file=sys.stderr)
     return 1
   return 0

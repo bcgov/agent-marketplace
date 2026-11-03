@@ -17,7 +17,9 @@ placement authority. Never automatically follow a replacement pointer.
 For a published snapshot, the Catalogue's full SHA identifies its published source bytes. A development/source preview is not publication evidence. A main-based link
 is latest source, may be ahead of publication, and is never pinned. The catalog
 release tag is snapshot metadata, not a substitute for the selected full SHA.
-No `RELEASE_TAG`-based third-party installer is advertised without layout tests.
+Explicit pre-v1 snapshots remain inspection-only: preserve their original IDs
+and source evidence, and use the current finite alias mapping for current
+notices. Their legacy installer fields do not supply a tested native action.
 
 ## Place native files explicitly
 
@@ -36,7 +38,7 @@ No `RELEASE_TAG`-based third-party installer is advertised without layout tests.
 
 Skills also have a tested personal/global choice rooted at the selected home
 directory, `~/.copilot/skills/<name>/`. The other types are project-only.
-No APM, npx or native deep-link action is supported by this contract. Do not claim a lockfile, runtime evaluation or client discovery result.
+Report only the actual tested native action and observed byte comparisons.
 The tested layout contract and evidence limits are in the site's format guide.
 
 ## Update and remove
@@ -49,5 +51,17 @@ and require explicit migration approval. Do not silently reinterpret an alias.
 
 For removal, use the selected revision's exact map, compare installed bytes,
 then ask before deleting those files only. Preserve unrelated guidance.
-Current non-active notices override new-install recommendations from older
-snapshots; older affected pins need the published update/removal guidance.
+For an older snapshot or source pin, fetch current Pages notices by identity.
+Show current removal/replacement notices and every intermediate notice; if that
+check cannot complete or the identity is absent, explicitly report current
+status unavailable. Historical bytes do not establish current status. Current
+withdrawal prevents installation from an older active snapshot, while the old
+map remains usable for explicit byte-checked removal. Notices do not revoke
+immutable downloads or remotely uninstall files.
+
+Bind confirmation to the actual full SHA, scope, destinations and action,
+including overwrite and migration authority. A later write must use that same
+SHA or present a new plan. The optional repository helper supports an expected
+revision guard and confirms its selected plan in the same invocation. It reports
+actual installer/revision/destinations, checks target existence, and claims byte
+verification only after downloaded and installed SHA-256 comparisons.
