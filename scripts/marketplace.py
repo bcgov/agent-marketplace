@@ -300,6 +300,8 @@ def _schema_diagnostic(path: Path, error) -> PublicDiagnostic:
     fix = "Additional properties are not allowed; remove unknown fields."
   elif constraint == "uniqueItems":
     fix = "Remove duplicate items."
+  elif constraint == "minimum":
+    fix = f"Use a value of at least {error.validator_value}."
   elif constraint in {"minLength", "minItems", "minProperties"}:
     fix = f"Add content to meet {constraint}: {error.validator_value}."
   elif constraint in {"maxLength", "maxItems", "maxProperties"}:

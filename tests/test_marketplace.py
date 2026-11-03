@@ -543,6 +543,24 @@ def test_security_pattern_parameters_are_read_from_policy(tmp_path):
   )
 
 
+def test_check_reports_required_policy_version_minimum(tmp_path, capsys):
+  """Policy version errors identify the schema-owned lower bound and valid edge."""
+  root = _root(tmp_path)
+  _package(root)
+  path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(path.read_text(encoding="utf-8"))
+  policy["policy-version"] = 0
+  path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  assert m.main(["--root", str(root), "check"]) == 1
+  output = capsys.readouterr()
+  assert "config/security-policy.yaml: policy-version:" in output.err
+  assert "Use a value of at least 1." in output.err
+  assert "Traceback" not in output.out + output.err
+  policy["policy-version"] = 1
+  path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  assert m.main(["--root", str(root), "check"]) == 0
+
+
 @pytest.mark.parametrize("command", ["check", "scan", "analyze"])
 def test_cli_rejects_missing_secret_patterns(tmp_path, capsys, command):
   """Incomplete policy cannot silently disable credential checks or crash."""
