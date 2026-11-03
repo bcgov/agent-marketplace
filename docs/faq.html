@@ -1863,7 +1863,7 @@
 
 <details id="full-commit-sha">
 <summary>Why is the source a full commit SHA?</summary>
-<div class="accordion-content"><p>A branch or tag can move. A full commit SHA plus package-tree digest binds discovery, scan, review, install, and receipt evidence to the same bytes.</p></div>
+<div class="accordion-content"><p>A branch or tag can move. A full commit SHA plus package-tree digest binds discovery, scan, review, and install evidence to the same bytes.</p></div>
 </details>
 
 <details id="two-companions">
@@ -1873,12 +1873,12 @@
 
 <details id="install-scope">
 <summary>Are installed skills global too?</summary>
-<div class="accordion-content"><p>Reviewed catalog skills default to the current project. Third-party candidates are project-local only. The finder shows the exact destination and material capabilities before confirmation.</p></div>
+<div class="accordion-content"><p>Tested native choices default to the current project. Skills also offer personal/global ~/.copilot/skills/&lt;name&gt;/ placement under a selected home. The finder shows exact destinations and material capabilities before confirmation.</p></div>
 </details>
 
 <details id="installation-evidence">
 <summary>Where is installation evidence?</summary>
-<div class="accordion-content"><p>Preferred APM installs use <code>apm.yml</code> and <code>apm.lock.yaml</code>; the fallback installer may write <code>skills-lock.json</code>. Legacy helper receipts live under <code>.github/agent-marketplace/receipts/</code>. Local evidence stays in the project unless the developer chooses to share it for support or incident response.</p></div>
+<div class="accordion-content"><p>The selected Catalogue records immutable source coordinates and per-file hashes. Compare downloaded and installed native files with those hashes; retain the selected snapshot for later update/removal comparisons. Manual placement creates no tracking files.</p></div>
 </details>
 
 <details id="self-publish">
@@ -1893,7 +1893,7 @@
 
 <details id="quarantine">
 <summary>How is a package quarantined?</summary>
-<div class="accordion-content"><p>Maintainers set its lifecycle to <code>quarantined</code>, regenerate, and publish through review. The finder excludes it from default results. Support then identifies affected receipts or declared dependencies and publishes update or removal guidance. See the <a href="https://github.com/bcgov/agent-marketplace/blob/main/docs/MARKETPLACE_RUNBOOK.md" target="_blank" rel="noopener">operations runbook</a> and the <a href="https://github.com/bcgov/agent-marketplace/blob/main/SECURITY.md" target="_blank" rel="noopener">private reporting route</a>.</p></div>
+<div class="accordion-content"><p>Maintainers set its lifecycle to <code>quarantined</code>, regenerate, and publish through review. The finder excludes it from default results. Support then identifies affected installed native files or declared dependencies and publishes update or removal guidance. See the <a href="https://github.com/bcgov/agent-marketplace/blob/main/docs/MARKETPLACE_RUNBOOK.md" target="_blank" rel="noopener">operations runbook</a> and the <a href="https://github.com/bcgov/agent-marketplace/blob/main/SECURITY.md" target="_blank" rel="noopener">private reporting route</a>.</p></div>
 </details>
 </div>
 </main>

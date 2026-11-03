@@ -2083,11 +2083,9 @@
 
 <h2 id="using-assets-from-this-catalog">Using assets from this catalog</h2>
 
-<p>Skills have pinned installation commands; other asset types use their native import locations. Each command or import requires an explicit user action. The marketplace does not install assets silently.</p>
+<p>Select a record to see its tested type/client choice, full-SHA source and exact native destinations. The default source is the latest published Catalogue; a development preview is labelled separately. A link to <code>main</code> is latest source and may be ahead of the Catalogue. A SHA in a URL does not verify downloaded bytes.</p>
 
-<pre><code>apm install bcgov/agent-marketplace/skills/security/repo-hardening#2046da7b0de0f673bf39208b35385c1516be4c75 --target copilot</code></pre>
-
-<p>If APM is unavailable, the same panel offers a <code>npx skills</code> command. The marketplace finder recommends installing APM for future dependency and lockfile management. Other formats and their harness-specific import guidance are described in the <a href="asset-formats.html">asset format guide</a>.</p>
+<p>Only tested native layouts receive an action. Inspect existing destinations before explicit placement, update or removal. See the <a href="consume.html">installation guide</a> for byte comparisons and migration.</p>
 
 <p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
 
@@ -2354,40 +2352,28 @@
       : null;
     const status = checks.status || 'unreviewed';
     const reviewers = (checks.reviewers || []).join(', ');
-    const repoPath = (source.repository || '').replace(/^https?:\/\/github\.com\//, '');
 
-    // The automated installer currently targets skills; other asset types use
-    // the documented native import path instead of a misleading command.
-    const installable = record.type === 'skill' && record.lifecycle === 'active';
     const notReadyOn = ((record.compatibility || {})['not-ready-on'] || []);
     const readiness = notReadyOn.length
       ? `Author-declared not ready on: ${notReadyOn.join(', ')}. These claims are not independently tested.`
       : 'No harness exclusions are declared by the author. This is not a compatibility test result.';
-    const commands = {
-      apm: source.path
-        ? `apm install ${repoPath}/${source.path}#${revision} --target copilot`
-        : 'apm install <owner>/<repository>/<package-path>#<commit-sha> --target copilot',
-      npx: sourceUrl
-        ? `npx skills add \\\n  ${sourceUrl} \\\n  --agent github-copilot -y`
-        : `npx skills add <immutable-tree-url> --agent github-copilot -y`
-    };
-
-    const installBlock = record.lifecycle !== 'active'
-      ? '<p class="install-note">Installation is unavailable for this Extension.</p>'
-      : installable
-      ? `
-      <h4>Install</h4>
-      <div class="install-switch" role="group" aria-label="Choose installer">
-        <button type="button" class="shell-option active" aria-pressed="true" data-installer="apm">APM</button>
-        <button type="button" class="shell-option" aria-pressed="false" data-installer="npx">Skills CLI</button>
-      </div>
-      <pre aria-live="polite"><code id="install-command">${escapeHtml(commands.apm)}</code></pre>
-      <p class="install-note" id="install-rationale">APM records the dependency and resolved bytes in a lockfile. Pinned to the checked revision and digest, and installing still needs your confirmation.</p>`
-      : `
-      <h4>Import</h4>
-      <p class="install-note">No automated install command is offered for this record. Follow the
-      <a href="asset-formats.html">manual import guidance</a>
-      for its asset type and target harness. Review the package and confirm its destination before importing.</p>`;
+    const choices = record.lifecycle === 'active' ? (record['install-options'] || []) : [];
+    const published = catalogData['release-state'] === 'published' && catalogData.version !== 'source';
+    const installBlock = choices.length ? choices.map((choice) => `
+      <section class="native-install-choice">
+        <h4>Install: ${escapeHtml(choice.client)}</h4>
+        <p>${escapeHtml(choice.installer)} placement; ${escapeHtml(choice.scope)} scope, rooted at ${escapeHtml(choice['destination-root'])}.</p>
+        <p><strong>${published ? 'Latest published Catalogue source' : 'Catalogue source (development preview)'}</strong>:
+          <a href="${escapeHtml(choice['source-url'])}" target="_blank" rel="noopener">${escapeHtml(choice.source.repository)}</a>
+          <code>${escapeHtml(choice.source.path)}</code> at <code>${escapeHtml(choice.source.revision)}</code>.</p>
+        <p><a href="${escapeHtml(choice['latest-source'].url)}" target="_blank" rel="noopener">Latest source (main)</a> may be ahead of the Catalogue.</p>
+        <p>${escapeHtml(choice.install)}</p>
+        <pre><code>${escapeHtml(choice.placements.map((item) => `${item.source} -> ${item.destination}\nSHA-256: ${item.sha256}`).join('\n\n'))}</code></pre>
+        <p><strong>Update:</strong> ${escapeHtml(choice.update)}</p>
+        <p><strong>Remove:</strong> ${escapeHtml(choice.remove)}</p>
+        <p>${escapeHtml(choice.integrity)}</p>
+        <p>Evidence: ${escapeHtml(choice.evidence.tested)}. This is a layout contract, not a runtime evaluation of this Extension.</p>
+      </section>`).join('') : '<p class="install-note">No tested install choice is available for this record. Inspect its lifecycle notice or the <a href="asset-formats.html">native format limits</a>.</p>';
 
     detail.innerHTML = `
       <h3 id="escapehtmlrecorddisplay-name-extension">${escapeHtml(record['display-name'] || 'Extension')}</h3>
@@ -2424,33 +2410,7 @@
       ${record.support ? `<p><a href="${escapeHtml(record.support)}" target="_blank" rel="noopener">Get support</a></p>` : ''}
     `;
 
-    if (installable) wireInstaller(commands);
     if (window.enhanceCodeBlocks) window.enhanceCodeBlocks(detail);
-  }
-
-  // Tabs swap the command text in place; the shared copy button always reads
-  // the command that is currently shown.
-  function wireInstaller(commands) {
-    const code = detail.querySelector('#install-command');
-    const rationale = detail.querySelector('#install-rationale');
-    const tabs = Array.from(detail.querySelectorAll('[data-installer]'));
-    const NOTES = {
-      apm: 'APM records the dependency and resolved bytes in a lockfile. Pinned to the checked revision and digest, and installing still needs your confirmation.',
-      npx: 'Use this when APM is unavailable. It installs from the immutable tree at the checked revision; APM is still preferred because it adds a manifest and lockfile.'
-    };
-
-    for (const tab of tabs) {
-      tab.addEventListener('click', () => {
-        const installer = tab.dataset.installer;
-        code.textContent = commands[installer];
-        rationale.textContent = NOTES[installer];
-        for (const other of tabs) {
-          const isActive = other === tab;
-          other.classList.toggle('active', isActive);
-          other.setAttribute('aria-pressed', String(isActive));
-        }
-      });
-    }
   }
 
   function select(row) {

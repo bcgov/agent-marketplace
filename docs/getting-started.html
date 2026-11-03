@@ -1847,8 +1847,8 @@
 <ul>
     <li>A GitHub Copilot version that supports Agent Skills.</li>
     <li>Network access to the hosted marketplace catalog.</li>
-    <li>APM, or Node.js with <code>npx</code>, only when installing a published skill.</li>
-    <li>GitHub authentication only when registering a candidate or submitting a draft pull request.</li>
+    <li>A way to download native files and compare SHA-256 hashes.</li>
+    <li>GitHub authentication when submitting a pull request.</li>
 </ul>
 
 <div class="alert alert-info">
@@ -1871,37 +1871,11 @@
     <div><strong>Development preview.</strong> The companion install command below installs immutable bytes from a pinned pre-release revision (<code>2046da7b0de0f673bf39208b35385c1516be4c75</code>). Content is validated, but this release is not final.</div>
 </div>
 
-<p>Install the two companions once per device with the <code>-g</code> (global) flag so they are available in every workspace, not just the current project. They install immutable bytes pinned to the published release tag; the exact commit revision and each package content-digest are recorded in the install lockfile, which is what the installer verifies. APM is preferred because it records a manifest and lockfile:</p>
+<p>Open the Catalogue entries for <code>bcgov-find-extension</code> and <code>bcgov-create-extension</code>, and select their tested manual skill choices. The companions do not require a marketplace checkout. Use the full source SHA in the latest published Catalogue, download each native skill directory and its resources, and compare the file hashes.</p>
 
-<pre><code>apm install -g \
-    bcgov/agent-marketplace/skills/community/bcgov-find-extension#catalog-2026.10.01 \
-    bcgov/agent-marketplace/skills/community/bcgov-create-extension#catalog-2026.10.01 \
-    --target copilot</code></pre>
+<p>For project scope, explicitly place the directories at <code>.github/skills/bcgov-find-extension/</code> and <code>.github/skills/bcgov-create-extension/</code>. For personal/global scope, choose the tested skill option under your home directory: <code>~/.copilot/skills/&lt;name&gt;/</code>. Inspect collisions before writing. Keep resources beside <code>SKILL.md</code> and omit the marketplace Manifest. Compare installed hashes, then open VS Code Local and check the customization list. Client discovery depends on its settings/session; placement tests do not establish runtime quality.</p>
 
-<p>The <code>-g</code> flag installs to your user scope (<code>~/.apm/</code>) instead of the current project, so you run this once rather than in every repository. If APM is unavailable, use the catalog-pinned Skills CLI:</p>
-
-<pre><code>npx skills add \
-    https://github.com/bcgov/agent-marketplace/tree/catalog-2026.10.01 \
-    --skill bcgov-find-extension --skill bcgov-create-extension \
-    --agent github-copilot -y</code></pre>
-
-<h2 id="verify-the-install">Verify the install</h2>
-
-<p>Two checks confirm the companions are present and intact:</p>
-
-<ol>
-    <li><strong>Integrity:</strong> run <code>apm audit</code>. It scans installed primitives for drift, hidden Unicode, and lockfile or policy violations, and reports any file that no longer matches its locked bytes.
-        <pre><code>apm audit</code></pre>
-    </li>
-    <li><strong>Availability:</strong> in any workspace, ask GitHub Copilot the prompt below. If it runs the finder, the companion is installed. If nothing happens, re-run the install command above.
-        <pre><code>Use bcgov-find-extension to search for a repository hardening skill.</code></pre>
-    </li>
-</ol>
-
-<div class="alert alert-info">
-    <div class="alert-icon" aria-hidden="true">i</div>
-    <div><code>apm list</code> only shows scripts in the current project, so it does not confirm a global companion install. Use the two checks above instead.</div>
-</div>
+<p>No <code>apm install</code> or <code>npx skills add</code> action is advertised until its exact published layout and scope are tested. Other Extension types use tested project choices only. See <a href="consume.html">installation, updates, removal and verification</a>.</p>
 
 <h2 id="use-the-workflows">Use the workflows</h2>
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Search and install immutable Agent Skills with local receipts."""
+"""Search Extensions and explicitly place immutable native files."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ import argparse
 import hashlib
 import json
 import re
-import shutil
 import stat
 import subprocess
 import sys
@@ -16,10 +15,16 @@ import unicodedata
 import urllib.parse
 import urllib.request
 import zipfile
-from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
 import yaml
+from install_choices import (
+  PlacementError,
+  build_install_choices,
+  place_choice,
+  remove_choice,
+  verify_choice,
+)
 
 POLICY_VERSION = "bcgov-finder-policy/1.0"
 MARKETPLACE_REVISION = "d00c5470891a7c04ceda598c0e7004f9383183b6"
@@ -41,16 +46,8 @@ MAX_FILES = 100
 # hit or two summary-token hits. It stops unrelated skills being presented as
 # weak matches for a request the marketplace does not actually serve.
 MIN_MATCH_SCORE = 8
-ACTIVE_EXTENSION_TYPES = {"skill"}
 KNOWN_EXTENSION_TYPES = {"skill", "prompt", "instructions", "agent", "hook", "mcp"}
 PUBLISHABLE_EXTENSION_TYPES = {"skill", "prompt", "instructions", "agent"}
-ARTIFACT_FILES = {
-  "skill": "SKILL.md",
-  "prompt": "prompt.prompt.md",
-  "instructions": "instructions.instructions.md",
-  "agent": "agent.agent.md",
-}
-ROOT_FILES = {*ARTIFACT_FILES.values(), "bcgov-extension.yaml"}
 RESOURCE_DIRECTORIES = {"agents", "assets", "references", "scripts"}
 ALLOWED_SUFFIXES = {
   ".css",
@@ -333,7 +330,9 @@ def stage_package(
 def inventory(package: Path) -> list[dict]:
   """Inventory regular package files in path order."""
   result = []
-  for path in sorted(package.rglob("*")):
+  for path in sorted(
+    package.rglob("*"), key=lambda item: item.relative_to(package).as_posix().lower()
+  ):
     if path.is_symlink():
       raise FinderError(f"package contains symlink: {path.relative_to(package)}")
     if not path.is_file():
@@ -485,39 +484,6 @@ def _confirm(message: str, assume_yes: bool) -> None:
     raise FinderError("operation cancelled")
 
 
-def _install_copy(staged: Path, target: Path, expected_digest: str) -> None:
-  """Atomically install staged bytes and verify the post-copy digest."""
-  if target.exists():
-    existing = tree_digest(inventory(target))
-    if existing == expected_digest:
-      return
-    raise FinderError(f"destination exists with different bytes: {target}")
-  target.parent.mkdir(parents=True, exist_ok=True)
-  temporary = target.with_name(f".{target.name}.installing")
-  if temporary.exists():
-    shutil.rmtree(temporary)
-  shutil.copytree(staged, temporary)
-  if tree_digest(inventory(temporary)) != expected_digest:
-    shutil.rmtree(temporary)
-    raise FinderError("post-copy digest mismatch")
-  temporary.replace(target)
-
-
-def _receipt_path(project: Path, name: str) -> Path:
-  """Return the local receipt path for an installed package."""
-  return project / ".github" / "agent-marketplace" / "receipts" / f"{name}.json"
-
-
-def _write_receipt(project: Path, name: str, receipt: dict) -> Path:
-  """Write a stable, project-local installation receipt."""
-  path = _receipt_path(project, name)
-  path.parent.mkdir(parents=True, exist_ok=True)
-  path.write_text(
-    json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-  )
-  return path
-
-
 def _capabilities(args) -> dict:
   """Build structured capability declarations from third-party CLI arguments."""
   return {
@@ -660,211 +626,117 @@ def _scan_source(args) -> dict:
     }
 
 
-def _retry_registration(args) -> dict:
-  """Retry registration from a complete local installation receipt."""
-  try:
-    receipt = json.loads(args.receipt.read_text(encoding="utf-8"))
-    source = receipt["source"]
-    namespace = argparse.Namespace(
-      discovery_catalog=receipt["discovery-catalog"],
-      repository=source["repository"],
-      revision=source["revision"],
-      path=source["path"],
-      registration_repository=args.registration_repository,
+def _selected_choice(
+  catalog: dict, identity: str, allow_alias: bool = False, scope: str = "project"
+) -> tuple[dict, dict]:
+  """Resolve one explicit identity without treating aliases as placement authority."""
+  record = lookup_extension(catalog, identity)
+  if record is None:
+    raise FinderError(f"catalog has no extension {identity!r}")
+  if record["id"] != identity and not allow_alias:
+    raise FinderError(
+      f"legacy alias resolves to {record['id']}; "
+      "explicitly use the canonical ID or --allow-alias"
     )
-    registration = _register_candidate(
-      namespace,
-      receipt["package-tree-digest"],
-      receipt["declared-capabilities"],
+  options = record.get("install-options", [])
+  if record.get("lifecycle") != "active" or not options:
+    raise FinderError(
+      "no tested install choice for this type/client or lifecycle; "
+      "inspect the notice and source history"
     )
-  except (OSError, UnicodeError, json.JSONDecodeError, KeyError) as exc:
-    raise FinderError(f"invalid receipt {args.receipt}: {exc}") from exc
-  receipt["registration"] = registration
-  args.receipt.write_text(
-    json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+  choice = next((option for option in options if option["scope"] == scope), None)
+  if choice is None:
+    raise FinderError(f"no tested VS Code {scope} placement choice")
+  return record, choice
+
+
+def _placement_root(args) -> Path:
+  """Select project or explicitly requested personal-home scope."""
+  if getattr(args, "scope", "project") == "global":
+    return args.home.resolve()
+  return args.project.resolve()
+
+
+def _selection(args, catalog: dict) -> tuple[dict, dict]:
+  """Select the explicitly requested identity and scope."""
+  return _selected_choice(
+    catalog,
+    args.id,
+    getattr(args, "allow_alias", False),
+    getattr(args, "scope", "project"),
   )
-  return registration
 
 
 def _reviewed_install(args, catalog: dict) -> dict:
-  """Install one marketplace-reviewed package from its catalog record."""
-  record = lookup_extension(catalog, args.id)
-  if record is None:
-    raise FinderError(f"catalog has no extension {args.id!r}")
-  if record["lifecycle"] != "active":
-    raise FinderError(
-      f"extension lifecycle is {record['lifecycle']}; new installs are blocked"
+  """Verify Catalogue bytes and explicitly place the shared native client layout."""
+  record, choice = _selection(args, catalog)
+  project = _placement_root(args)
+  previous = None
+  if getattr(args, "previous_catalog", None):
+    _, previous = _selected_choice(
+      load_catalog(str(args.previous_catalog)), record["id"], scope=choice["scope"]
     )
-  extension_type = record.get("type", "skill")
-  if extension_type not in ACTIVE_EXTENSION_TYPES:
-    raise FinderError(
-      f"extension type is {extension_type!r}; installation is not active for this type"
-    )
-  project = args.project.resolve()
-  checks = (
-    record["checks"]
-    if catalog.get("schema-version") == "bcgov-marketplace/v1"
-    else record.get("policy", {})
-  )
-  review = (
-    checks
-    if catalog.get("schema-version") == "bcgov-marketplace/v1"
-    else record.get("review", {})
-  )
-  name = record["id"].rsplit("/", 1)[-1]
-  target = project / ".github" / "skills" / name
   print(
     json.dumps(
       {
-        "id": record["id"],
-        "type": extension_type,
-        "publisher": record["publisher"],
-        "source": record["source"],
-        "digest": record["content-digest"],
-        "capabilities": record["capabilities"],
-        "checks": checks,
-        "target": str(target),
+        "canonical-id": record["id"],
+        "choice": choice,
+        "checks": record.get("checks"),
+        "capabilities": record.get("capabilities"),
+        "lifecycle": record["lifecycle"],
+        "destination-root": str(project),
+        "publication": (
+          "Catalogue source (preview)"
+          if catalog.get("release-state") != "published"
+          or catalog.get("version") == "source"
+          else "latest published Catalogue source"
+        ),
       },
       indent=2,
       sort_keys=True,
     )
   )
-  _confirm("Install this reviewed skill into the current project?", args.yes)
-  with tempfile.TemporaryDirectory(prefix="bcgov-marketplace-") as directory:
+  with tempfile.TemporaryDirectory(prefix="bcgov-native-placement-") as directory:
     staged = Path(directory) / "package"
     staged.mkdir()
     source = record["source"]
-    stage_package(source["repository"], source["revision"], source["path"], staged)
-    staged_inventory = inventory(staged)
-    if staged_inventory != record["files"]:
-      raise FinderError("downloaded file inventory does not match the catalog")
-    digest = tree_digest(staged_inventory)
-    if digest != record["content-digest"]:
-      raise FinderError("downloaded package digest does not match the catalog")
-    _install_copy(staged, target, digest)
-  receipt = {
-    "package-id": record["id"],
-    "extension-type": extension_type,
-    "source": record["source"],
-    "package-tree-digest": record["content-digest"],
-    "scan": checks,
-    "declared-capabilities": record["capabilities"],
-    "granted-capabilities": record["capabilities"],
-    "install-target": str(target),
-    "scope": "project",
-    "installed-at": _now(),
-    "trust": "Marketplace reviewed",
-    "review": review,
-    "registration": None,
-  }
-  receipt_path = _write_receipt(project, name, receipt)
-  return {
-    "installed": str(target),
-    "receipt": str(receipt_path),
-    "digest": record["content-digest"],
-  }
-
-
-def _third_party_install(args) -> dict:
-  """Stage, scan, install, receipt, and register an immutable third-party package."""
-  project = args.project.resolve()
-  if args.extension_type not in ACTIVE_EXTENSION_TYPES:
-    raise FinderError(
-      f"extension type is {args.extension_type!r}; third-party "
-      "installation is not active"
-    )
-  name = args.name or PurePosixPath(args.path).name
-  if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name):
-    raise FinderError("installed skill name must be kebab-case")
-  capabilities = _capabilities(args)
-  with tempfile.TemporaryDirectory(prefix="bcgov-candidate-") as directory:
-    staged = Path(directory) / "package"
-    staged.mkdir()
     stage_package(
-      args.repository, args.revision, args.path, staged, args.extension_type
+      source["repository"], source["revision"], source["path"], staged, record["type"]
     )
-    scan = scan_staged(staged, capabilities, args.extension_type, name)
-    digest = tree_digest(inventory(staged))
-    preview = {
-      "discovery-catalog": args.discovery_catalog,
-      "source": {
-        "repository": args.repository,
-        "revision": args.revision,
-        "path": args.path,
-      },
-      "extension-type": args.extension_type,
-      "digest": digest,
-      "scan": scan,
-      "capabilities": capabilities,
-      "target": str(project / ".github" / "skills" / name),
-      "registration-repository": args.registration_repository,
-    }
-    print(json.dumps(preview, indent=2, sort_keys=True))
-    if scan["outcome"] == "blocked":
-      raise FinderError("candidate has blocking findings; installation is not allowed")
+    downloaded = inventory(staged)
     if (
-      any(item["severity"] == "advisory" for item in scan["findings"])
-      and not args.acknowledge_advisories
+      downloaded != record["files"]
+      or tree_digest(downloaded) != record["content-digest"]
     ):
-      raise FinderError("advisory findings require --acknowledge-advisories")
-    _confirm(
-      "Install this locally scanned candidate and register it for review?", args.yes
+      raise FinderError("downloaded bytes do not match the Catalogue inventory/digest")
+    actual_choices = build_install_choices(record, staged)
+    if choice not in actual_choices:
+      raise FinderError(
+        "Catalogue choice does not match actual native client requirements/layout"
+      )
+    _confirm(f"Copy native files into {project} ({choice['scope']})?", args.yes)
+    return place_choice(
+      choice,
+      staged,
+      project,
+      confirmed=True,
+      previous=previous,
+      allow_migration=getattr(args, "allow_migration", False),
     )
-    target = project / ".github" / "skills" / name
-    _install_copy(staged, target, digest)
-  registration = _register_candidate(args, digest, capabilities)
-  receipt = {
-    "package-id": name,
-    "extension-type": args.extension_type,
-    "discovery-catalog": args.discovery_catalog,
-    "source": {
-      "repository": args.repository,
-      "revision": args.revision,
-      "path": args.path,
-    },
-    "package-tree-digest": digest,
-    "scan": scan,
-    "declared-capabilities": capabilities,
-    "granted-capabilities": capabilities,
-    "install-target": str(target),
-    "scope": "project",
-    "installed-at": _now(),
-    "trust": "Locally scanned - not BC Gov reviewed",
-    "registration": registration,
-  }
-  receipt_path = _write_receipt(project, name, receipt)
-  result = {
-    "installed": str(target),
-    "receipt": str(receipt_path),
-    "registration": registration,
-  }
-  if registration["status"] == "failed":
-    result["retry"] = f"python {Path(__file__).name} register --receipt {receipt_path}"
-  return result
 
 
-def _now() -> str:
-  """Return a stable UTC installation timestamp."""
-  return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+def _verify_selected(args, catalog: dict) -> list[dict]:
+  """Compare installed bytes directly with a selected Catalogue revision."""
+  _, choice = _selection(args, catalog)
+  return verify_choice(choice, _placement_root(args))
 
 
-def _verify(project: Path) -> list[dict]:
-  """Verify every project receipt against currently installed bytes."""
-  results = []
-  receipt_dir = project.resolve() / ".github" / "agent-marketplace" / "receipts"
-  for path in sorted(receipt_dir.glob("*.json")):
-    receipt = json.loads(path.read_text(encoding="utf-8"))
-    target = Path(receipt["install-target"])
-    actual = tree_digest(inventory(target)) if target.is_dir() else None
-    results.append(
-      {
-        "receipt": str(path),
-        "expected": receipt["package-tree-digest"],
-        "actual": actual,
-        "valid": actual == receipt["package-tree-digest"],
-      }
-    )
-  return results
+def _remove_selected(args, catalog: dict) -> dict:
+  """Delete selected native files only after explicit consent and byte comparison."""
+  _, choice = _selection(args, catalog)
+  print(json.dumps(choice, indent=2, sort_keys=True))
+  _confirm("Delete only these native files with matching installed bytes?", args.yes)
+  return remove_choice(choice, _placement_root(args), confirmed=True)
 
 
 def _add_capability_arguments(parser: argparse.ArgumentParser) -> None:
@@ -899,22 +771,22 @@ def _parser() -> argparse.ArgumentParser:
   install_parser.add_argument("id")
   install_parser.add_argument("--project", type=Path, default=Path.cwd())
   install_parser.add_argument("--yes", action="store_true")
-  third_party = commands.add_parser("install-third-party")
-  third_party.add_argument("--discovery-catalog", required=True)
-  third_party.add_argument("--repository", required=True)
-  third_party.add_argument("--revision", required=True)
-  third_party.add_argument("--path", required=True)
-  third_party.add_argument("--extension-type", default="skill")
-  third_party.add_argument("--name")
-  third_party.add_argument("--project", type=Path, default=Path.cwd())
-  third_party.add_argument(
-    "--registration-repository", default="bcgov/agent-marketplace"
+  install_parser.add_argument("--allow-alias", action="store_true")
+  install_parser.add_argument("--allow-migration", action="store_true")
+  install_parser.add_argument("--previous-catalog", type=Path)
+  install_parser.add_argument(
+    "--scope", choices=["project", "global"], default="project"
   )
-  third_party.add_argument("--acknowledge-advisories", action="store_true")
-  third_party.add_argument("--yes", action="store_true")
-  _add_capability_arguments(third_party)
-  verify_parser = commands.add_parser("verify")
-  verify_parser.add_argument("--project", type=Path, default=Path.cwd())
+  install_parser.add_argument("--home", type=Path, default=Path.home())
+  for action in ("verify", "remove"):
+    selected = commands.add_parser(action)
+    selected.add_argument("id")
+    selected.add_argument("--project", type=Path, default=Path.cwd())
+    selected.add_argument("--allow-alias", action="store_true")
+    selected.add_argument("--scope", choices=["project", "global"], default="project")
+    selected.add_argument("--home", type=Path, default=Path.home())
+    if action == "remove":
+      selected.add_argument("--yes", action="store_true")
   scan_source = commands.add_parser("scan-source")
   scan_source.add_argument("--repository", required=True)
   scan_source.add_argument("--revision", required=True)
@@ -923,11 +795,6 @@ def _parser() -> argparse.ArgumentParser:
     "--extension-type", choices=sorted(PUBLISHABLE_EXTENSION_TYPES), default="skill"
   )
   _add_capability_arguments(scan_source)
-  register_parser = commands.add_parser("register")
-  register_parser.add_argument("--receipt", type=Path, required=True)
-  register_parser.add_argument(
-    "--registration-repository", default="bcgov/agent-marketplace"
-  )
   commands.add_parser("list")
   return parser
 
@@ -946,16 +813,17 @@ def main(argv: list[str] | None = None) -> int:
       result = load_catalog(args.catalog)["extensions"]
     elif args.command == "install":
       result = _reviewed_install(args, load_catalog(args.catalog))
-    elif args.command == "install-third-party":
-      result = _third_party_install(args)
     elif args.command == "scan-source":
       result = _scan_source(args)
-    elif args.command == "register":
-      result = _retry_registration(args)
+    elif args.command == "remove":
+      result = _remove_selected(args, load_catalog(args.catalog))
     else:
-      result = _verify(args.project)
+      result = _verify_selected(args, load_catalog(args.catalog))
+      if not all(item["valid"] for item in result):
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 1
     print(json.dumps(result, indent=2, sort_keys=True))
-  except FinderError as exc:
+  except (FinderError, PlacementError, OSError) as exc:
     print(f"ERROR: {exc}", file=sys.stderr)
     return 1
   return 0

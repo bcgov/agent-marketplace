@@ -1850,12 +1850,12 @@
 <h2 id="supported-asset-types">Supported asset types</h2>
 
 <table>
-    <thead><tr><th>Type</th><th>Package content</th><th>Purpose</th><th>Copilot project import</th></tr></thead>
+    <thead><tr><th>Type</th><th>Package content</th><th>Purpose</th><th>VS Code Local project placement</th></tr></thead>
     <tbody>
         <tr><td>Skill</td><td><code>SKILL.md</code></td><td>Reusable task workflow with optional supporting resources.</td><td><code>.github/skills/&lt;name&gt;/</code></td></tr>
-        <tr><td>Prompt</td><td><code>prompt.prompt.md</code></td><td>One focused reusable request or deliverable.</td><td><code>.github/prompts/&lt;name&gt;.prompt.md</code></td></tr>
-        <tr><td>Instructions</td><td><code>instructions.instructions.md</code></td><td>Persistent guidance for a defined scope.</td><td><code>.github/instructions/&lt;name&gt;.instructions.md</code></td></tr>
-        <tr><td>Agent</td><td><code>agent.agent.md</code></td><td>A focused assistant role with explicit boundaries.</td><td><code>.github/agents/&lt;name&gt;.agent.md</code></td></tr>
+        <tr><td>Prompt</td><td><code>&lt;name&gt;.prompt.md</code></td><td>One focused reusable request or deliverable.</td><td><code>.github/prompts/&lt;name&gt;.prompt.md</code></td></tr>
+        <tr><td>Instructions</td><td><code>&lt;name&gt;.instructions.md</code></td><td>Persistent guidance for a defined scope.</td><td><code>.github/instructions/&lt;name&gt;.instructions.md</code></td></tr>
+        <tr><td>Agent</td><td><code>&lt;name&gt;.agent.md</code></td><td>A focused assistant role with explicit boundaries.</td><td><code>.github/agents/&lt;name&gt;.agent.md</code></td></tr>
     </tbody>
 </table>
 
@@ -1863,7 +1863,7 @@
 
 <h2 id="import-into-a-harness">Import into a harness</h2>
 
-<p>For Copilot project imports, copy the type-specific content file to the location in the table. Preserve supporting resources next to the file when the format uses relative references. Review the destination and file list before copying; importing requires an explicit user action.</p>
+<p>For VS Code Local project placements, copy the type-specific content file to the location in the table. Preserve supporting resources next to the file when the format uses relative references. Review the destination and file list before copying; importing requires an explicit user action.</p>
 
 <p>Other harnesses may use different directories or formats. Skills use the shared Agent Skills format where the harness supports it. Prompts, instructions, and custom agents are not assumed to be interchangeable across products. Use the package's author-declared <code>not-ready-on</code> list and the harness's current documentation before importing.</p>
 
@@ -1878,6 +1878,11 @@
     <li><a href="https://github.com/openai/codex/tree/main/codex-rs/skills/src/assets/samples/skill-creator">Codex skills</a></li>
     <li><a href="https://docs.anthropic.com/en/docs/claude-code/sub-agents">Claude Code subagents</a></li>
 </ul>
+
+<h2 id="tested-install-matrix-and-limits">Tested install matrix and limits</h2>
+<p>The <code>native-project-layout/v1</code> contract is exercised in CI through the shared choice builder and actual placement interface for all four rows above. Fixtures use directory-per-Extension immutable source coordinates, real byte copying, collision refusal, update/removal, explicit Specialty migration and installed hash comparisons. Skills retain their support tree; the other three types use canonical leaf-name files flattened into native directories. Marketplace validation treats contributed files as inert data.</p>
+<p>Host client inventory: VS Code 1.144.0 (commit <code>2c33b50b16c472efe58357d1d2a8a5414bc23fbf</code>). This is a version observation, not client discovery/runtime evidence. Manual placement smoke and immutable-download evidence are recorded in <a href="https://github.com/bcgov/agent-marketplace/blob/main/docs/INSTALL_TEST_MATRIX.md">the test matrix</a>. No authenticated Copilot session or per-asset runtime evaluation is claimed. The v1 action is manual placement: project scope for all four types and personal/global <code>~/.copilot/skills/&lt;name&gt;/</code> for skills only. Other global paths, third-party installers and native deep links are withheld.</p>
+<p>Native contracts: <a href="https://code.visualstudio.com/docs/agent-customization/agent-skills">VS Code skills</a>, <a href="https://code.visualstudio.com/docs/agent-customization/custom-instructions">instructions</a>, <a href="https://code.visualstudio.com/docs/agent-customization/prompt-files">prompts</a>, <a href="https://code.visualstudio.com/docs/agent-customization/custom-agents">agents</a>, and <a href="https://docs.github.com/en/copilot/reference/custom-agents-configuration">GitHub agent requirements</a>.</p>
 </main>
     <footer class="site-footer">
         <div class="footer-content">

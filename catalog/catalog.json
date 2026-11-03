@@ -105,6 +105,90 @@
         }
       ],
       "id": "bcgov-public/skill/azure-networking",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/skills/azure-networking",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/azure-networking",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/azure-networking"
+          },
+          "placements": [
+            {
+              "destination": ".github/skills/azure-networking/SKILL.md",
+              "sha256": "c7d1309d4e405063b1c2464227965ac450d65739c63d12c5c8ea70b5672ba604",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".github/skills/azure-networking/references/REFERENCE.md",
+              "sha256": "99e86e81f37a71e88ea1e21b99b4e27315a2d32a3f9f1ff2b105eb5673dd7e58",
+              "source": "references/REFERENCE.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "skills/community/azure-networking",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/azure-networking",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        },
+        {
+          "client": "VS Code Local",
+          "destination": ".copilot/skills/azure-networking",
+          "destination-root": "home",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/azure-networking",
+          "id": "vscode-user-skill",
+          "install": "Select your home directory explicitly. Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/azure-networking"
+          },
+          "placements": [
+            {
+              "destination": ".copilot/skills/azure-networking/SKILL.md",
+              "sha256": "c7d1309d4e405063b1c2464227965ac450d65739c63d12c5c8ea70b5672ba604",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".copilot/skills/azure-networking/references/REFERENCE.md",
+              "sha256": "99e86e81f37a71e88ea1e21b99b4e27315a2d32a3f9f1ff2b105eb5673dd7e58",
+              "source": "references/REFERENCE.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "global",
+          "source": {
+            "path": "skills/community/azure-networking",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/azure-networking",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
       "legacy-ids": [
         "bcgov-public/azure-networking"
       ],
@@ -208,6 +292,130 @@
         }
       ],
       "id": "bcgov-public/skill/bcgov-create-extension",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/skills/bcgov-create-extension",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/bcgov-create-extension",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/bcgov-create-extension"
+          },
+          "placements": [
+            {
+              "destination": ".github/skills/bcgov-create-extension/SKILL.md",
+              "sha256": "0c7ee0c3f14cae0897d462ebac34a54f402f2775bb9bb2dc80651e91636f8bc1",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".github/skills/bcgov-create-extension/references/SUBMISSION.md",
+              "sha256": "06d1eed67427ebe2fbf79baa49615866cc0610fed82b859986af751f18c8ad47",
+              "source": "references/SUBMISSION.md"
+            },
+            {
+              "destination": ".github/skills/bcgov-create-extension/references/writing-agents.md",
+              "sha256": "681a343e0d284a1ac5e2db06c7860383d9e380cfb52393f9aadcaec12ade210e",
+              "source": "references/writing-agents.md"
+            },
+            {
+              "destination": ".github/skills/bcgov-create-extension/references/writing-instructions.md",
+              "sha256": "c5f340322719bccb5859b54961fde6906e2c09c6f804f481e0b8d2c22aff86e4",
+              "source": "references/writing-instructions.md"
+            },
+            {
+              "destination": ".github/skills/bcgov-create-extension/references/writing-prompts.md",
+              "sha256": "bbb47acea4fd626bb1de259f4478b097c23819c11140e5b90541d24b3b7dd0d5",
+              "source": "references/writing-prompts.md"
+            },
+            {
+              "destination": ".github/skills/bcgov-create-extension/references/writing-skills.md",
+              "sha256": "0ddfbc0d0ff23a9231ad0fdeb3f371f8e4d017c9cac19cc39d5aba1a8b0fa5dc",
+              "source": "references/writing-skills.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "skills/community/bcgov-create-extension",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/bcgov-create-extension",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        },
+        {
+          "client": "VS Code Local",
+          "destination": ".copilot/skills/bcgov-create-extension",
+          "destination-root": "home",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/bcgov-create-extension",
+          "id": "vscode-user-skill",
+          "install": "Select your home directory explicitly. Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/bcgov-create-extension"
+          },
+          "placements": [
+            {
+              "destination": ".copilot/skills/bcgov-create-extension/SKILL.md",
+              "sha256": "0c7ee0c3f14cae0897d462ebac34a54f402f2775bb9bb2dc80651e91636f8bc1",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".copilot/skills/bcgov-create-extension/references/SUBMISSION.md",
+              "sha256": "06d1eed67427ebe2fbf79baa49615866cc0610fed82b859986af751f18c8ad47",
+              "source": "references/SUBMISSION.md"
+            },
+            {
+              "destination": ".copilot/skills/bcgov-create-extension/references/writing-agents.md",
+              "sha256": "681a343e0d284a1ac5e2db06c7860383d9e380cfb52393f9aadcaec12ade210e",
+              "source": "references/writing-agents.md"
+            },
+            {
+              "destination": ".copilot/skills/bcgov-create-extension/references/writing-instructions.md",
+              "sha256": "c5f340322719bccb5859b54961fde6906e2c09c6f804f481e0b8d2c22aff86e4",
+              "source": "references/writing-instructions.md"
+            },
+            {
+              "destination": ".copilot/skills/bcgov-create-extension/references/writing-prompts.md",
+              "sha256": "bbb47acea4fd626bb1de259f4478b097c23819c11140e5b90541d24b3b7dd0d5",
+              "source": "references/writing-prompts.md"
+            },
+            {
+              "destination": ".copilot/skills/bcgov-create-extension/references/writing-skills.md",
+              "sha256": "0ddfbc0d0ff23a9231ad0fdeb3f371f8e4d017c9cac19cc39d5aba1a8b0fa5dc",
+              "source": "references/writing-skills.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "global",
+          "source": {
+            "path": "skills/community/bcgov-create-extension",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/bcgov-create-extension",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
       "legacy-ids": [
         "bcgov-public/bcgov-create-extension"
       ],
@@ -256,7 +464,7 @@
       },
       "checks": {
         "advisories": 1,
-        "content-digest": "sha256:b6639667aff89fdc4b7fa7e86514d267a196e3786a5b611210a4c890aacfeed4",
+        "content-digest": "sha256:c1d9a8b11c38bd3ef99d8cd4256c8750801623d24a57488d6178dd04790a7c85",
         "findings": [
           {
             "category": "package",
@@ -282,7 +490,7 @@
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:b6639667aff89fdc4b7fa7e86514d267a196e3786a5b611210a4c890aacfeed4",
+      "content-digest": "sha256:c1d9a8b11c38bd3ef99d8cd4256c8750801623d24a57488d6178dd04790a7c85",
       "display-name": "BC Gov Find Extension",
       "files": [
         {
@@ -292,8 +500,8 @@
         },
         {
           "path": "references/INSTALLATION.md",
-          "sha256": "12ad79a730e63f7ad5f8ca08d7cf9297151ea3d7681a83e83cd4111b366ce94e",
-          "size": 2255
+          "sha256": "2a30f3d009330525a0ec0104ad1d53fbace8531c454a4c52c5c017cc531a10ac",
+          "size": 3040
         },
         {
           "path": "references/THIRD_PARTY.md",
@@ -302,11 +510,105 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "9379ff913e86b54cb11de4cce76c8ee88d48a0b79dce32442c4764dbf691af78",
-          "size": 5393
+          "sha256": "d7ba4355705559463936171c73db1b0b6bdf0f500f07454939d3dfd01462828d",
+          "size": 5498
         }
       ],
       "id": "bcgov-public/skill/bcgov-find-extension",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/skills/bcgov-find-extension",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/bcgov-find-extension",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/bcgov-find-extension"
+          },
+          "placements": [
+            {
+              "destination": ".github/skills/bcgov-find-extension/SKILL.md",
+              "sha256": "d7ba4355705559463936171c73db1b0b6bdf0f500f07454939d3dfd01462828d",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".github/skills/bcgov-find-extension/references/INSTALLATION.md",
+              "sha256": "2a30f3d009330525a0ec0104ad1d53fbace8531c454a4c52c5c017cc531a10ac",
+              "source": "references/INSTALLATION.md"
+            },
+            {
+              "destination": ".github/skills/bcgov-find-extension/references/THIRD_PARTY.md",
+              "sha256": "380128eb33b54a987e7347569210ce5ada797b32c563b38312de408fa50c0807",
+              "source": "references/THIRD_PARTY.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "skills/community/bcgov-find-extension",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/bcgov-find-extension",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        },
+        {
+          "client": "VS Code Local",
+          "destination": ".copilot/skills/bcgov-find-extension",
+          "destination-root": "home",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/bcgov-find-extension",
+          "id": "vscode-user-skill",
+          "install": "Select your home directory explicitly. Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/bcgov-find-extension"
+          },
+          "placements": [
+            {
+              "destination": ".copilot/skills/bcgov-find-extension/SKILL.md",
+              "sha256": "d7ba4355705559463936171c73db1b0b6bdf0f500f07454939d3dfd01462828d",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".copilot/skills/bcgov-find-extension/references/INSTALLATION.md",
+              "sha256": "2a30f3d009330525a0ec0104ad1d53fbace8531c454a4c52c5c017cc531a10ac",
+              "source": "references/INSTALLATION.md"
+            },
+            {
+              "destination": ".copilot/skills/bcgov-find-extension/references/THIRD_PARTY.md",
+              "sha256": "380128eb33b54a987e7347569210ce5ada797b32c563b38312de408fa50c0807",
+              "source": "references/THIRD_PARTY.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "global",
+          "source": {
+            "path": "skills/community/bcgov-find-extension",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/bcgov-find-extension",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
       "legacy-ids": [
         "bcgov-public/bcgov-find-extension"
       ],
@@ -415,6 +717,90 @@
         }
       ],
       "id": "bcgov-public/skill/github-actions",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/skills/github-actions",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/github-actions",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/github-actions"
+          },
+          "placements": [
+            {
+              "destination": ".github/skills/github-actions/SKILL.md",
+              "sha256": "db4c7c33bcca1413b8cc1fdbd49612ef706c2eb67acf007b1daa79239353a4b3",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".github/skills/github-actions/references/REFERENCE.md",
+              "sha256": "75bfbe56ba2bddd085b2878c261197d85e60d298f0dd0129647769f463fbe566",
+              "source": "references/REFERENCE.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "skills/community/github-actions",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/github-actions",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        },
+        {
+          "client": "VS Code Local",
+          "destination": ".copilot/skills/github-actions",
+          "destination-root": "home",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/github-actions",
+          "id": "vscode-user-skill",
+          "install": "Select your home directory explicitly. Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/github-actions"
+          },
+          "placements": [
+            {
+              "destination": ".copilot/skills/github-actions/SKILL.md",
+              "sha256": "db4c7c33bcca1413b8cc1fdbd49612ef706c2eb67acf007b1daa79239353a4b3",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".copilot/skills/github-actions/references/REFERENCE.md",
+              "sha256": "75bfbe56ba2bddd085b2878c261197d85e60d298f0dd0129647769f463fbe566",
+              "source": "references/REFERENCE.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "global",
+          "source": {
+            "path": "skills/community/github-actions",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/github-actions",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
       "legacy-ids": [
         "bcgov-public/github-actions"
       ],
@@ -519,6 +905,90 @@
         }
       ],
       "id": "bcgov-public/skill/github-repo-setup",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/skills/github-repo-setup",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/github-repo-setup",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/github-repo-setup"
+          },
+          "placements": [
+            {
+              "destination": ".github/skills/github-repo-setup/SKILL.md",
+              "sha256": "a1797814f8767977644b57638de213b9ba99ad6b4812abe50c6fa2d32c5c46a2",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".github/skills/github-repo-setup/references/REFERENCE.md",
+              "sha256": "2574212bffc18a5c97516a47198505d112e40cf57fa81a9b90737f22d4f8b91a",
+              "source": "references/REFERENCE.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "skills/community/github-repo-setup",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/github-repo-setup",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        },
+        {
+          "client": "VS Code Local",
+          "destination": ".copilot/skills/github-repo-setup",
+          "destination-root": "home",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/github-repo-setup",
+          "id": "vscode-user-skill",
+          "install": "Select your home directory explicitly. Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/github-repo-setup"
+          },
+          "placements": [
+            {
+              "destination": ".copilot/skills/github-repo-setup/SKILL.md",
+              "sha256": "a1797814f8767977644b57638de213b9ba99ad6b4812abe50c6fa2d32c5c46a2",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".copilot/skills/github-repo-setup/references/REFERENCE.md",
+              "sha256": "2574212bffc18a5c97516a47198505d112e40cf57fa81a9b90737f22d4f8b91a",
+              "source": "references/REFERENCE.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "global",
+          "source": {
+            "path": "skills/community/github-repo-setup",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/github-repo-setup",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
       "legacy-ids": [
         "bcgov-public/github-repo-setup"
       ],
@@ -720,6 +1190,270 @@
         }
       ],
       "id": "bcgov-public/skill/n8n-runbook-parser",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/skills/n8n-runbook-parser",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/n8n-runbook-parser",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/n8n-runbook-parser"
+          },
+          "placements": [
+            {
+              "destination": ".github/skills/n8n-runbook-parser/SKILL.md",
+              "sha256": "da9de9df68f2621e6f64b9b6ef0e45d6b4ca4d5178479e302ad6fefe83b09eaf",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/assets/config.template.yaml",
+              "sha256": "90b8d4db07afc3dedbd56df63697bd087c2ee490c9133b610357f59a851d1169",
+              "source": "assets/config.template.yaml"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/assets/doc-url-shim-template.sh",
+              "sha256": "ae5f50ff81d86f83bade9ade0400e99725a08136eb5ad5fabaf258517195e4f9",
+              "source": "assets/doc-url-shim-template.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/assets/report-template.md",
+              "sha256": "4fad09ff34170df489286f60a3d888067df660a71ba1dcb35c480f17ce08d7ae",
+              "source": "assets/report-template.md"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/assets/snippet-template.sh",
+              "sha256": "e2293974a4666c1a1a4e584ea48c6e4931dd21d4aba85f2c7d5b286c1105e87d",
+              "source": "assets/snippet-template.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/assets/validator-template.sh",
+              "sha256": "11060681874b6099afe7d145999296cdeb349cb80b23d3ad845e5a47fb3fc456",
+              "source": "assets/validator-template.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/references/BACKPORT.md",
+              "sha256": "2d2c21f96902eace4ce830e7dee8980a42520bf41114cce96dd77cc53528f320",
+              "source": "references/BACKPORT.md"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/references/CLEANING.md",
+              "sha256": "8851ce2ae702fe98f2c139e7fe68797fe1024ffd35517bffb0f35021733aef4a",
+              "source": "references/CLEANING.md"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/references/CONFIG.md",
+              "sha256": "8b745e92b010f38dfc45c9ee14b1a55b75aeb0ac071e1a32ccb02a6733adfd1f",
+              "source": "references/CONFIG.md"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/references/PARSER_USAGE.md",
+              "sha256": "6223f3168800b6f81a9082ad6709647347b1410ab822f0a10cb8746f256d0e42",
+              "source": "references/PARSER_USAGE.md"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/references/SKILL_SPEC.md",
+              "sha256": "9f8801b0e840256f05a4866f6f440ba45e3011298c8cf80b51ea81df5ce6bf34",
+              "source": "references/SKILL_SPEC.md"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/scripts/doc_links.py",
+              "sha256": "7ff0f6ffd0b00904b905255edfbe60e76a7f2e943e5f08895a80628ce8097633",
+              "source": "scripts/doc_links.py"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/scripts/parser.py",
+              "sha256": "3ec73fd0fc859e27e06bb68c112928417a37123b28d1a58c7b56e3bd634d3289",
+              "source": "scripts/parser.py"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/scripts/rb_commands.py",
+              "sha256": "f721baf0eaf4d57bd19d1475d8e6dafdff819c1c32bb02216358d7f79ebe00a6",
+              "source": "scripts/rb_commands.py"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/scripts/rb_config.py",
+              "sha256": "55e0246c546717c68bb7cd8a2fcfc778d1bc5ee5225bd549d6b3050d1101f397",
+              "source": "scripts/rb_config.py"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/scripts/rb_log.py",
+              "sha256": "325ceb51d62d73c9be0eddd6c460f7cb12ba940ded554ca41af540fa0e76d1af",
+              "source": "scripts/rb_log.py"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/scripts/rb_markdown.py",
+              "sha256": "f86f664508a35e6a85d0dd6fe65330645e3cb78893fddd5926b57fa154d3511a",
+              "source": "scripts/rb_markdown.py"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/scripts/rb_model.py",
+              "sha256": "bb3a86a4565841d5fd0c5ec3cdfde1710be75600fc2979d48aff3367f2298de6",
+              "source": "scripts/rb_model.py"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/scripts/rb_reconstruct.py",
+              "sha256": "008e89fd7a296e6cd67076b5323bcf62c6c50d75d3d27bb613310499f5411f16",
+              "source": "scripts/rb_reconstruct.py"
+            },
+            {
+              "destination": ".github/skills/n8n-runbook-parser/scripts/rb_seal.py",
+              "sha256": "d06aae9375fcaaf614ae7b3f82f5eb8b3932c0d47537b7aed8d6576b4cda9f8f",
+              "source": "scripts/rb_seal.py"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "skills/community/n8n-runbook-parser",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/n8n-runbook-parser",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        },
+        {
+          "client": "VS Code Local",
+          "destination": ".copilot/skills/n8n-runbook-parser",
+          "destination-root": "home",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/n8n-runbook-parser",
+          "id": "vscode-user-skill",
+          "install": "Select your home directory explicitly. Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/n8n-runbook-parser"
+          },
+          "placements": [
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/SKILL.md",
+              "sha256": "da9de9df68f2621e6f64b9b6ef0e45d6b4ca4d5178479e302ad6fefe83b09eaf",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/assets/config.template.yaml",
+              "sha256": "90b8d4db07afc3dedbd56df63697bd087c2ee490c9133b610357f59a851d1169",
+              "source": "assets/config.template.yaml"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/assets/doc-url-shim-template.sh",
+              "sha256": "ae5f50ff81d86f83bade9ade0400e99725a08136eb5ad5fabaf258517195e4f9",
+              "source": "assets/doc-url-shim-template.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/assets/report-template.md",
+              "sha256": "4fad09ff34170df489286f60a3d888067df660a71ba1dcb35c480f17ce08d7ae",
+              "source": "assets/report-template.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/assets/snippet-template.sh",
+              "sha256": "e2293974a4666c1a1a4e584ea48c6e4931dd21d4aba85f2c7d5b286c1105e87d",
+              "source": "assets/snippet-template.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/assets/validator-template.sh",
+              "sha256": "11060681874b6099afe7d145999296cdeb349cb80b23d3ad845e5a47fb3fc456",
+              "source": "assets/validator-template.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/references/BACKPORT.md",
+              "sha256": "2d2c21f96902eace4ce830e7dee8980a42520bf41114cce96dd77cc53528f320",
+              "source": "references/BACKPORT.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/references/CLEANING.md",
+              "sha256": "8851ce2ae702fe98f2c139e7fe68797fe1024ffd35517bffb0f35021733aef4a",
+              "source": "references/CLEANING.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/references/CONFIG.md",
+              "sha256": "8b745e92b010f38dfc45c9ee14b1a55b75aeb0ac071e1a32ccb02a6733adfd1f",
+              "source": "references/CONFIG.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/references/PARSER_USAGE.md",
+              "sha256": "6223f3168800b6f81a9082ad6709647347b1410ab822f0a10cb8746f256d0e42",
+              "source": "references/PARSER_USAGE.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/references/SKILL_SPEC.md",
+              "sha256": "9f8801b0e840256f05a4866f6f440ba45e3011298c8cf80b51ea81df5ce6bf34",
+              "source": "references/SKILL_SPEC.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/scripts/doc_links.py",
+              "sha256": "7ff0f6ffd0b00904b905255edfbe60e76a7f2e943e5f08895a80628ce8097633",
+              "source": "scripts/doc_links.py"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/scripts/parser.py",
+              "sha256": "3ec73fd0fc859e27e06bb68c112928417a37123b28d1a58c7b56e3bd634d3289",
+              "source": "scripts/parser.py"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/scripts/rb_commands.py",
+              "sha256": "f721baf0eaf4d57bd19d1475d8e6dafdff819c1c32bb02216358d7f79ebe00a6",
+              "source": "scripts/rb_commands.py"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/scripts/rb_config.py",
+              "sha256": "55e0246c546717c68bb7cd8a2fcfc778d1bc5ee5225bd549d6b3050d1101f397",
+              "source": "scripts/rb_config.py"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/scripts/rb_log.py",
+              "sha256": "325ceb51d62d73c9be0eddd6c460f7cb12ba940ded554ca41af540fa0e76d1af",
+              "source": "scripts/rb_log.py"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/scripts/rb_markdown.py",
+              "sha256": "f86f664508a35e6a85d0dd6fe65330645e3cb78893fddd5926b57fa154d3511a",
+              "source": "scripts/rb_markdown.py"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/scripts/rb_model.py",
+              "sha256": "bb3a86a4565841d5fd0c5ec3cdfde1710be75600fc2979d48aff3367f2298de6",
+              "source": "scripts/rb_model.py"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/scripts/rb_reconstruct.py",
+              "sha256": "008e89fd7a296e6cd67076b5323bcf62c6c50d75d3d27bb613310499f5411f16",
+              "source": "scripts/rb_reconstruct.py"
+            },
+            {
+              "destination": ".copilot/skills/n8n-runbook-parser/scripts/rb_seal.py",
+              "sha256": "d06aae9375fcaaf614ae7b3f82f5eb8b3932c0d47537b7aed8d6576b4cda9f8f",
+              "source": "scripts/rb_seal.py"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "global",
+          "source": {
+            "path": "skills/community/n8n-runbook-parser",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/n8n-runbook-parser",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
       "legacy-ids": [
         "bcgov-public/n8n-runbook-parser"
       ],
@@ -905,6 +1639,230 @@
         }
       ],
       "id": "bcgov-public/skill/n8n-workflow-builder",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/skills/n8n-workflow-builder",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/n8n-workflow-builder",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/n8n-workflow-builder"
+          },
+          "placements": [
+            {
+              "destination": ".github/skills/n8n-workflow-builder/SKILL.md",
+              "sha256": "a32a1e725f6d90cafd99171ed23e8c40a7c9a3a4b6988c935c241a91773ca942",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/assets/local-workflow.sh",
+              "sha256": "2e6d0dba30dd6ba11f6b49878e8a4dc7ba3cedb7e5c88bd210552ade95c5b8fb",
+              "source": "assets/local-workflow.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/assets/skeleton.json",
+              "sha256": "158fb190a40cc003a207ba4ec6fbe5f0abc04d5512e1590b7651d574230d855b",
+              "source": "assets/skeleton.json"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/assets/sticky-note.md",
+              "sha256": "99b5a001f0a3ffe30643c704c2b7682fe71dff55295aceba51accb1a648dcbe1",
+              "source": "assets/sticky-note.md"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/references/API_SCHEMA.md",
+              "sha256": "52fc5413b069feb2133a5f27d52b75dbaf35e027c31e885802405b13c97c27fb",
+              "source": "references/API_SCHEMA.md"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/references/LOCAL_WORKFLOW.md",
+              "sha256": "002382aca8bafe3557647a0fe8244b69c1c8f132467d037883fb474bbbb2fb7b",
+              "source": "references/LOCAL_WORKFLOW.md"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/references/N8N_NODES.md",
+              "sha256": "955c1d87fb44a396e6ce54e7cd6f44f0e96f52d3c35b0acbbfdea5e6a4d4dfa6",
+              "source": "references/N8N_NODES.md"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/scripts/merge.sh",
+              "sha256": "8b24453f56c83f3eaa0d4a69dd6dad5b91fbc3548da30bbf90278b870192183f",
+              "source": "scripts/merge.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/scripts/n8n-entrypoint.sh",
+              "sha256": "9e3391068b26cbeb1c24b42d55965d3766517edf926996268f74b898f3c8d67b",
+              "source": "scripts/n8n-entrypoint.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/scripts/pull.sh",
+              "sha256": "167ba1397d6cc8d778962bf6c7e187dfba8e6decac2613d92c107b0d57001360",
+              "source": "scripts/pull.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/scripts/push.sh",
+              "sha256": "d2310fcfa644e2c0b0a49e61ff44fc306e14ead60c22f4a959af88906730ba0d",
+              "source": "scripts/push.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/scripts/render.sh",
+              "sha256": "f1baf99e6a0d7ef48c7f053a672212f270c4d31b72a49875306011dd27c04e32",
+              "source": "scripts/render.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/scripts/report.sh",
+              "sha256": "b0f8b430e9537132e19d226f2b7514b4fd7ff276feb67fedd12e27d1706cf097",
+              "source": "scripts/report.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/scripts/sync.sh",
+              "sha256": "d96493f8b6081007e9964b64716db3dffcc4abb2d24a03d32e9dff18dca731c2",
+              "source": "scripts/sync.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/scripts/utils.sh",
+              "sha256": "12c45014d4d94eeb2c462c762dce11409e5dacb5926241d4a486f075ae6804eb",
+              "source": "scripts/utils.sh"
+            },
+            {
+              "destination": ".github/skills/n8n-workflow-builder/scripts/view.sh",
+              "sha256": "ad40563b039b4b91bf019169ddc103e39380373dce1e076dc113e24ae23210fa",
+              "source": "scripts/view.sh"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "skills/community/n8n-workflow-builder",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/n8n-workflow-builder",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        },
+        {
+          "client": "VS Code Local",
+          "destination": ".copilot/skills/n8n-workflow-builder",
+          "destination-root": "home",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/n8n-workflow-builder",
+          "id": "vscode-user-skill",
+          "install": "Select your home directory explicitly. Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/n8n-workflow-builder"
+          },
+          "placements": [
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/SKILL.md",
+              "sha256": "a32a1e725f6d90cafd99171ed23e8c40a7c9a3a4b6988c935c241a91773ca942",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/assets/local-workflow.sh",
+              "sha256": "2e6d0dba30dd6ba11f6b49878e8a4dc7ba3cedb7e5c88bd210552ade95c5b8fb",
+              "source": "assets/local-workflow.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/assets/skeleton.json",
+              "sha256": "158fb190a40cc003a207ba4ec6fbe5f0abc04d5512e1590b7651d574230d855b",
+              "source": "assets/skeleton.json"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/assets/sticky-note.md",
+              "sha256": "99b5a001f0a3ffe30643c704c2b7682fe71dff55295aceba51accb1a648dcbe1",
+              "source": "assets/sticky-note.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/references/API_SCHEMA.md",
+              "sha256": "52fc5413b069feb2133a5f27d52b75dbaf35e027c31e885802405b13c97c27fb",
+              "source": "references/API_SCHEMA.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/references/LOCAL_WORKFLOW.md",
+              "sha256": "002382aca8bafe3557647a0fe8244b69c1c8f132467d037883fb474bbbb2fb7b",
+              "source": "references/LOCAL_WORKFLOW.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/references/N8N_NODES.md",
+              "sha256": "955c1d87fb44a396e6ce54e7cd6f44f0e96f52d3c35b0acbbfdea5e6a4d4dfa6",
+              "source": "references/N8N_NODES.md"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/scripts/merge.sh",
+              "sha256": "8b24453f56c83f3eaa0d4a69dd6dad5b91fbc3548da30bbf90278b870192183f",
+              "source": "scripts/merge.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/scripts/n8n-entrypoint.sh",
+              "sha256": "9e3391068b26cbeb1c24b42d55965d3766517edf926996268f74b898f3c8d67b",
+              "source": "scripts/n8n-entrypoint.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/scripts/pull.sh",
+              "sha256": "167ba1397d6cc8d778962bf6c7e187dfba8e6decac2613d92c107b0d57001360",
+              "source": "scripts/pull.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/scripts/push.sh",
+              "sha256": "d2310fcfa644e2c0b0a49e61ff44fc306e14ead60c22f4a959af88906730ba0d",
+              "source": "scripts/push.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/scripts/render.sh",
+              "sha256": "f1baf99e6a0d7ef48c7f053a672212f270c4d31b72a49875306011dd27c04e32",
+              "source": "scripts/render.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/scripts/report.sh",
+              "sha256": "b0f8b430e9537132e19d226f2b7514b4fd7ff276feb67fedd12e27d1706cf097",
+              "source": "scripts/report.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/scripts/sync.sh",
+              "sha256": "d96493f8b6081007e9964b64716db3dffcc4abb2d24a03d32e9dff18dca731c2",
+              "source": "scripts/sync.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/scripts/utils.sh",
+              "sha256": "12c45014d4d94eeb2c462c762dce11409e5dacb5926241d4a486f075ae6804eb",
+              "source": "scripts/utils.sh"
+            },
+            {
+              "destination": ".copilot/skills/n8n-workflow-builder/scripts/view.sh",
+              "sha256": "ad40563b039b4b91bf019169ddc103e39380373dce1e076dc113e24ae23210fa",
+              "source": "scripts/view.sh"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "global",
+          "source": {
+            "path": "skills/community/n8n-workflow-builder",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/n8n-workflow-builder",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
       "legacy-ids": [
         "bcgov-public/n8n-workflow-builder"
       ],
@@ -997,6 +1955,90 @@
         }
       ],
       "id": "bcgov-public/skill/openshift-deployment",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/skills/openshift-deployment",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/openshift-deployment",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/openshift-deployment"
+          },
+          "placements": [
+            {
+              "destination": ".github/skills/openshift-deployment/SKILL.md",
+              "sha256": "3f23ff8fb6ce97442080318a3f05678040d407ed3f899b26c281de1720efc5e4",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".github/skills/openshift-deployment/references/REFERENCE.md",
+              "sha256": "331430ddc0819ba7bce912be98674f2d86db5a2e633921e31a69f49f4da6fd00",
+              "source": "references/REFERENCE.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "skills/community/openshift-deployment",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/openshift-deployment",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        },
+        {
+          "client": "VS Code Local",
+          "destination": ".copilot/skills/openshift-deployment",
+          "destination-root": "home",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/openshift-deployment",
+          "id": "vscode-user-skill",
+          "install": "Select your home directory explicitly. Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/community/openshift-deployment"
+          },
+          "placements": [
+            {
+              "destination": ".copilot/skills/openshift-deployment/SKILL.md",
+              "sha256": "3f23ff8fb6ce97442080318a3f05678040d407ed3f899b26c281de1720efc5e4",
+              "source": "SKILL.md"
+            },
+            {
+              "destination": ".copilot/skills/openshift-deployment/references/REFERENCE.md",
+              "sha256": "331430ddc0819ba7bce912be98674f2d86db5a2e633921e31a69f49f4da6fd00",
+              "source": "references/REFERENCE.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "global",
+          "source": {
+            "path": "skills/community/openshift-deployment",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/community/openshift-deployment",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
       "legacy-ids": [
         "bcgov-public/openshift-deployment"
       ],
@@ -1081,6 +2123,80 @@
         }
       ],
       "id": "bcgov-public/skill/repo-hardening",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/skills/repo-hardening",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/repo-hardening",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/security/repo-hardening"
+          },
+          "placements": [
+            {
+              "destination": ".github/skills/repo-hardening/SKILL.md",
+              "sha256": "c3c157b17673a8bd2bdd2fd53cf85d95103bbbc445a245f1e6adfe35020e8f4c",
+              "source": "SKILL.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "skills/security/repo-hardening",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/security/repo-hardening",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        },
+        {
+          "client": "VS Code Local",
+          "destination": ".copilot/skills/repo-hardening",
+          "destination-root": "home",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/skill/repo-hardening",
+          "id": "vscode-user-skill",
+          "install": "Select your home directory explicitly. Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/skills/security/repo-hardening"
+          },
+          "placements": [
+            {
+              "destination": ".copilot/skills/repo-hardening/SKILL.md",
+              "sha256": "c3c157b17673a8bd2bdd2fd53cf85d95103bbbc445a245f1e6adfe35020e8f4c",
+              "source": "SKILL.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "global",
+          "source": {
+            "path": "skills/security/repo-hardening",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/skills/security/repo-hardening",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
       "legacy-ids": [
         "bcgov-public/repo-hardening"
       ],

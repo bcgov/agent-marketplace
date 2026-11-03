@@ -16,6 +16,7 @@ import unicodedata
 from pathlib import Path
 
 import yaml
+from install_choices import build_install_choices
 from jsonschema import Draft202012Validator, FormatChecker
 
 SCHEMA_VERSION = "bcgov-extension/v1alpha1"
@@ -395,7 +396,7 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
     lifecycle = manifest.get("lifecycle", "active")
     frontmatter = {}
     if lifecycle != "removed":
-      frontmatter, artifact_errors = _read_artifact(
+      frontmatter, artifact_errors = read_native_content(
         artifact_path, TYPE_DIRECTORIES[parts[0]]
       )
       errors.extend(artifact_errors)
@@ -458,7 +459,7 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
   return manifest, errors
 
 
-def _read_artifact(path: Path, extension_type: str) -> tuple[dict, list[str]]:
+def read_native_content(path: Path, extension_type: str) -> tuple[dict, list[str]]:
   """Read native content once for validation and effective metadata derivation."""
   errors = []
   if not path.is_file():
@@ -467,7 +468,7 @@ def _read_artifact(path: Path, extension_type: str) -> tuple[dict, list[str]]:
     text = path.read_text(encoding="utf-8")
   except (OSError, UnicodeError):
     return {}, [_diagnostic(path, "<root>", "Save a readable UTF-8 text file.")]
-  if extension_type == "skill" and not text.startswith("---"):
+  if not text.startswith("---"):
     return {}, (
       [] if text.strip() else [_diagnostic(path, "<root>", "Add non-empty content.")]
     )
@@ -485,12 +486,9 @@ def _read_artifact(path: Path, extension_type: str) -> tuple[dict, list[str]]:
   except PublicMarketplaceError as exc:
     return {}, [PublicDiagnostic(str(exc))]
 
-  required = {
-    "prompt": {"description"},
-    "instructions": {"description"},
-    "agent": {"name", "description"},
-    "skill": set(),
-  }[extension_type]
+  # VS Code Local accepts optional headers for prompts, instructions and agents.
+  # Independent client requirements (for example skill routing) gate choices.
+  required = set()
   for field in sorted(required | (frontmatter.keys() & {"name", "description"})):
     if not isinstance(frontmatter.get(field), str) or not frontmatter[field].strip():
       errors.append(
@@ -1571,8 +1569,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     )
     evidence.pop("risk", None)
     record["checks"].update(evidence)
-    if record["lifecycle"] != "active":
-      record["install-options"] = []
+    record["install-options"] = build_install_choices(record, package_dir)
     records.append(record)
   by_id = {record["id"]: record for record in records}
   legacy_ids = load_legacy_ids(root)
