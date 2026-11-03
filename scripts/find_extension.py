@@ -144,7 +144,10 @@ def load_catalog(source: str) -> dict:
       else:
         content = Path(candidate).read_text(encoding="utf-8")
       catalog = json.loads(content)
-      if catalog.get("schema-version") != "bcgov-marketplace-catalog/v1alpha1":
+      if catalog.get("schema-version") not in {
+        "bcgov-marketplace/v1",
+        "bcgov-marketplace-catalog/v1alpha1",
+      }:
         raise FinderError(f"unsupported catalog schema in {candidate}")
       if (
         candidate == PINNED_CATALOG and catalog.get("revision") != MARKETPLACE_REVISION
@@ -167,13 +170,15 @@ def _tokens(value: str) -> set[str]:
 
 
 def search(catalog: dict, query: str, extension_type: str | None = None) -> list[dict]:
-  """Return at most three active records that clear the relevance floor."""
+  """Return active matches, or a requested non-active id with its warning."""
   if extension_type is not None and extension_type not in KNOWN_EXTENSION_TYPES:
     raise FinderError(f"unsupported extension type: {extension_type}")
   query_tokens = _tokens(query)
   ranked = []
   for record in catalog["extensions"]:
-    if record["lifecycle"] != "active":
+    if (
+      record["lifecycle"] != "active" and query.strip().lower() != record["id"].lower()
+    ):
       continue
     if extension_type is not None and record.get("type") != extension_type:
       continue
@@ -297,7 +302,9 @@ def stage_package(
         raise FinderError(f"archive file exceeds size limit: {relative}")
       destination.write_bytes(content)
       destination.chmod(0o644)
-  artifact_file = ARTIFACT_FILES[extension_type]
+  artifact_file = (
+    "SKILL.md" if extension_type == "skill" else f"{package.name}.{extension_type}.md"
+  )
   if not (target / artifact_file).is_file():
     raise FinderError(f"resolved package does not contain {artifact_file}")
 
@@ -335,14 +342,21 @@ def tree_digest(file_inventory: list[dict]) -> str:
 
 
 def scan_staged(
-  package: Path, capabilities: dict | None = None, extension_type: str = "skill"
+  package: Path,
+  capabilities: dict | None = None,
+  extension_type: str = "skill",
+  package_name: str | None = None,
 ) -> dict:
   """Apply deterministic local policy without executing staged content."""
   findings = []
   total = 0
   if extension_type not in PUBLISHABLE_EXTENSION_TYPES:
     raise FinderError(f"unsupported extension type: {extension_type}")
-  artifact_file = ARTIFACT_FILES[extension_type]
+  artifact_file = (
+    "SKILL.md"
+    if extension_type == "skill"
+    else f"{package_name or package.name}.{extension_type}.md"
+  )
   expected_root_files = {artifact_file, "bcgov-extension.yaml"}
   files = inventory(package)
   if len(files) > MAX_FILES:
@@ -738,7 +752,7 @@ def _third_party_install(args) -> dict:
     stage_package(
       args.repository, args.revision, args.path, staged, args.extension_type
     )
-    scan = scan_staged(staged, capabilities)
+    scan = scan_staged(staged, capabilities, args.extension_type, name)
     digest = tree_digest(inventory(staged))
     preview = {
       "discovery-catalog": args.discovery_catalog,

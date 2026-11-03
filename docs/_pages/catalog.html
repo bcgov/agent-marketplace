@@ -154,7 +154,7 @@
 
   const state = { query: '', specialty: '', type: '', status: '', lifecycle: '', access: '' };
   let catalogData = null;
-  let selectedId = null;
+  let selectedId = rows.find((row) => '#' + encodeURIComponent(row.id) === window.location.hash)?.id || null;
 
   function distinct(key) {
     return Array.from(new Set(rows.map((row) => row[key]).filter(Boolean))).sort();
@@ -166,6 +166,7 @@
     if (ignore !== 'type' && state.type && row.type !== state.type) return false;
     if (ignore !== 'status' && state.status && row.status !== state.status) return false;
     if (ignore !== 'lifecycle' && state.lifecycle && row.lifecycle !== state.lifecycle) return false;
+    if (!state.lifecycle && !state.query && row.lifecycle !== 'active' && row.id !== selectedId) return false;
     if (ignore !== 'access' && state.access && !row.access.includes(state.access)) return false;
     return true;
   }
@@ -276,7 +277,7 @@
     const filtered = Object.values(state).some(Boolean);
     countLabel.textContent = filtered
       ? `${visible} of ${rows.length} extensions`
-      : `Showing every extension`;
+      : `Showing ${visible} active extensions`;
     emptyState.hidden = visible !== 0;
     resetButton.hidden = !filtered;
     renderFacets();
@@ -347,7 +348,9 @@
         : `npx skills add <immutable-tree-url> --agent github-copilot -y`
     };
 
-    const installBlock = installable
+    const installBlock = record.lifecycle !== 'active'
+      ? '<p class="install-note">Installation is unavailable for this Extension.</p>'
+      : installable
       ? `
       <h4>Install</h4>
       <div class="install-switch" role="group" aria-label="Choose installer">
@@ -365,6 +368,12 @@
     detail.innerHTML = `
       <h3>${escapeHtml(record['display-name'] || 'Extension')}</h3>
       <p>${escapeHtml(record.summary || '')}</p>
+      ${record.lifecycle !== 'active'
+        ? `<p role="status"><strong>${escapeHtml(record.lifecycle)}:</strong> ${escapeHtml(record.notice || 'This Extension is unavailable.')}</p>`
+        : ''}
+      ${record['moved-to']
+        ? `<p>Replacement: <code>${escapeHtml(record['moved-to'])}</code></p>`
+        : ''}
 
       <h4>What it can access</h4>
       ${accessDetail(record)}
@@ -422,6 +431,8 @@
 
   function select(row) {
     selectedId = row.id;
+    window.history.replaceState(null, '', '#' + encodeURIComponent(row.id));
+    apply();
     for (const other of rows) {
       other.node.classList.toggle('is-selected', other.id === selectedId);
     }
@@ -444,6 +455,10 @@
     const { facet, value } = button.dataset;
     state[facet] = state[facet] === value ? '' : value;
     apply();
+    if (selectedId) {
+      const linked = rows.find((row) => row.id === selectedId);
+      if (linked) select(linked);
+    }
   });
 
   resetButton.addEventListener('click', () => {

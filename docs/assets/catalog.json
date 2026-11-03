@@ -72,16 +72,22 @@
         ],
         "secret-names": []
       },
+      "checks": {
+        "content-digest": "sha256:065a0fc314c870a3d2a4bba7829fba0f5c79bc6963f36080ccaf90e688bb1d99",
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": 2
+      },
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:bbfa9c9bc082d1e009f9b30f0d4ec28df225d588b54c1809922f4ae8c577ae8c",
+      "content-digest": "sha256:065a0fc314c870a3d2a4bba7829fba0f5c79bc6963f36080ccaf90e688bb1d99",
       "display-name": "Azure Networking",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "79364182944900aa550c4590ebd87c4d6c326f048cc17fd6d852d13c4473ce9f",
-          "size": 856
+          "sha256": "c36f2668b1400133cbcfd63a5be8b4ba1117516d4fa3e59ecc1276fb1cfa7ed7",
+          "size": 645
         },
         {
           "path": "references/REFERENCE.md",
@@ -101,6 +107,7 @@
         "@mishraomp",
         "@DerekRoberts"
       ],
+      "name": "azure-networking",
       "policy": {
         "findings": [],
         "outcome": "passed",
@@ -112,12 +119,16 @@
       "publisher": "Province of British Columbia",
       "review": {
         "advisories": 0,
-        "content-digest": "sha256:bbfa9c9bc082d1e009f9b30f0d4ec28df225d588b54c1809922f4ae8c577ae8c",
+        "content-digest": "sha256:065a0fc314c870a3d2a4bba7829fba0f5c79bc6963f36080ccaf90e688bb1d99",
         "method": "automated-policy-scan",
-        "policy-version": "bcgov-marketplace-policy/1.0",
+        "policy-version": 2,
         "reviewers": [],
         "risk": "elevated",
         "status": "auto-scanned"
+      },
+      "risk": "elevated",
+      "route": {
+        "type": "community"
       },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
@@ -151,16 +162,22 @@
         ],
         "secret-names": []
       },
+      "checks": {
+        "content-digest": "sha256:7130e81255053fa800124ffada165428986d78f8e4d90e08bd0601e7d535dc55",
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": 2
+      },
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:55ba2bf7f5c048be39f7f093382bbe7818808416fe1d8a52624eaa582f931077",
+      "content-digest": "sha256:7130e81255053fa800124ffada165428986d78f8e4d90e08bd0601e7d535dc55",
       "display-name": "BC Gov Create Extension",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "e5899cc0cb31c201c771414c2bc0a10a969c635b074a3605f13d54c38639bbb6",
-          "size": 741
+          "sha256": "695b9c5a38f6f8be4608810f49ce94857fe5542a8588f0772fab995ab03e9772",
+          "size": 524
         },
         {
           "path": "references/SUBMISSION.md",
@@ -200,6 +217,7 @@
         "@mishraomp",
         "@DerekRoberts"
       ],
+      "name": "bcgov-create-extension",
       "policy": {
         "findings": [],
         "outcome": "passed",
@@ -211,12 +229,16 @@
       "publisher": "Province of British Columbia",
       "review": {
         "advisories": 0,
-        "content-digest": "sha256:55ba2bf7f5c048be39f7f093382bbe7818808416fe1d8a52624eaa582f931077",
+        "content-digest": "sha256:7130e81255053fa800124ffada165428986d78f8e4d90e08bd0601e7d535dc55",
         "method": "automated-policy-scan",
-        "policy-version": "bcgov-marketplace-policy/1.0",
+        "policy-version": 2,
         "reviewers": [],
         "risk": "elevated",
         "status": "auto-scanned"
+      },
+      "risk": "elevated",
+      "route": {
+        "type": "community"
       },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
@@ -246,16 +268,37 @@
         ],
         "secret-names": []
       },
+      "checks": {
+        "content-digest": "sha256:b6639667aff89fdc4b7fa7e86514d267a196e3786a5b611210a4c890aacfeed4",
+        "findings": [
+          {
+            "category": "package",
+            "code": "unsupported-trust-claim",
+            "disposition": "advisory",
+            "field": "\u2014",
+            "file": "references/THIRD_PARTY.md",
+            "line": 67,
+            "message": "instruction requires human review",
+            "path": "references/THIRD_PARTY.md",
+            "policy-version": 2,
+            "remediation": "instruction requires human review",
+            "rule-id": "unsupported-trust-claim",
+            "severity": "advisory"
+          }
+        ],
+        "outcome": "passed",
+        "policy-version": 2
+      },
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:9b2efd7efd60842ca9df3ccc3c18906c8191bc4f9945fb9fbf9cc69f629c2ceb",
+      "content-digest": "sha256:b6639667aff89fdc4b7fa7e86514d267a196e3786a5b611210a4c890aacfeed4",
       "display-name": "BC Gov Find Extension",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "6ae7aafd3cb3cda47373cb62951c0dcae2dd6c4480f24eebbac280815837b98a",
-          "size": 648
+          "sha256": "2ba9fb1c55433f622a197faa6fa95a9ba96641f4525cb53363e6f7f2653e8020",
+          "size": 433
         },
         {
           "path": "references/INSTALLATION.md",
@@ -280,6 +323,7 @@
         "@mishraomp",
         "@DerekRoberts"
       ],
+      "name": "bcgov-find-extension",
       "policy": {
         "findings": [
           {
@@ -306,12 +350,16 @@
       "publisher": "Province of British Columbia",
       "review": {
         "advisories": 1,
-        "content-digest": "sha256:9b2efd7efd60842ca9df3ccc3c18906c8191bc4f9945fb9fbf9cc69f629c2ceb",
+        "content-digest": "sha256:b6639667aff89fdc4b7fa7e86514d267a196e3786a5b611210a4c890aacfeed4",
         "method": "automated-policy-scan",
-        "policy-version": "bcgov-marketplace-policy/1.0",
+        "policy-version": 2,
         "reviewers": [],
         "risk": "elevated",
         "status": "auto-scanned"
+      },
+      "risk": "elevated",
+      "route": {
+        "type": "community"
       },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
@@ -355,16 +403,37 @@
           "GITHUB_TOKEN"
         ]
       },
+      "checks": {
+        "content-digest": "sha256:6a3dbd173189659d7bffebae5fea46ddc1262b275b1c2a4fe3a01158e392fcd6",
+        "findings": [
+          {
+            "category": "package",
+            "code": "wildcard-capability",
+            "disposition": "advisory",
+            "field": "capabilities",
+            "file": "bcgov-extension.yaml",
+            "line": 1,
+            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "path": ".",
+            "policy-version": 2,
+            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "rule-id": "wildcard-capability",
+            "severity": "advisory"
+          }
+        ],
+        "outcome": "passed",
+        "policy-version": 2
+      },
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:ec33a9388c3b50a32fda77d8b0ef51194168dce7744927b5a3695fb0b05227d5",
+      "content-digest": "sha256:6a3dbd173189659d7bffebae5fea46ddc1262b275b1c2a4fe3a01158e392fcd6",
       "display-name": "GitHub Actions",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "c2224b634c542a76fb7cf9a59a34f3037268d6bccc5d01e643008284b315047e",
-          "size": 862
+          "sha256": "a8e9053299582c59a8f60bee1c354f9d773c88ec33f1662994786b2c55745b27",
+          "size": 653
         },
         {
           "path": "references/REFERENCE.md",
@@ -384,6 +453,7 @@
         "@mishraomp",
         "@DerekRoberts"
       ],
+      "name": "github-actions",
       "policy": {
         "findings": [
           {
@@ -410,12 +480,16 @@
       "publisher": "Province of British Columbia",
       "review": {
         "advisories": 1,
-        "content-digest": "sha256:ec33a9388c3b50a32fda77d8b0ef51194168dce7744927b5a3695fb0b05227d5",
+        "content-digest": "sha256:6a3dbd173189659d7bffebae5fea46ddc1262b275b1c2a4fe3a01158e392fcd6",
         "method": "automated-policy-scan",
-        "policy-version": "bcgov-marketplace-policy/1.0",
+        "policy-version": 2,
         "reviewers": [],
         "risk": "high",
         "status": "auto-scanned"
+      },
+      "risk": "high",
+      "route": {
+        "type": "community"
       },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
@@ -455,16 +529,37 @@
         ],
         "secret-names": []
       },
+      "checks": {
+        "content-digest": "sha256:8c21d38f24540b2331c6b9ad87aad12f2935e548e257125621637d74e90e1913",
+        "findings": [
+          {
+            "category": "package",
+            "code": "wildcard-capability",
+            "disposition": "advisory",
+            "field": "capabilities",
+            "file": "bcgov-extension.yaml",
+            "line": 1,
+            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "path": ".",
+            "policy-version": 2,
+            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "rule-id": "wildcard-capability",
+            "severity": "advisory"
+          }
+        ],
+        "outcome": "passed",
+        "policy-version": 2
+      },
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:39c052747fa7d319576fdca00b44e1ad8b825dcbd9a1cb7abba3b6467828db1c",
+      "content-digest": "sha256:8c21d38f24540b2331c6b9ad87aad12f2935e548e257125621637d74e90e1913",
       "display-name": "GitHub Repository Setup",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "936b6a0f59745563c350978a4d29d6fa064e6c9b6f5f6ac22b574ccb1ae5d122",
-          "size": 829
+          "sha256": "3663f53f05c642b200b47e51eee8d5c09ff7b95125bfcfd87dd8576e1405f7c8",
+          "size": 617
         },
         {
           "path": "references/REFERENCE.md",
@@ -484,6 +579,7 @@
         "@mishraomp",
         "@DerekRoberts"
       ],
+      "name": "github-repo-setup",
       "policy": {
         "findings": [
           {
@@ -510,12 +606,16 @@
       "publisher": "Province of British Columbia",
       "review": {
         "advisories": 1,
-        "content-digest": "sha256:39c052747fa7d319576fdca00b44e1ad8b825dcbd9a1cb7abba3b6467828db1c",
+        "content-digest": "sha256:8c21d38f24540b2331c6b9ad87aad12f2935e548e257125621637d74e90e1913",
         "method": "automated-policy-scan",
-        "policy-version": "bcgov-marketplace-policy/1.0",
+        "policy-version": 2,
         "reviewers": [],
         "risk": "high",
         "status": "auto-scanned"
+      },
+      "risk": "high",
+      "route": {
+        "type": "community"
       },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
@@ -562,10 +662,31 @@
         ],
         "secret-names": []
       },
+      "checks": {
+        "content-digest": "sha256:16029be080594e56425200abeac3015d9e39ca970bf6e773d96d1398154a4484",
+        "findings": [
+          {
+            "category": "package",
+            "code": "wildcard-capability",
+            "disposition": "advisory",
+            "field": "capabilities",
+            "file": "bcgov-extension.yaml",
+            "line": 1,
+            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "path": ".",
+            "policy-version": 2,
+            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "rule-id": "wildcard-capability",
+            "severity": "advisory"
+          }
+        ],
+        "outcome": "passed",
+        "policy-version": 2
+      },
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:58310909cad7d5d52455fa78c40f81dd397e561f7f8f6cffc949dc3d6d0d5800",
+      "content-digest": "sha256:16029be080594e56425200abeac3015d9e39ca970bf6e773d96d1398154a4484",
       "display-name": "n8n Runbook Parser",
       "files": [
         {
@@ -595,8 +716,8 @@
         },
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "b6a194db4c263a0391e24e30573f26ce3ab7c63d778555b74edbf1668ef78094",
-          "size": 1054
+          "sha256": "aa269004128f4a3b042be3d99a124d18bbf1c42bde1130a708cbe3addda235ed",
+          "size": 841
         },
         {
           "path": "references/BACKPORT.md",
@@ -681,6 +802,7 @@
         "@mishraomp",
         "@DerekRoberts"
       ],
+      "name": "n8n-runbook-parser",
       "policy": {
         "findings": [
           {
@@ -708,12 +830,16 @@
       "publisher": "Province of British Columbia",
       "review": {
         "advisories": 1,
-        "content-digest": "sha256:58310909cad7d5d52455fa78c40f81dd397e561f7f8f6cffc949dc3d6d0d5800",
+        "content-digest": "sha256:16029be080594e56425200abeac3015d9e39ca970bf6e773d96d1398154a4484",
         "method": "automated-policy-scan",
-        "policy-version": "bcgov-marketplace-policy/1.0",
+        "policy-version": 2,
         "reviewers": [],
         "risk": "high",
         "status": "auto-scanned"
+      },
+      "risk": "high",
+      "route": {
+        "type": "community"
       },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
@@ -763,10 +889,31 @@
           "N8N_API_KEY"
         ]
       },
+      "checks": {
+        "content-digest": "sha256:bae3f05e05510390e595d773fb696ca0040e6723138e8ac5879a8e650957622e",
+        "findings": [
+          {
+            "category": "package",
+            "code": "wildcard-capability",
+            "disposition": "advisory",
+            "field": "capabilities",
+            "file": "bcgov-extension.yaml",
+            "line": 1,
+            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "path": ".",
+            "policy-version": 2,
+            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "rule-id": "wildcard-capability",
+            "severity": "advisory"
+          }
+        ],
+        "outcome": "passed",
+        "policy-version": 2
+      },
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:84146ec685ef4d17931f60c5d03f5dbdae320ff4274e501a35f0d22f144368e0",
+      "content-digest": "sha256:bae3f05e05510390e595d773fb696ca0040e6723138e8ac5879a8e650957622e",
       "display-name": "n8n Workflow Builder",
       "files": [
         {
@@ -786,8 +933,8 @@
         },
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "8adbb3be15c6c87a59c9df0ebb6d3f917d99647b199da356355ad69f8aff91ae",
-          "size": 1018
+          "sha256": "2e0cf09c0d0ac16a4343aa4d978d12d94102cf42bc1e38fb02b399f974a356e9",
+          "size": 803
         },
         {
           "path": "references/API_SCHEMA.md",
@@ -862,6 +1009,7 @@
         "@mishraomp",
         "@DerekRoberts"
       ],
+      "name": "n8n-workflow-builder",
       "policy": {
         "findings": [
           {
@@ -889,12 +1037,16 @@
       "publisher": "Province of British Columbia",
       "review": {
         "advisories": 1,
-        "content-digest": "sha256:84146ec685ef4d17931f60c5d03f5dbdae320ff4274e501a35f0d22f144368e0",
+        "content-digest": "sha256:bae3f05e05510390e595d773fb696ca0040e6723138e8ac5879a8e650957622e",
         "method": "automated-policy-scan",
-        "policy-version": "bcgov-marketplace-policy/1.0",
+        "policy-version": 2,
         "reviewers": [],
         "risk": "high",
         "status": "auto-scanned"
+      },
+      "risk": "high",
+      "route": {
+        "type": "community"
       },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
@@ -936,16 +1088,22 @@
         ],
         "secret-names": []
       },
+      "checks": {
+        "content-digest": "sha256:da1d7ed5518eb8f00a45a8fd59a18f88cb57fcaaeaa763847bdfa61064acd2ac",
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": 2
+      },
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:55fd1005c185c8e5210051568f7dcac7987171eeb8e8b6e3b1da17a31225060f",
+      "content-digest": "sha256:da1d7ed5518eb8f00a45a8fd59a18f88cb57fcaaeaa763847bdfa61064acd2ac",
       "display-name": "OpenShift Deployment",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "9d845500e2be0d687cabe6db2839b6fb1a07137423bdce4dd566413063d204c7",
-          "size": 971
+          "sha256": "e85a4ef4f774a6775ff24a6f6b982b4dcd5a6686db198ee9042c9153a10e3ad4",
+          "size": 756
         },
         {
           "path": "references/REFERENCE.md",
@@ -965,6 +1123,7 @@
         "@mishraomp",
         "@DerekRoberts"
       ],
+      "name": "openshift-deployment",
       "policy": {
         "findings": [],
         "outcome": "passed",
@@ -976,12 +1135,16 @@
       "publisher": "Province of British Columbia",
       "review": {
         "advisories": 0,
-        "content-digest": "sha256:55fd1005c185c8e5210051568f7dcac7987171eeb8e8b6e3b1da17a31225060f",
+        "content-digest": "sha256:da1d7ed5518eb8f00a45a8fd59a18f88cb57fcaaeaa763847bdfa61064acd2ac",
         "method": "automated-policy-scan",
-        "policy-version": "bcgov-marketplace-policy/1.0",
+        "policy-version": 2,
         "reviewers": [],
         "risk": "elevated",
         "status": "auto-scanned"
+      },
+      "risk": "elevated",
+      "route": {
+        "type": "community"
       },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
@@ -1023,16 +1186,22 @@
           "GITHUB_TOKEN"
         ]
       },
+      "checks": {
+        "content-digest": "sha256:74a63da025d6cdf174b3356f84c9c6dab324fb77a5fd1e76a052b93788950cae",
+        "findings": [],
+        "outcome": "passed",
+        "policy-version": 2
+      },
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:9fd010749fc81d20119daa1b504c89aa10ebde34f172d8277992720201d16355",
+      "content-digest": "sha256:74a63da025d6cdf174b3356f84c9c6dab324fb77a5fd1e76a052b93788950cae",
       "display-name": "Repo Hardening",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "b3122bc25b9af22faebfd2e773fb554624208f7dd2e2bf811136f2df2ce550a9",
-          "size": 916
+          "sha256": "e50964280f4c834e4f3f366ee6373a591c1bb913a99c4083e47fb5fea145580f",
+          "size": 706
         },
         {
           "path": "SKILL.md",
@@ -1047,6 +1216,7 @@
         "@mishraomp",
         "@DerekRoberts"
       ],
+      "name": "repo-hardening",
       "policy": {
         "findings": [],
         "outcome": "passed",
@@ -1058,10 +1228,15 @@
       ],
       "publisher": "Province of British Columbia",
       "review": {
-        "content-digest": "sha256:9fd010749fc81d20119daa1b504c89aa10ebde34f172d8277992720201d16355",
+        "content-digest": "sha256:74a63da025d6cdf174b3356f84c9c6dab324fb77a5fd1e76a052b93788950cae",
         "reviewers": [],
         "risk": "high",
         "status": "unreviewed"
+      },
+      "risk": "high",
+      "route": {
+        "owner-team": "@bcgov/security",
+        "type": "specialty-review"
       },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
@@ -1075,10 +1250,10 @@
       "type": "skill"
     }
   ],
-  "policy-version": "bcgov-marketplace-policy/1.0",
+  "policy-version": 2,
   "release-state": "development",
   "repository": "https://github.com/bcgov/agent-marketplace",
   "revision": "2046da7b0de0f673bf39208b35385c1516be4c75",
-  "schema-version": "bcgov-marketplace-catalog/v1alpha1",
+  "schema-version": "bcgov-marketplace/v1",
   "version": "catalog-2026.10.01"
 }
