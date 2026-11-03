@@ -19,6 +19,8 @@ elif command -v node.exe &>/dev/null && node.exe --version &>/dev/null 2>&1; the
 fi
 
 if [ -n "$NODE_BIN" ]; then
+    uv run --project "$SCRIPT_DIR/.." python "$SCRIPT_DIR/../scripts/browser_contribution.py" \
+        --root "$SCRIPT_DIR/.." --output "$SCRIPT_DIR/assets/contribute.json"
     if [ "$NODE_BIN" = "node.exe" ] && command -v wslpath &>/dev/null; then
         $NODE_BIN "$(wslpath -w "$SCRIPT_DIR/build-pages.js")" "$(wslpath -w "$SCRIPT_DIR")"
     else

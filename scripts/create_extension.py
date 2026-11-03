@@ -125,7 +125,7 @@ no bundled references are required.
 """
 
 
-def _artifact_template(
+def native_template(
   extension_type: str, name: str, description: str, display_name: str
 ) -> str:
   """Render a portable starter file for one supported agent asset type."""
@@ -183,7 +183,7 @@ def initialize(args) -> dict:
   package.mkdir(parents=True)
   artifact_filename = ARTIFACT_FILENAMES[extension_type].format(name=args.name)
   (package / artifact_filename).write_text(
-    _artifact_template(extension_type, args.name, args.description, args.display_name),
+    native_template(extension_type, args.name, args.description, args.display_name),
     encoding="utf-8",
   )
   (package / "bcgov-extension.yaml").write_text(

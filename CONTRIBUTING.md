@@ -1,6 +1,47 @@
 # Contributing to the BC Gov Agent Marketplace
 
-Contributions use signed commits on branches in `bcgov/agent-marketplace`. The author must be a member of the GitHub `bcgov` organization; this is an eligibility proxy, not employment verification. The eligibility workflow fails closed when it cannot confirm membership. See the [intake policy](docs/COMMUNITY_INTAKE_POLICY.md) for token requirements and troubleshooting. Fork pull requests fail closed. If you lack branch access, keep your staged package and request access through a repository issue.
+Contribute through a fork branch, a repository branch, or the creation companion.
+Commits must meet the repository's signing requirements. Public `bcgov` GitHub
+membership is required for Community automatic eligibility; this is an
+eligibility proxy, not employment verification. Unconfirmed membership produces
+a human-review hold, while format and security errors still require fixes.
+Preview results do not prove production activation or live rulesets.
+
+## Browser contribution
+
+Use the [Contribute page](https://bcgov.github.io/agent-marketplace/contribute.html)
+to select the type, Community or a registered Specialty, stable name, your
+maintainer username, and summary. No local commands are required.
+
+1. Open the native-file prefill and edit its body. Without upstream write access,
+   create/select a fork and a contribution branch. Commit/propose that file and
+   record the actual fork repository and branch. Do not open the PR yet.
+2. On that **same fork and existing branch**, use Add file -> Create new file
+   to add the matching `bcgov-extension.yaml` beside the native file. The page
+   supplies the exact path, a second prefill and a copyable minimal Manifest.
+   Declare your individual maintainer and actual capabilities; `none` means no
+   declared access. Commit directly to the existing branch.
+3. Open one upstream PR from that branch. Confirm the intended base branch and
+   both matching paths in Files changed. Use the single type-neutral template.
+   For a Specialty, mark ready for review to request the owners declared by the
+   **base branch's** CODEOWNERS; drafts do not request owners automatically.
+4. Read exact-head check details. Fix hard failures on the same branch. A passing
+   `human-review` route is a review hold. If fork runs await approval, ask a
+   maintainer to approve the existing workflow run. Missing checks are pending
+   evidence. Automation being off does not waive required checks.
+
+If summary validation fails, add native frontmatter `description:` or Manifest
+`summary:`; native-format requirements still apply. If the Manifest is missing,
+add it beside the native file on the existing branch. Quote YAML values that
+contain special punctuation. If membership cannot be confirmed, make your
+organization membership public when appropriate or request a maintainer's
+review of the hold. Never share tokens or credentials.
+
+GitHub signs web-interface commits. Inspect each PR commit's **Verified** status.
+For unsigned local commits, configure Git's supported signing method and recreate
+the affected commits with signing enabled on the head branch; coordinate with
+maintainers before rewriting a shared branch. Check the replacement commits'
+Verified status before requesting review. Do not disable signature requirements.
 
 ## Preferred authoring path
 
@@ -17,9 +58,9 @@ Every hosted package has a type-specific content file and the common
 
 ```text
 skills/<bucket>/<name>/SKILL.md
-prompts/<bucket>/<name>/prompt.prompt.md
-instructions/<bucket>/<name>/instructions.instructions.md
-agents/<bucket>/<name>/agent.agent.md
+prompts/<bucket>/<name>/<name>.prompt.md
+instructions/<bucket>/<name>/<name>.instructions.md
+agents/<bucket>/<name>/<name>.agent.md
 <type>/<bucket>/<name>/bcgov-extension.yaml
 ```
 
@@ -36,13 +77,19 @@ skills/<bucket>/<name>/
 └── assets/        optional, flat files only
 ```
 
-All package manifests follow [schemas/bcgov-extension-v1alpha1.schema.json](schemas/bcgov-extension-v1alpha1.schema.json), use IDs of the form `bcgov-public/<name>`, declare capabilities, and use Apache-2.0. Authors must not add review fields.
+All package manifests follow [schemas/bcgov-extension-v1alpha1.schema.json](schemas/bcgov-extension-v1alpha1.schema.json).
+Only `maintainers` and `capabilities` are mandatory authored governance fields.
+IDs are derived as `bcgov-public/<type>/<name>`, unique per type across all
+Specialties, including retained removed records. Type/name stays stable through
+reviewed Specialty transfers. Effective summary is required and can come from
+native `description:` or a Manifest override. Other metadata uses validated
+defaults, including Apache-2.0. Authors must not add review fields.
 
 Before authoring, search the BC Gov catalog and all approved discovery sources in [config/marketplace.yaml](config/marketplace.yaml). Prefer upstream contribution when no BC Gov-specific policy or workflow gap exists.
 
 Only include explicitly selected public resources. Never publish credentials, personal information, private endpoints, or sensitive operational data.
 
-## Verify and submit
+## Verify and submit from a local checkout
 
 ```bash
 make generate
