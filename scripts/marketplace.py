@@ -8,16 +8,20 @@ import hashlib
 import html
 import json
 import os
+import platform
 import re
 import stat
 import subprocess
 import sys
 import unicodedata
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 
 import yaml
 from install_choices import build_install_choices
 from jsonschema import Draft202012Validator, FormatChecker
+from publication import PublicationError, canonical, git, source_dates
 
 SCHEMA_VERSION = "bcgov-extension/v1alpha1"
 MANIFEST_NAME = "bcgov-extension.yaml"
@@ -1056,15 +1060,20 @@ def load_marketplace_config(root: Path) -> dict:
     "schema-version",
     "release-state",
     "repository",
-    "revision",
-    "version",
+    "publication",
+    "history-start",
     "community-intake",
     "approved-discovery-sources",
   }
   unexpected = sorted(set(config) - allowed)
   if unexpected:
     raise MarketplaceError(f"{path}: unexpected keys: {', '.join(unexpected)}")
-  required = allowed - {"approved-discovery-sources", "community-intake"}
+  required = allowed - {
+    "approved-discovery-sources",
+    "community-intake",
+    "publication",
+    "history-start",
+  }
   missing = sorted(required - set(config))
   if missing:
     raise MarketplaceError(f"{path}: missing keys: {', '.join(missing)}")
@@ -1072,11 +1081,16 @@ def load_marketplace_config(root: Path) -> dict:
     raise MarketplaceError(f"{path}: unsupported schema-version")
   if config["release-state"] not in {"development", "published"}:
     raise MarketplaceError(f"{path}: release-state must be development or published")
-  if not re.fullmatch(r"[0-9a-f]{40}", str(config["revision"])):
-    raise MarketplaceError(f"{path}: revision must be a full lowercase commit SHA")
-  version = str(config["version"])
-  if not re.fullmatch(r"catalog-\d{4}\.\d{2}\.\d{2}(?:\.\d+)?", version):
-    raise MarketplaceError(f"{path}: version must be a catalog-YYYY.MM.DD release tag")
+  control = config.get("publication", {"enabled": False})
+  if (
+    not isinstance(control, dict)
+    or set(control) != {"enabled"}
+    or not isinstance(control["enabled"], bool)
+  ):
+    raise MarketplaceError(f"{path}: publication must contain Boolean enabled only")
+  baseline = config.get("history-start")
+  if baseline is not None and not re.fullmatch(r"[0-9a-f]{40}", str(baseline)):
+    raise MarketplaceError(f"{path}: history-start must be a full SHA")
   if config["repository"] != "https://github.com/bcgov/agent-marketplace":
     raise MarketplaceError(f"{path}: repository must use the canonical post-clone name")
   sources = config.get("approved-discovery-sources", [])
@@ -1496,11 +1510,73 @@ def analyze_transitions(root: Path, base: str) -> list[dict]:
   return facts
 
 
-def build_catalog(root: Path) -> tuple[dict, str]:
+def engine_identity(root: Path) -> str:
+  """Hash the actual trusted validator, adapter, schemas and policy inputs."""
+  scripts = Path(__file__).parent
+  inputs = {}
+  for name in ("marketplace.py", "validate_skill.py", "install_choices.py"):
+    path = scripts / name
+    if path.exists():
+      inputs[f"scripts/{name}"] = hashlib.sha256(path.read_bytes()).hexdigest()
+  for path in sorted((root / "schemas").glob("*.json")):
+    inputs[f"schemas/{path.name}"] = json.loads(path.read_text(encoding="utf-8"))
+  inputs["security-policy"] = load_security_policy(root)
+  inputs["python"] = platform.python_version()
+  inputs["dependencies"] = {}
+  # Runtime schema dependencies also affect interpretation; dev-only tooling does not.
+  for name in (
+    "jsonschema",
+    "PyYAML",
+    "attrs",
+    "jsonschema-specifications",
+    "referencing",
+    "rpds-py",
+    "typing_extensions",
+  ):
+    try:
+      inputs["dependencies"][name] = distribution_version(name)
+    except PackageNotFoundError:
+      continue  # Some runtimes do not need typing_extensions.
+  return "sha256:" + hashlib.sha256(canonical(inputs)).hexdigest()
+
+
+def authorization_inputs(root: Path) -> dict:
+  """Identify actual intake code separately from package scan/install evidence.
+
+  The trusted merge gate must replace the legacy workflow entry and add its
+  decision module here when it becomes the authorization implementation.
+  These are input identities, not a claim that an Extension was auto-merged.
+  """
+  sources = {"scripts/marketplace.py": Path(__file__)}
+  workflow = root / ".github/workflows/community-intake.yml"
+  if workflow.exists():
+    sources[".github/workflows/community-intake.yml"] = workflow
+  return {
+    name: "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    for name, path in sources.items()
+  }
+
+
+def build_catalog(
+  root: Path, *, revision: str | None = None, version: str = "source"
+) -> tuple[dict, str]:
   """Build machine-readable and escaped HTML catalog projections."""
   schema = load_schema(root)
   config = load_marketplace_config(root)
   policy = load_security_policy(root)
+  if revision is None:
+    try:
+      revision = git(root, "rev-parse", "HEAD").strip()
+    except PublicationError:
+      revision = "0" * 40  # Unpublished preview with no source history.
+  if not re.fullmatch(r"[0-9a-f]{40}", revision):
+    raise MarketplaceError("Catalogue source revision must be a full lowercase SHA")
+  dates = {}
+  if config.get("history-start"):
+    try:
+      dates = source_dates(root, config["history-start"], revision)
+    except PublicationError as exc:
+      raise MarketplaceError(str(exc)) from exc
   specialty_ids = {item["id"] for item in load_specialties(root)}
   records = []
   errors = []
@@ -1528,8 +1604,9 @@ def build_catalog(root: Path) -> tuple[dict, str]:
       "specialty": specialty,
       "source": {
         "repository": config["repository"],
-        "revision": config["revision"],
+        "revision": revision,
         "path": relative_path,
+        **dates.get(manifest["id"], {"added": None, "updated": None}),
       },
       "content-digest": "",
       "files": [],
@@ -1616,15 +1693,30 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     "schema-version": "bcgov-marketplace/v1",
     "release-state": config["release-state"],
     "repository": config["repository"],
-    "revision": config["revision"],
-    "version": config["version"],
+    "revision": revision,
+    "version": version,
+    "engine": engine_identity(root),
+    "authorization-inputs": authorization_inputs(root),
+    "submission-policy": {
+      "community-intake": {
+        key: value
+        for key, value in (config.get("community-intake") or {}).items()
+        if key != "auto-publish"
+      }
+    },
+    "specialties": load_specialties(root),
     "policy-version": policy["policy-version"],
     "approved-discovery-sources": config.get("approved-discovery-sources", []),
     "count": len(records),
     "extensions": records,
     "legacy-ids": legacy_ids,
   }
-  cards = [_catalog_row(record) for record in records]
+  return catalog, render_catalog_cards(catalog)
+
+
+def render_catalog_cards(catalog: dict) -> str:
+  """Render the selected Catalogue records, including their complete type vocabulary."""
+  cards = [_catalog_row(record) for record in catalog["extensions"]]
   # The page builds its facets from the rendered rows, so the canonical type
   # vocabulary travels with them. Types absent from the catalog still appear,
   # disabled, which shows the reader what this marketplace intends to carry.
@@ -1640,7 +1732,7 @@ def build_catalog(root: Path) -> tuple[dict, str]:
   header = (
     f'<script type="application/json" id="catalog-vocabulary">{vocabulary}</script>'
   )
-  return catalog, "\n\n".join([header, *cards]) + "\n"
+  return "\n\n".join([header, *cards]) + "\n"
 
 
 TRUST_LABELS = {
@@ -1772,25 +1864,28 @@ def _join_phrases(items: list[str]) -> str:
 
 
 def _serialized_catalog(catalog: dict) -> str:
-  """Serialize the catalog in its canonical checked-in representation."""
+  """Serialize the catalog in its canonical immutable representation."""
   return json.dumps(catalog, indent=2, ensure_ascii=True, sort_keys=True) + "\n"
 
 
-def generate(root: Path, check: bool = False) -> list[str]:
+def generate(root: Path, check: bool = False, output: Path | None = None) -> list[str]:
   """Write generated projections or report checked-in drift."""
   catalog, cards = build_catalog(root)
   serialized_catalog = _serialized_catalog(catalog)
+  output = output or root
   outputs = {
     root / ".github" / "CODEOWNERS": render_codeowners(load_specialties(root)),
-    root / "catalog" / "catalog.json": serialized_catalog,
-    root / "docs" / "assets" / "catalog.json": serialized_catalog,
-    root / "docs" / "_generated" / "catalog-cards.html": cards,
+    output / "catalog" / "catalog.json": serialized_catalog,
+    output / "docs" / "assets" / "catalog.json": serialized_catalog,
+    output / "docs" / "_generated" / "catalog-cards.html": cards,
   }
   drift = []
   for path, expected in outputs.items():
     current = path.read_text(encoding="utf-8") if path.exists() else None
     if current != expected:
-      drift.append(path.relative_to(root).as_posix())
+      drift.append(
+        path.relative_to(root if path.is_relative_to(root) else output).as_posix()
+      )
       if not check:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(expected, encoding="utf-8")
@@ -1798,12 +1893,12 @@ def generate(root: Path, check: bool = False) -> list[str]:
 
 
 def validate(root: Path) -> None:
-  """Validate all packages and ensure generated projections are current."""
-  drift = generate(root, check=True)
-  if drift:
-    raise MarketplaceError(
-      "generated output drift: " + ", ".join(drift) + "; run marketplace.py generate"
-    )
+  """Validate source packages and the committed CODEOWNERS projection."""
+  build_catalog(root)
+  path = root / ".github" / "CODEOWNERS"
+  expected = render_codeowners(load_specialties(root))
+  if not path.exists() or path.read_text(encoding="utf-8") != expected:
+    raise MarketplaceError("CODEOWNERS drift; run marketplace.py generate")
 
 
 def check_policy(root: Path) -> bool:
@@ -1958,6 +2053,9 @@ def _parser() -> argparse.ArgumentParser:
   subparsers.add_parser("check", help="report policy findings for the PR check")
   generate_parser = subparsers.add_parser("generate", help="write generated output")
   generate_parser.add_argument("--check", action="store_true")
+  generate_parser.add_argument(
+    "--output", type=Path, help="isolated generated-output root"
+  )
   scan_parser = subparsers.add_parser("scan", help="scan one package directory")
   scan_parser.add_argument("package", type=Path)
   analyze_parser = subparsers.add_parser(
@@ -1999,7 +2097,7 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "check":
       return 0 if check_policy(root) else 1
     elif args.command == "generate":
-      drift = generate(root, check=args.check)
+      drift = generate(root, check=args.check, output=args.output)
       if args.check and drift:
         raise MarketplaceError("generated output drift: " + ", ".join(drift))
       for path in drift:

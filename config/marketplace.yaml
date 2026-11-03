@@ -1,12 +1,11 @@
 schema-version: bcgov-marketplace/v1alpha1
 release-state: development
 repository: https://github.com/bcgov/agent-marketplace
-revision: 2046da7b0de0f673bf39208b35385c1516be4c75
-# Current published release tag (CalVer). The release workflow cuts an immutable
-# catalog-YYYY.MM.DD tag on every merge that changes catalog content and
-# rewrites this field. People install by this tag; the exact revision above and
-# each package content-digest are what the installer actually verifies.
-version: catalog-2026.10.01
+# Admin-owned activation; #43 proves live controls before enabling this.
+publication:
+  enabled: false
+# Source dates are unknown at this reachable first-parent legacy baseline.
+history-start: 246f032d1b99d594834e16e1654a37eb2c09ef56
 # Additional anti-abuse limits for community auto-publishing. Organization
 # membership is a required contributor gate for every active asset type.
 community-intake:

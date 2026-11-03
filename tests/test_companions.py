@@ -227,25 +227,15 @@ def test_approved_sources_are_filtered_by_declared_type():
   ]
 
 
-def test_default_catalog_uses_local_fallback(monkeypatch, tmp_path, capsys):
-  """A network failure falls back to the generated checkout catalog."""
-  catalog = {
-    "schema-version": "bcgov-marketplace-catalog/v1alpha1",
-    "revision": "b" * 40,
-    "approved-discovery-sources": [],
-    "extensions": [],
-  }
-  local_catalog = tmp_path / "catalog.json"
-  local_catalog.write_text(json.dumps(catalog), encoding="utf-8")
-  monkeypatch.setattr(finder, "LOCAL_CATALOG", local_catalog)
+def test_current_catalog_failure_never_silently_replays_historical_data(monkeypatch):
+  """A failed live fetch cannot restore a withdrawn historical record as current."""
   monkeypatch.setattr(
     finder,
     "_download",
     lambda _url: (_ for _ in ()).throw(finder.FinderError("network unavailable")),
   )
-
-  assert finder.load_catalog(finder.DEFAULT_CATALOG) == catalog
-  assert "using fallback catalog" in capsys.readouterr().err
+  with pytest.raises(finder.FinderError, match="network unavailable"):
+    finder.load_catalog(finder.DEFAULT_CATALOG)
 
 
 def test_sources_command_reads_generated_catalog(tmp_path, capsys):
@@ -674,7 +664,9 @@ def test_install_docs_distinguish_published_sha_from_latest_source():
 
 def test_catalog_ids_match_hosted_manifests():
   """Generated catalog count and IDs exactly match hosted package manifests."""
-  catalog = json.loads((ROOT / "catalog" / "catalog.json").read_text())
+  import marketplace
+
+  catalog, _ = marketplace.build_catalog(ROOT)
   types = {directory: kind for kind, directory in creator.TYPE_DIRECTORIES.items()}
   package_ids = {
     f"bcgov-public/{types[asset_type]}/{path.parent.name}"

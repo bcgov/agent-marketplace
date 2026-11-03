@@ -15,7 +15,7 @@ validate-one:
 	@test -n "$(SKILL)" || (echo 'Usage: make validate-one SKILL=skills/<name>/SKILL.md' >&2; exit 2)
 	uv run python scripts/validate_skill.py $(SKILL)
 
-# Validate metadata, package policy, and checked-in generated projections.
+# Validate metadata, package policy, and committed CODEOWNERS.
 marketplace:
 	uv run python scripts/marketplace.py validate
 
@@ -57,7 +57,7 @@ lint:
 	uv run yamllint .github/workflows
 
 # One launch gate: formatting, lint, tests, portable and marketplace
-# validation, generated catalog drift, Getting Started contracts, and docs.
+# validation, CODEOWNERS drift, Getting Started contracts, and isolated docs.
 verify:
 	uv run ruff format --check .
 	uv run ruff check .
@@ -65,4 +65,4 @@ verify:
 	uv run pytest -q tests/
 	uv run python scripts/validate_skill.py --all
 	uv run python scripts/marketplace.py validate
-	bash docs/build.sh
+	bash docs/build.sh "$$(mktemp -d)/docs"

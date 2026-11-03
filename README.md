@@ -1,3 +1,5 @@
+[![Publish](https://github.com/bcgov/agent-marketplace/actions/workflows/publish.yml/badge.svg)](https://github.com/bcgov/agent-marketplace/actions/workflows/publish.yml)
+
 # BC Gov Agent Marketplace
 
 A public, GitHub-backed marketplace for BC Gov agent assets: skills, prompts, instructions, and agent definitions. Packages have closed metadata, immutable source identity, deterministic package digests, declared capabilities, policy results, and GitHub-native review evidence.
@@ -28,7 +30,7 @@ instructions/<bucket>/<name>/instructions.instructions.md  persistent guidance
 agents/<bucket>/<name>/agent.agent.md               focused agent definition
 <type>/<bucket>/<name>/bcgov-extension.yaml         author-controlled package metadata
 scripts/marketplace.py                              validation, scanning, digesting, generation
-catalog/catalog.json                                generated machine-readable catalog
+https://bcgov.github.io/agent-marketplace/assets/catalog.json   live Catalogue (built in CI)
 docs/_generated/                                   escaped generated website projection
 ```
 
@@ -54,7 +56,7 @@ make setup
 make verify
 ```
 
-`make verify` checks formatting, lint, unit tests, every portable skill, marketplace metadata and policy, generated-output drift, Getting Started command pins, and the static site. Validation treats contributed scripts as data and never executes them.
+`make verify` checks formatting, lint, unit tests, every portable skill, marketplace metadata and policy, isolated Catalogue/site builds, CODEOWNERS drift, Getting Started command pins, and the static site. Validation treats contributed scripts as data and never executes them.
 
 Regenerate catalog projections after a package or release change:
 
@@ -102,7 +104,7 @@ Pass `PORT` when 8000 is taken, for example `make serve PORT=8080`. The server
 reads whatever is already built, so after editing anything in `docs/_pages/`,
 `docs/_partials/`, or a package, re-run `make generate && make docs` and reload
 the page. Nothing in `docs/*.html` or `docs/_generated/` should be edited by
-hand; those are generated and `make verify` fails on drift.
+hand; CI builds those outputs in an isolated directory. CODEOWNERS retains its drift check.
 
 ## Trust and operations
 

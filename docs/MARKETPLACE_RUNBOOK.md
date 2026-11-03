@@ -24,12 +24,19 @@ status check, the workflow may report failure without preventing a merge.
 
 ## Publish
 
-1. Confirm `make verify` passes without executing contributed package scripts.
-2. Confirm the package manifest, file inventory, capabilities, policy output, upstream evidence, and generated catalog changes are present in the PR.
-3. Require CODEOWNER and package-domain approval on the exact head revision.
-4. Merge through the protected `main` branch.
-5. For a marketplace release, update `config/marketplace.yaml` to the immutable implementation commit, set `release-state: published`, regenerate projections, rerun `make verify`, and merge that release PR.
-6. Record tool versions, policy version, source commit, catalog/package digests, fixture results, pilot evidence, ruleset evidence, and named owners in the release PR.
+The implementation remains dormant: `publication.enabled` in
+`config/marketplace.yaml` defaults to false. Only #43's human-owned control
+procedure may activate it after the live actor, immutable release, Pages,
+credentials and protected-branch proofs pass. No merge-route flag or release
+label substitutes for that switch.
+
+Validate and merge authored source through protected main. `publish.yml`
+resolves latest main after queueing, builds in isolation, and compares meaningful
+Catalogue data against validated publication history. It publishes a new
+immutable `catalog.json` only when package, lifecycle, metadata, install support,
+policy/engine findings or Specialty ownership/flair changes. Docs-only changes
+reuse the previous asset byte-for-byte. The workflow never stamps configuration,
+commits generated files, or pushes main. See [publication.md](publication.md).
 
 ## Federated candidate review
 
@@ -47,10 +54,24 @@ The candidate issue identifies an approved discovery source, full commit SHA, pa
 
 Set lifecycle to `removed`, regenerate, and publish. Keep enough catalog and issue history to identify the old source and digest. Guidance must name the finder removal action or exact installed destination and retain the selected Catalogue source coordinates and byte-comparison evidence until incident response is complete.
 
-## Rollback
+## Site rollback and publication recovery
 
-Revert the catalog and hosted package to the last reviewed immutable revision through a signed pull request. Regenerate all projections atomically and run `make verify`. Do not force-push, move a release tag, edit generated cards by hand, or relabel changed bytes with old evidence.
+A site-rendering rollback must keep the newest accepted Catalogue bytes and
+support its schema. Use the manual `Publish Catalogue and site` workflow in
+`newest` mode on main. Recovery rechecks current main's publication switch and
+the newest accepted snapshot before deployment. An old failed-deploy retry
+cannot restore a superseded active entry after a withdrawal.
+
+Historical release assets remain downloadable for inspection and explicit
+pinned use; they are not current recovery inputs. Lifecycle/evidence changes
+require normal reviewed source changes and a new publication. Never move a tag,
+replace a published asset, or restore an old Catalogue as the current one.
 
 ## Recovery checks
 
-Verify catalog count and IDs match manifests, generated outputs have no drift, Pages exposes `assets/catalog.json`, both companion names appear in the pinned installer list, quarantined entries are absent from default finder results, and candidate scanning still blocks every adversarial fixture.
+Confirm source validation and CODEOWNERS drift checks pass, Pages serves the
+exact accepted release asset at `assets/catalog.json`, and non-active records
+have no install choices. Release `published_at` and successful Pages run/deploy
+records are actual event evidence. Site build time and source addition dates
+are not publication timestamps. Follow the failure table in
+[publication.md](publication.md); a failed history comparison is an error.
