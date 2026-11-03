@@ -519,3 +519,31 @@ def test_direct_chain_cli_never_installs_an_unconfirmed_replacement(
   )
   assert not untouched.exists()
   assert requests == [finder.DEFAULT_CATALOG] * 3
+
+
+@pytest.mark.parametrize("selection", ["latest", "historical", "preview"])
+def test_search_labels_selected_catalogue_separately_from_source_sha(
+  tmp_path, monkeypatch, capsys, selection
+):
+  """A full SHA, published snapshot and source preview retain distinct meanings."""
+  catalog, archive, _ = package_fixture(tmp_path)
+  if selection == "preview":
+    catalog.update({"version": "source", "release-state": "development"})
+  requests = []
+  serve(monkeypatch, catalog, archive, requests)
+  command = ["search", "bcgov-public/skill/demo"]
+  if selection != "latest":
+    path = tmp_path / "selected.json"
+    path.write_text(json.dumps(catalog))
+    command = ["--catalog", str(path), *command]
+  assert finder.main(command) == 0
+  result = json.loads(capsys.readouterr().out)[0]
+  expected_label = {
+    "latest": "latest published Catalogue source (full-SHA pin)",
+    "historical": "selected published snapshot source (full-SHA pin)",
+    "preview": "Catalogue source (preview)",
+  }[selection]
+  assert result["catalogue-selection"]["label"] == expected_label
+  assert result["catalogue-selection"]["snapshot"] == catalog["version"]
+  assert result["source"]["revision"] == "a" * 40
+  assert result["install-options"][0]["latest-source"]["label"] == "latest source"

@@ -288,6 +288,26 @@ def check_current_notices(catalog: dict, current_source: str) -> dict:
   return {**catalog, "extensions": records}
 
 
+def _catalogue_selection(catalog: dict, source: str) -> dict:
+  """Describe selected Catalogue evidence separately from package source bytes."""
+  if catalog.get("historical-inspection-only"):
+    label = "historical pre-v1 snapshot (inspection only)"
+  elif (
+    catalog.get("release-state") != "published" or catalog.get("version") == "source"
+  ):
+    label = "Catalogue source (preview)"
+  elif source == DEFAULT_CATALOG:
+    label = "latest published Catalogue source (full-SHA pin)"
+  else:
+    label = "selected published snapshot source (full-SHA pin)"
+  return {
+    "label": label,
+    "source": source,
+    "snapshot": catalog.get("version"),
+    "schema-version": catalog["schema-version"],
+  }
+
+
 def search(catalog: dict, query: str, extension_type: str | None = None) -> list[dict]:
   """Return active matches, or a requested non-active id with its warning."""
   if extension_type is not None and extension_type not in KNOWN_EXTENSION_TYPES:
@@ -582,16 +602,9 @@ def _reviewed_install(args, catalog: dict) -> dict:
         "action": "overwrite" if previous else "install",
         "migration-approved": getattr(args, "allow_migration", False),
         "current-status": record.get("current-status"),
-        "publication": (
-          "Catalogue source (preview)"
-          if catalog.get("release-state") != "published"
-          or catalog.get("version") == "source"
-          else (
-            "latest published Catalogue source (full-SHA pin)"
-            if getattr(args, "catalog", DEFAULT_CATALOG) == DEFAULT_CATALOG
-            else "selected published snapshot source (full-SHA pin)"
-          )
-        ),
+        "publication": _catalogue_selection(
+          catalog, getattr(args, "catalog", DEFAULT_CATALOG)
+        )["label"],
       },
       indent=2,
       sort_keys=True,
@@ -699,6 +712,13 @@ def main(argv: list[str] | None = None) -> int:
   args = _parser().parse_args(argv)
   try:
     catalog = load_catalog(args.catalog, historical=args.catalog != DEFAULT_CATALOG)
+    selection = _catalogue_selection(catalog, args.catalog)
+    catalog = {
+      **catalog,
+      "extensions": [
+        {**item, "catalogue-selection": selection} for item in catalog["extensions"]
+      ],
+    }
     if args.catalog != args.current_catalog:
       catalog = check_current_notices(catalog, args.current_catalog)
     if args.command == "search":
