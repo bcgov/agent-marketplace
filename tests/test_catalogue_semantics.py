@@ -93,8 +93,16 @@ def test_real_install_recipes_and_engine_inputs_distinguish_docs_from_policy(tmp
     config_path.write_text(yaml.safe_dump(changed), encoding="utf-8")
     assert meaningful(build()) != meaningful(governed)
   config["community-intake"]["auto-publish"] = True
+  config["dependency-intake"] = {"auto-merge": True}
   config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
-  assert meaningful(build()) == meaningful(governed)
+  enabled = build()
+  assert meaningful(enabled) == meaningful(governed)
+  assert "auto-merge" not in json.dumps(enabled["submission-policy"])
+  assert "scripts/merge_gate.py" in enabled["authorization-inputs"]
+  gate = source / "scripts/merge_gate.py"
+  with gate.open("a", encoding="utf-8") as stream:
+    stream.write("\n# Trusted authorization logic changed.\n")
+  assert meaningful(build()) != meaningful(enabled)
 
   # The builder is now executing this copied trusted adapter input, not a mocked hash.
   adapter = source / "scripts/install_choices.py"

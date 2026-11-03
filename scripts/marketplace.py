@@ -1061,6 +1061,7 @@ def load_marketplace_config(root: Path) -> dict:
     "release-state",
     "repository",
     "publication",
+    "dependency-intake",
     "history-start",
     "community-intake",
     "approved-discovery-sources",
@@ -1072,6 +1073,7 @@ def load_marketplace_config(root: Path) -> dict:
     "approved-discovery-sources",
     "community-intake",
     "publication",
+    "dependency-intake",
     "history-start",
   }
   missing = sorted(required - set(config))
@@ -1088,6 +1090,15 @@ def load_marketplace_config(root: Path) -> dict:
     or not isinstance(control["enabled"], bool)
   ):
     raise MarketplaceError(f"{path}: publication must contain Boolean enabled only")
+  dependency = config.get("dependency-intake", {"auto-merge": False})
+  if (
+    not isinstance(dependency, dict)
+    or set(dependency) != {"auto-merge"}
+    or not isinstance(dependency["auto-merge"], bool)
+  ):
+    raise MarketplaceError(
+      f"{path}: dependency-intake must contain Boolean auto-merge only"
+    )
   baseline = config.get("history-start")
   if baseline is not None and not re.fullmatch(r"[0-9a-f]{40}", str(baseline)):
     raise MarketplaceError(f"{path}: history-start must be a full SHA")
@@ -1265,14 +1276,18 @@ def _validate_community_intake(path: Path, intake: object) -> None:
     "max-new-packages-per-window",
     "window-days",
   ):
-    if key in intake and (not isinstance(intake[key], int) or intake[key] < 0):
+    if key in intake and (type(intake[key]) is not int or intake[key] < 0):
       raise MarketplaceError(
         f"{path}: community-intake {key} must be a non-negative integer"
       )
+  if intake.get("max-new-packages-per-window", 10) > 10:
+    raise MarketplaceError(f"{path}: Community new-Extension ceiling cannot exceed 10")
+  if intake.get("window-days", 7) < 7:
+    raise MarketplaceError(f"{path}: Community rolling window must be at least 7 days")
   ceiling = intake.get("auto-publish-risk-ceiling", "elevated")
   if not isinstance(intake.get("auto-publish", False), bool):
     raise MarketplaceError(f"{path}: community-intake auto-publish must be boolean")
-  if ceiling not in RISK_ORDER:
+  if ceiling not in {"low", "elevated"}:
     raise MarketplaceError(
       f"{path}: community-intake auto-publish-risk-ceiling must be a risk band"
     )
@@ -1407,15 +1422,6 @@ def analyze_transitions(root: Path, base: str) -> list[dict]:
       "specialty": parts[1],
     }
   proposed = {item["id"]: item for item in build_catalog(root)[0]["extensions"]}
-  errors = []
-  for _identity in previous.keys() - proposed.keys():
-    errors.append(
-      _diagnostic(
-        Path(MANIFEST_NAME),
-        "lifecycle",
-        "Keep a retained non-active Manifest for every retired trusted-base identity.",
-      )
-    )
   changed = set(
     _git_bytes(
       root,
@@ -1438,6 +1444,20 @@ def analyze_transitions(root: Path, base: str) -> list[dict]:
     .split("\0")
   )
   changed.discard("")
+  return transition_facts(previous, proposed, changed)
+
+
+def transition_facts(previous: dict, proposed: dict, changed: set[str]) -> list[dict]:
+  """Compare canonical records and complete changed paths, independent of Git."""
+  errors = []
+  for _identity in previous.keys() - proposed.keys():
+    errors.append(
+      _diagnostic(
+        Path(MANIFEST_NAME),
+        "lifecycle",
+        "Keep a retained non-active Manifest for every retired trusted-base identity.",
+      )
+    )
   paths = {item["source"]["path"] for item in proposed.values()} | {
     item["path"] for item in previous.values()
   }
@@ -1543,14 +1563,16 @@ def engine_identity(root: Path) -> str:
 def authorization_inputs(root: Path) -> dict:
   """Identify actual intake code separately from package scan/install evidence.
 
-  The trusted merge gate must replace the legacy workflow entry and add its
-  decision module here when it becomes the authorization implementation.
+  Include the actual main-owned decision, API/data/dependency adapters and workflow.
   These are input identities, not a claim that an Extension was auto-merged.
   """
   sources = {"scripts/marketplace.py": Path(__file__)}
-  workflow = root / ".github/workflows/community-intake.yml"
-  if workflow.exists():
-    sources[".github/workflows/community-intake.yml"] = workflow
+  for name in ("merge_gate.py", "gate_github.py", "gate_data.py", "gate_dependency.py"):
+    sources[f"scripts/{name}"] = Path(__file__).parent / name
+  sources[".github/workflows/merge-gate.yml"] = (
+    root / ".github/workflows/merge-gate.yml"
+  )
+  sources = {name: path for name, path in sources.items() if path.exists()}
   return {
     name: "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
     for name, path in sources.items()
@@ -1698,11 +1720,12 @@ def build_catalog(
     "engine": engine_identity(root),
     "authorization-inputs": authorization_inputs(root),
     "submission-policy": {
+      "dependency-intake": {},
       "community-intake": {
         key: value
         for key, value in (config.get("community-intake") or {}).items()
         if key != "auto-publish"
-      }
+      },
     },
     "specialties": load_specialties(root),
     "policy-version": policy["policy-version"],

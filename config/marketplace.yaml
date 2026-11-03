@@ -5,6 +5,9 @@ repository: https://github.com/bcgov/agent-marketplace
 publication:
   enabled: false
 # Source dates are unknown at this reachable first-parent legacy baseline.
+# Independent admin kill switch; shares publication readiness only.
+dependency-intake:
+  auto-merge: false
 history-start: 246f032d1b99d594834e16e1654a37eb2c09ef56
 # Additional anti-abuse limits for community auto-publishing. Organization
 # membership is a required contributor gate for every active asset type.
@@ -13,7 +16,7 @@ community-intake:
   max-new-packages-per-window: 10
   window-days: 7
   # Submissions at or below this capability-risk band can auto-publish once the
-  # scan passes and the author clears the tenure and velocity checks. Anything
+  # scan passes and the author clears membership and new-Extension budget checks. Anything
   # riskier (for example wildcard capabilities) always waits for a maintainer.
   auto-publish-risk-ceiling: elevated
   auto-publish: false

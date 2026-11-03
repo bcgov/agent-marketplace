@@ -428,19 +428,3 @@ def test_asset_format_guide_documents_supported_types_and_claim_limits():
   assert "not-ready-on" in spec
   assert "does not mean the asset was runtime-tested" in spec
   assert "openai.yaml" in spec
-
-
-def test_contributor_eligibility_workflow_gates_all_active_asset_types():
-  """Every active asset PR gets the fail-closed bcgov membership check."""
-  workflow = (ROOT / ".github" / "workflows" / "community-intake.yml").read_text(
-    encoding="utf-8"
-  )
-  for asset_type in ("skills", "prompts", "instructions", "agents"):
-    assert asset_type in workflow
-  assert "^(skills|prompts|instructions|agents)/" in workflow
-  assert "paths:" not in workflow
-  assert "Detect active asset changes" in workflow
-  assert "if: steps.changes.outputs.has_assets == 'true'" in workflow
-  assert 'gh api --include "orgs/${ORG}/members/${AUTHOR}"' in workflow
-  assert "GitHub returned 404 for the membership check" in workflow
-  assert "Members: read permission" in workflow
