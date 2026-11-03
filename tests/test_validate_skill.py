@@ -8,8 +8,14 @@ filesystem/git discovery helpers, and the CLI entry point.
 """
 
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
+from pathlib import Path
+
+import pytest
+import yaml
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
@@ -44,6 +50,17 @@ One sentence summary.
 ## References
 See [references/REFERENCE.md](references/REFERENCE.md)
 """
+
+ROOT = Path(__file__).parents[1]
+
+
+def _write_registry(root):
+  """Copy the authoritative Specialty contract into an isolated repository."""
+  root = Path(root)
+  (root / "config").mkdir(exist_ok=True)
+  (root / "schemas").mkdir(exist_ok=True)
+  for source in ("config/specialties.yaml", "schemas/specialties.schema.json"):
+    shutil.copyfile(ROOT / source, root / source)
 
 
 # --- Test helpers -----------------------------------------------------------
@@ -341,6 +358,7 @@ def test_validate_file_valid_skill():
 def test_discover_all_excludes_ignored_github_skills():
   """Only tracked canonical skills are discovered."""
   with tempfile.TemporaryDirectory() as root:
+    _write_registry(root)
     os.makedirs(os.path.join(root, "skills", "community", "demo"))
     open(os.path.join(root, "skills", "community", "demo", "SKILL.md"), "w").close()
     cwd = os.getcwd()
@@ -356,6 +374,7 @@ def test_discover_all_excludes_ignored_github_skills():
 def test_discover_all_finds_canonical_layouts():
   """Canonical community and security package layouts are discovered."""
   with tempfile.TemporaryDirectory() as root:
+    _write_registry(root)
     os.makedirs(os.path.join(root, "skills", "community", "azure-networking"))
     open(
       os.path.join(root, "skills", "community", "azure-networking", "SKILL.md"), "w"
@@ -379,6 +398,7 @@ def test_discover_all_finds_canonical_layouts():
 def test_discover_all_ignores_legacy_flat_layout():
   """The old flat skills/<name>/ layout is not treated as a canonical package."""
   with tempfile.TemporaryDirectory() as root:
+    _write_registry(root)
     os.makedirs(os.path.join(root, "skills", "demo"))
     open(os.path.join(root, "skills", "demo", "SKILL.md"), "w").close()
     cwd = os.getcwd()
@@ -401,6 +421,7 @@ def test_changed_modules_maps_canonical_skill_files_to_manifests():
     stdout = "skills/community/demo/SKILL.md\nREADME.md\nscripts/validate_skill.py\n"
 
   with tempfile.TemporaryDirectory() as root:
+    _write_registry(root)
     os.makedirs(os.path.join(root, "skills", "community", "demo"))
     open(os.path.join(root, "skills", "community", "demo", "SKILL.md"), "w").close()
     orig_run = v.subprocess.run
@@ -452,6 +473,102 @@ def test_main_invalid_path_returns_one():
     with open(path, "w", encoding="utf-8") as f:
       f.write("no frontmatter at all")
     assert v.main([path]) == 1
+
+
+@pytest.mark.parametrize(
+  "mode", ["all", "base-skill", "base-resource", "base-registry"]
+)
+@pytest.mark.parametrize("specialty_id", ["accessibility", "scripts"])
+@pytest.mark.parametrize("valid", [True, False], ids=["valid", "invalid"])
+def test_native_cli_validates_registry_only_specialty(
+  tmp_path, mode, specialty_id, valid
+):
+  """Native validation covers package edits and registration of existing bytes."""
+  _write_registry(tmp_path)
+  registry_path = tmp_path / "config/specialties.yaml"
+  registry = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
+  specialty = {**registry["specialties"][0], "id": specialty_id}
+  registry["specialties"].append(specialty)
+  if mode != "base-registry":
+    registry_path.write_text(yaml.safe_dump(registry), encoding="utf-8")
+  path = f"skills/{specialty_id}/demo/SKILL.md"
+  package = tmp_path / Path(path).parent
+  package.mkdir(parents=True)
+  content = VALID if valid else VALID.replace("## Workflow", "## Missing Workflow")
+  (package / "SKILL.md").write_text(content, encoding="utf-8")
+  (package / "bcgov-extension.yaml").write_text("id: bcgov-public/demo\n")
+  reference = package / "references/REFERENCE.md"
+  reference.parent.mkdir()
+  reference.write_text("Original reference.\n", encoding="utf-8")
+  ignored = (
+    "skills/legacy/SKILL.md",
+    "skills/unregistered/demo/SKILL.md",
+    ".github/skills/local/SKILL.md",
+  )
+  for ignored_path in ignored:
+    target = tmp_path / ignored_path
+    target.parent.mkdir(parents=True)
+    target.write_text("Invalid out-of-scope skill.\n", encoding="utf-8")
+  args = ["--all"]
+  if mode.startswith("base-"):
+    subprocess.run(
+      ["git", "-c", "init.templateDir=", "init", "--quiet"],
+      cwd=tmp_path,
+      check=True,
+    )
+    commit = [
+      "git",
+      "-c",
+      "user.name=Validation fixture",
+      "-c",
+      "user.email=validation@example.invalid",
+      "-c",
+      "commit.gpgsign=false",
+      "commit",
+      "--quiet",
+      "-m",
+    ]
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run([*commit, "Synthetic base"], cwd=tmp_path, check=True)
+    base = subprocess.run(
+      ["git", "rev-parse", "HEAD"],
+      cwd=tmp_path,
+      capture_output=True,
+      text=True,
+      check=True,
+    ).stdout.strip()
+    if mode == "base-registry":
+      registry_path.write_text(yaml.safe_dump(registry), encoding="utf-8")
+    elif mode == "base-skill":
+      (package / "SKILL.md").write_text(
+        content + "\nUpdated guidance.\n", encoding="utf-8"
+      )
+    else:
+      reference.write_text("Updated reference.\n", encoding="utf-8")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run([*commit, "Synthetic head"], cwd=tmp_path, check=True)
+    if mode == "base-registry":
+      changed = subprocess.run(
+        ["git", "diff", "--name-only", f"{base}...HEAD"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+      )
+      assert changed.stdout.splitlines() == ["config/specialties.yaml"]
+    args = ["--base", base]
+  result = subprocess.run(
+    [sys.executable, str(ROOT / "scripts/validate_skill.py"), *args],
+    cwd=tmp_path,
+    capture_output=True,
+    text=True,
+    encoding="utf-8",
+  )
+  assert result.returncode == (0 if valid else 1), result.stdout + result.stderr
+  assert path in result.stdout
+  assert not any(ignored_path in result.stdout for ignored_path in ignored)
+  if not valid:
+    assert "Workflow" in result.stdout
 
 
 # --- Duplicate-detection helpers --------------------------------------------
@@ -618,6 +735,7 @@ def test_check_duplicates_skips_empty_fingerprints():
 def test_main_flags_cross_skill_duplicates():
   """`main` exits 1 when a target duplicates another skill discovered in the repo."""
   with tempfile.TemporaryDirectory() as root:
+    _write_registry(root)
     skills = os.path.join(root, "skills")
     os.makedirs(skills)
     _write_skill_for_dup(skills, "alpha", desc="Shared description.")

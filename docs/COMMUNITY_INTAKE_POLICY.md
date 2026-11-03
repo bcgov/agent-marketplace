@@ -66,6 +66,13 @@ the new-Extension velocity, the package is held, never auto-published.
 If membership cannot be confirmed, the contributor-eligibility check fails and
 blocks the PR.
 
+While auto-publish is disabled, a valid hold is a successful validation and
+routing result: the workflow summarizes the need for human review and does not
+merge. Blocking findings, rejection, malformed or unknown results, command
+failures, and unconfirmed membership still fail validation. This is a
+transitional mapping in the legacy intake workflow; [#42](https://github.com/bcgov/agent-marketplace/issues/42)
+replaces that path with the new-package gate.
+
 ## The knobs (config/marketplace.yaml)
 
 ```yaml

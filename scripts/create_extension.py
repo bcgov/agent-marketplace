@@ -218,7 +218,7 @@ def _validate(
     [
       ["uv", "run", "python", "scripts/marketplace.py", "analyze", str(package)],
       ["uv", "run", "python", "scripts/marketplace.py", "generate"],
-      ["uv", "run", "pytest", "-q"],
+      ["uv", "run", "pytest", "-q", "tests/"],
       ["uv", "run", "python", "scripts/marketplace.py", "validate"],
     ]
   )

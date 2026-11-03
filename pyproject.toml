@@ -18,6 +18,9 @@ dev = [
 [tool.uv]
 package = false
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.ruff]
 # Two-space indentation across all Python in this repo.
 indent-width = 2

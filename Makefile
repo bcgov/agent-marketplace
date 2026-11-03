@@ -25,7 +25,7 @@ generate:
 
 # Run the validator unit tests.
 test:
-	uv run pytest -q
+	uv run pytest -q tests/
 
 # Build the static site and client-side search index.
 docs:
@@ -62,7 +62,7 @@ verify:
 	uv run ruff format --check .
 	uv run ruff check .
 	uv run yamllint .github/workflows
-	uv run pytest -q
+	uv run pytest -q tests/
 	uv run python scripts/validate_skill.py --all
 	uv run python scripts/marketplace.py validate
 	bash docs/build.sh

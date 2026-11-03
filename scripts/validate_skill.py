@@ -25,8 +25,10 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 import yaml
+from marketplace import MarketplaceError, load_specialties
 
 # --- Spec definition --------------------------------------------------------
 
@@ -414,11 +416,16 @@ def validate_file(path: str) -> list:
 # --- Module discovery -------------------------------------------------------
 
 
-def _manifest_for(path: str):
+def _skill_buckets() -> set[str]:
+  """Read canonical native skill buckets from the authoritative registry."""
+  return {"community", *(item["id"] for item in load_specialties(Path.cwd()))}
+
+
+def _manifest_for(path: str, buckets: set[str]):
   """Return the SKILL.md manifest path a changed file belongs to, if any.
 
-  Canonical package locations are ``skills/community/<name>/`` and
-  ``skills/security/<name>/``. Legacy flat skills are intentionally ignored.
+  Canonical package locations use Community or a registered Specialty. Legacy
+  flat skills and unregistered buckets are intentionally ignored.
   """
   parts = path.strip().split("/")
   for root in SKILL_ROOTS:
@@ -429,7 +436,7 @@ def _manifest_for(path: str):
 
     if len(parts) >= depth + 2:
       bucket = parts[depth]
-      if bucket not in {"community", "security"}:
+      if bucket not in buckets:
         continue
       candidate = f"{root}/{bucket}/{parts[depth + 1]}/SKILL.md"
       if os.path.isfile(candidate):
@@ -440,21 +447,16 @@ def _manifest_for(path: str):
 def discover_all() -> list:
   """Find every canonical skill manifest in the repository.
 
-  Supported package roots are skills/community and skills/security. Flat legacy
-  paths and ignored .github/skills content are intentionally excluded.
+  Community and every registered Specialty receive the same native validation.
+  Flat legacy paths and ignored .github/skills content are excluded.
   """
   found = []
   for root in SKILL_ROOTS:
-    patterns = [
-      f"{root}/community/*/SKILL.md",
-      f"{root}/security/*/SKILL.md",
-    ]
+    patterns = [f"{root}/{bucket}/*/SKILL.md" for bucket in _skill_buckets()]
     for pattern in patterns:
       matches = glob.glob(pattern)
       for match in matches:
         rel = match.replace(os.sep, "/")
-        if "/references/" in rel or "/scripts/" in rel or "/assets/" in rel:
-          continue
         found.append(rel)
   return sorted(set(found))
 
@@ -468,9 +470,10 @@ def changed_modules(base: str) -> list:
 
   Returns:
     A sorted list of ``<root>/<name>/SKILL.md`` paths for every skill touched
-    by the diff whose manifest still exists on disk. Returns an empty list when
-    ``git`` is not installed or otherwise unavailable, so the validator can run
-    on hosts without git rather than crashing with a stack trace.
+    by the diff whose manifest still exists on disk. Registry changes select all
+    current skills because registration can bring unchanged bytes into scope.
+    Returns an empty list when ``git`` is not installed or otherwise unavailable,
+    so the validator can run on hosts without git rather than crashing.
   """
   try:
     res = subprocess.run(
@@ -496,9 +499,13 @@ def changed_modules(base: str) -> list:
   except FileNotFoundError:
     print("git not found on PATH; cannot compute changed skills.", file=sys.stderr)
     return []
+  changed_paths = {line.strip() for line in res.stdout.splitlines()}
+  if "config/specialties.yaml" in changed_paths:
+    return discover_all()
   modules = set()
-  for line in res.stdout.splitlines():
-    manifest = _manifest_for(line.strip())
+  buckets = _skill_buckets()
+  for path in changed_paths:
+    manifest = _manifest_for(path, buckets)
     if manifest:
       modules.add(manifest)
   return sorted(m for m in modules if os.path.isfile(m))
@@ -701,12 +708,21 @@ def main(argv=None) -> int:
   )
   args = p.parse_args(argv)
 
-  if args.all:
-    targets = discover_all()
-  elif args.base:
-    targets = changed_modules(args.base)
-  else:
-    targets = args.paths
+  try:
+    if args.all:
+      targets = discover_all()
+    elif args.base:
+      targets = changed_modules(args.base)
+    else:
+      targets = args.paths
+    corpus = (
+      sorted(set(targets) | set(discover_all()))
+      if targets and not args.no_duplicates
+      else []
+    )
+  except (MarketplaceError, OSError) as exc:
+    print(f"Cannot discover native skills: {exc}", file=sys.stderr)
+    return 1
 
   if not targets:
     print("No skills to validate.")
@@ -718,7 +734,6 @@ def main(argv=None) -> int:
     # Always compare targets against the full repo so that validating a
     # subset (e.g. one new skill) still catches duplicates of skills that
     # were not in the explicit target list.
-    corpus = sorted(set(targets) | set(discover_all()))
     for t, errs in check_duplicates(targets, corpus).items():
       per_file.setdefault(t, []).extend(errs)
 
