@@ -289,9 +289,9 @@ def test_sources_command_reads_generated_catalog(tmp_path, capsys):
   ("extension_type", "directory", "filename"),
   [
     ("skill", "skills", "SKILL.md"),
-    ("prompt", "prompts", "prompt.prompt.md"),
-    ("instructions", "instructions", "instructions.instructions.md"),
-    ("agent", "agents", "agent.agent.md"),
+    ("prompt", "prompts", "demo.prompt.md"),
+    ("instructions", "instructions", "demo.instructions.md"),
+    ("agent", "agents", "demo.agent.md"),
   ],
 )
 def test_creator_scaffolds_every_declarative_asset_type(
@@ -318,6 +318,28 @@ def test_creator_scaffolds_every_declarative_asset_type(
     (package / "bcgov-extension.yaml").read_text(encoding="utf-8")
   )
   assert manifest["compatibility"]["not-ready-on"] == ["claude-code"]
+
+
+def test_finder_reports_requested_removed_id_without_recommending_it():
+  """Exact old ids remain discoverable, but normal searches exclude tombstones."""
+  catalog = {
+    "extensions": [
+      {
+        "id": "bcgov-public/old-name",
+        "type": "skill",
+        "lifecycle": "removed",
+        "notice": "Use the replacement",
+        "moved-to": "bcgov-public/new-name",
+        "display-name": "Old name",
+        "summary": "Old skill",
+        "prerequisites": [],
+      }
+    ]
+  }
+  assert finder.search(catalog, "old-name") == []
+  assert finder.search(catalog, "bcgov-public/old-name")[0]["moved-to"] == (
+    "bcgov-public/new-name"
+  )
 
 
 @pytest.mark.parametrize("extension_type", ["hook", "mcp"])
@@ -715,3 +737,8 @@ def test_contributor_eligibility_workflow_gates_all_active_asset_types():
   assert 'gh api --include "orgs/${ORG}/members/${AUTHOR}"' in workflow
   assert "GitHub returned 404 for the membership check" in workflow
   assert "Members: read permission" in workflow
+  assert "GH_TOKEN: ${{ github.token }}" in workflow
+  assert "GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}" in workflow
+  assert workflow.index(
+    "GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}"
+  ) < workflow.index("Hold community auto-publish pending the new-package gate")

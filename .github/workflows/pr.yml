@@ -74,6 +74,16 @@ jobs:
       - name: Run unit tests
         run: uv run pytest -q tests/
 
+      - name: Flag Extension path renames for review
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git diff --name-status -M "$BASE_SHA" HEAD -- skills prompts instructions agents |
+            awk -F '\t' '$1 ~ /^R/ {
+              print "Extension path rename: " $2 " -> " $3
+              print "- Extension path rename: `" $2 "` -> `" $3 "`; found=1
+            }' | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Run Security-owned policy fixtures
         run: uv run pytest -q tests/security-policy/
 

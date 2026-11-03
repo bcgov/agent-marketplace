@@ -9,9 +9,9 @@ config/marketplace.yaml               centrally controlled release and source po
 config/security-policy.yaml           Security-owned scan dispositions and secret patterns
 schemas/                              marketplace metadata schemas
 skills/<bucket>/<name>/SKILL.md      Agent Skill content
-prompts/<bucket>/<name>/prompt.prompt.md  prompt content
-instructions/<bucket>/<name>/instructions.instructions.md  instruction content
-agents/<bucket>/<name>/agent.agent.md  agent definition
+prompts/<bucket>/<name>/<name>.prompt.md  prompt content
+instructions/<bucket>/<name>/<name>.instructions.md  instruction content
+agents/<bucket>/<name>/<name>.agent.md  agent definition
 <type>/<bucket>/<name>/bcgov-extension.yaml  author-controlled package metadata
 scripts/marketplace.py                validation, scanning, digesting, and generation
 catalog/catalog.json                 generated machine-readable catalog
@@ -23,7 +23,8 @@ spec/SKILL_SPEC.md                   authoritative skill specification
 
 The public catalog accepts skills, prompts, instructions, and agent
 definitions. Each package has one canonical content file and a common
-`bcgov-extension.yaml` manifest; see [ASSET_SPEC.md](../spec/ASSET_SPEC.md).
+`bcgov-extension.yaml` manifest; a removed package has only its Manifest.
+See [ASSET_SPEC.md](../spec/ASSET_SPEC.md).
 The installer currently automates skills only. The other asset types require
 explicit manual import using the target harness's native format.
 
@@ -38,9 +39,12 @@ marketplace's eligibility proxy, not employment verification.
 Each package lives under a review and lifecycle model:
 
 - `active` — available through default discovery;
-- `quarantined` — removed from default discovery while risk is assessed;
-- `removed` — intentionally retired from the public catalog;
-- `draft` or unpublished states — used before a reviewed record is published.
+- `quarantined` — content stays available for inspection, but installation is blocked;
+- `removed` — content is deleted and a Manifest-only tombstone remains;
+- `moved-to` — an old id points to a new active id after a rename or move.
+
+Non-active records require a `notice`, remain accessible by direct lookup and
+cannot be installed. Drafts are not published.
 
 Review is attached to the exact immutable source revision. Changed bytes invalidate prior review evidence.
 
