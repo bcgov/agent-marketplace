@@ -73,10 +73,14 @@
         "secret-names": []
       },
       "checks": {
+        "advisories": 0,
         "content-digest": "sha256:065a0fc314c870a3d2a4bba7829fba0f5c79bc6963f36080ccaf90e688bb1d99",
         "findings": [],
+        "method": "automated-policy-scan",
         "outcome": "passed",
-        "policy-version": 2
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
       },
       "compatibility": {
         "not-ready-on": []
@@ -100,7 +104,10 @@
           "size": 14187
         }
       ],
-      "id": "bcgov-public/azure-networking",
+      "id": "bcgov-public/skill/azure-networking",
+      "legacy-ids": [
+        "bcgov-public/azure-networking"
+      ],
       "license": "Apache-2.0",
       "lifecycle": "active",
       "maintainers": [
@@ -108,28 +115,14 @@
         "@DerekRoberts"
       ],
       "name": "azure-networking",
-      "policy": {
-        "findings": [],
-        "outcome": "passed",
-        "policy-version": 2
+      "policy-route": {
+        "type": "community"
       },
       "prerequisites": [
         "Access to the target BC Gov Azure Landing Zone project"
       ],
       "publisher": "Province of British Columbia",
-      "review": {
-        "advisories": 0,
-        "content-digest": "sha256:065a0fc314c870a3d2a4bba7829fba0f5c79bc6963f36080ccaf90e688bb1d99",
-        "method": "automated-policy-scan",
-        "policy-version": 2,
-        "reviewers": [],
-        "risk": "elevated",
-        "status": "auto-scanned"
-      },
       "risk": "elevated",
-      "route": {
-        "type": "community"
-      },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
         "path": "skills/community/azure-networking",
@@ -163,10 +156,14 @@
         "secret-names": []
       },
       "checks": {
+        "advisories": 0,
         "content-digest": "sha256:7130e81255053fa800124ffada165428986d78f8e4d90e08bd0601e7d535dc55",
         "findings": [],
+        "method": "automated-policy-scan",
         "outcome": "passed",
-        "policy-version": 2
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
       },
       "compatibility": {
         "not-ready-on": []
@@ -210,7 +207,10 @@
           "size": 5132
         }
       ],
-      "id": "bcgov-public/bcgov-create-extension",
+      "id": "bcgov-public/skill/bcgov-create-extension",
+      "legacy-ids": [
+        "bcgov-public/bcgov-create-extension"
+      ],
       "license": "Apache-2.0",
       "lifecycle": "active",
       "maintainers": [
@@ -218,28 +218,14 @@
         "@DerekRoberts"
       ],
       "name": "bcgov-create-extension",
-      "policy": {
-        "findings": [],
-        "outcome": "passed",
-        "policy-version": 2
+      "policy-route": {
+        "type": "community"
       },
       "prerequisites": [
         "GitHub Copilot with Agent Skills support"
       ],
       "publisher": "Province of British Columbia",
-      "review": {
-        "advisories": 0,
-        "content-digest": "sha256:7130e81255053fa800124ffada165428986d78f8e4d90e08bd0601e7d535dc55",
-        "method": "automated-policy-scan",
-        "policy-version": 2,
-        "reviewers": [],
-        "risk": "elevated",
-        "status": "auto-scanned"
-      },
       "risk": "elevated",
-      "route": {
-        "type": "community"
-      },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
         "path": "skills/community/bcgov-create-extension",
@@ -269,6 +255,7 @@
         "secret-names": []
       },
       "checks": {
+        "advisories": 1,
         "content-digest": "sha256:b6639667aff89fdc4b7fa7e86514d267a196e3786a5b611210a4c890aacfeed4",
         "findings": [
           {
@@ -286,8 +273,11 @@
             "severity": "advisory"
           }
         ],
+        "method": "automated-policy-scan",
         "outcome": "passed",
-        "policy-version": 2
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
       },
       "compatibility": {
         "not-ready-on": []
@@ -316,7 +306,10 @@
           "size": 5393
         }
       ],
-      "id": "bcgov-public/bcgov-find-extension",
+      "id": "bcgov-public/skill/bcgov-find-extension",
+      "legacy-ids": [
+        "bcgov-public/bcgov-find-extension"
+      ],
       "license": "Apache-2.0",
       "lifecycle": "active",
       "maintainers": [
@@ -324,43 +317,14 @@
         "@DerekRoberts"
       ],
       "name": "bcgov-find-extension",
-      "policy": {
-        "findings": [
-          {
-            "category": "package",
-            "code": "unsupported-trust-claim",
-            "disposition": "advisory",
-            "field": "\u2014",
-            "file": "references/THIRD_PARTY.md",
-            "line": 67,
-            "message": "instruction requires human review",
-            "path": "references/THIRD_PARTY.md",
-            "policy-version": 2,
-            "remediation": "instruction requires human review",
-            "rule-id": "unsupported-trust-claim",
-            "severity": "advisory"
-          }
-        ],
-        "outcome": "passed",
-        "policy-version": 2
+      "policy-route": {
+        "type": "community"
       },
       "prerequisites": [
         "GitHub Copilot with Agent Skills support"
       ],
       "publisher": "Province of British Columbia",
-      "review": {
-        "advisories": 1,
-        "content-digest": "sha256:b6639667aff89fdc4b7fa7e86514d267a196e3786a5b611210a4c890aacfeed4",
-        "method": "automated-policy-scan",
-        "policy-version": 2,
-        "reviewers": [],
-        "risk": "elevated",
-        "status": "auto-scanned"
-      },
       "risk": "elevated",
-      "route": {
-        "type": "community"
-      },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
         "path": "skills/community/bcgov-find-extension",
@@ -404,6 +368,7 @@
         ]
       },
       "checks": {
+        "advisories": 1,
         "content-digest": "sha256:6a3dbd173189659d7bffebae5fea46ddc1262b275b1c2a4fe3a01158e392fcd6",
         "findings": [
           {
@@ -421,8 +386,11 @@
             "severity": "advisory"
           }
         ],
+        "method": "automated-policy-scan",
         "outcome": "passed",
-        "policy-version": 2
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
       },
       "compatibility": {
         "not-ready-on": []
@@ -446,7 +414,10 @@
           "size": 23745
         }
       ],
-      "id": "bcgov-public/github-actions",
+      "id": "bcgov-public/skill/github-actions",
+      "legacy-ids": [
+        "bcgov-public/github-actions"
+      ],
       "license": "Apache-2.0",
       "lifecycle": "active",
       "maintainers": [
@@ -454,43 +425,14 @@
         "@DerekRoberts"
       ],
       "name": "github-actions",
-      "policy": {
-        "findings": [
-          {
-            "category": "package",
-            "code": "wildcard-capability",
-            "disposition": "advisory",
-            "field": "capabilities",
-            "file": "bcgov-extension.yaml",
-            "line": 1,
-            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "path": ".",
-            "policy-version": 2,
-            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "rule-id": "wildcard-capability",
-            "severity": "advisory"
-          }
-        ],
-        "outcome": "passed",
-        "policy-version": 2
+      "policy-route": {
+        "type": "community"
       },
       "prerequisites": [
         "A GitHub repository with Actions enabled"
       ],
       "publisher": "Province of British Columbia",
-      "review": {
-        "advisories": 1,
-        "content-digest": "sha256:6a3dbd173189659d7bffebae5fea46ddc1262b275b1c2a4fe3a01158e392fcd6",
-        "method": "automated-policy-scan",
-        "policy-version": 2,
-        "reviewers": [],
-        "risk": "high",
-        "status": "auto-scanned"
-      },
       "risk": "high",
-      "route": {
-        "type": "community"
-      },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
         "path": "skills/community/github-actions",
@@ -530,6 +472,7 @@
         "secret-names": []
       },
       "checks": {
+        "advisories": 1,
         "content-digest": "sha256:8c21d38f24540b2331c6b9ad87aad12f2935e548e257125621637d74e90e1913",
         "findings": [
           {
@@ -547,8 +490,11 @@
             "severity": "advisory"
           }
         ],
+        "method": "automated-policy-scan",
         "outcome": "passed",
-        "policy-version": 2
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
       },
       "compatibility": {
         "not-ready-on": []
@@ -572,7 +518,10 @@
           "size": 8323
         }
       ],
-      "id": "bcgov-public/github-repo-setup",
+      "id": "bcgov-public/skill/github-repo-setup",
+      "legacy-ids": [
+        "bcgov-public/github-repo-setup"
+      ],
       "license": "Apache-2.0",
       "lifecycle": "active",
       "maintainers": [
@@ -580,43 +529,14 @@
         "@DerekRoberts"
       ],
       "name": "github-repo-setup",
-      "policy": {
-        "findings": [
-          {
-            "category": "package",
-            "code": "wildcard-capability",
-            "disposition": "advisory",
-            "field": "capabilities",
-            "file": "bcgov-extension.yaml",
-            "line": 1,
-            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "path": ".",
-            "policy-version": 2,
-            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "rule-id": "wildcard-capability",
-            "severity": "advisory"
-          }
-        ],
-        "outcome": "passed",
-        "policy-version": 2
+      "policy-route": {
+        "type": "community"
       },
       "prerequisites": [
         "GitHub CLI authenticated for the repository being assessed"
       ],
       "publisher": "Province of British Columbia",
-      "review": {
-        "advisories": 1,
-        "content-digest": "sha256:8c21d38f24540b2331c6b9ad87aad12f2935e548e257125621637d74e90e1913",
-        "method": "automated-policy-scan",
-        "policy-version": 2,
-        "reviewers": [],
-        "risk": "high",
-        "status": "auto-scanned"
-      },
       "risk": "high",
-      "route": {
-        "type": "community"
-      },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
         "path": "skills/community/github-repo-setup",
@@ -663,6 +583,7 @@
         "secret-names": []
       },
       "checks": {
+        "advisories": 1,
         "content-digest": "sha256:16029be080594e56425200abeac3015d9e39ca970bf6e773d96d1398154a4484",
         "findings": [
           {
@@ -680,8 +601,11 @@
             "severity": "advisory"
           }
         ],
+        "method": "automated-policy-scan",
         "outcome": "passed",
-        "policy-version": 2
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
       },
       "compatibility": {
         "not-ready-on": []
@@ -795,7 +719,10 @@
           "size": 12213
         }
       ],
-      "id": "bcgov-public/n8n-runbook-parser",
+      "id": "bcgov-public/skill/n8n-runbook-parser",
+      "legacy-ids": [
+        "bcgov-public/n8n-runbook-parser"
+      ],
       "license": "Apache-2.0",
       "lifecycle": "active",
       "maintainers": [
@@ -803,44 +730,15 @@
         "@DerekRoberts"
       ],
       "name": "n8n-runbook-parser",
-      "policy": {
-        "findings": [
-          {
-            "category": "package",
-            "code": "wildcard-capability",
-            "disposition": "advisory",
-            "field": "capabilities",
-            "file": "bcgov-extension.yaml",
-            "line": 1,
-            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "path": ".",
-            "policy-version": 2,
-            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "rule-id": "wildcard-capability",
-            "severity": "advisory"
-          }
-        ],
-        "outcome": "passed",
-        "policy-version": 2
+      "policy-route": {
+        "type": "community"
       },
       "prerequisites": [
         "Python 3.12 or newer",
         "Read access to each configured source document"
       ],
       "publisher": "Province of British Columbia",
-      "review": {
-        "advisories": 1,
-        "content-digest": "sha256:16029be080594e56425200abeac3015d9e39ca970bf6e773d96d1398154a4484",
-        "method": "automated-policy-scan",
-        "policy-version": 2,
-        "reviewers": [],
-        "risk": "high",
-        "status": "auto-scanned"
-      },
       "risk": "high",
-      "route": {
-        "type": "community"
-      },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
         "path": "skills/community/n8n-runbook-parser",
@@ -890,6 +788,7 @@
         ]
       },
       "checks": {
+        "advisories": 1,
         "content-digest": "sha256:bae3f05e05510390e595d773fb696ca0040e6723138e8ac5879a8e650957622e",
         "findings": [
           {
@@ -907,8 +806,11 @@
             "severity": "advisory"
           }
         ],
+        "method": "automated-policy-scan",
         "outcome": "passed",
-        "policy-version": 2
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
       },
       "compatibility": {
         "not-ready-on": []
@@ -1002,7 +904,10 @@
           "size": 13729
         }
       ],
-      "id": "bcgov-public/n8n-workflow-builder",
+      "id": "bcgov-public/skill/n8n-workflow-builder",
+      "legacy-ids": [
+        "bcgov-public/n8n-workflow-builder"
+      ],
       "license": "Apache-2.0",
       "lifecycle": "active",
       "maintainers": [
@@ -1010,44 +915,15 @@
         "@DerekRoberts"
       ],
       "name": "n8n-workflow-builder",
-      "policy": {
-        "findings": [
-          {
-            "category": "package",
-            "code": "wildcard-capability",
-            "disposition": "advisory",
-            "field": "capabilities",
-            "file": "bcgov-extension.yaml",
-            "line": 1,
-            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "path": ".",
-            "policy-version": 2,
-            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "rule-id": "wildcard-capability",
-            "severity": "advisory"
-          }
-        ],
-        "outcome": "passed",
-        "policy-version": 2
+      "policy-route": {
+        "type": "community"
       },
       "prerequisites": [
         "Bash and jq",
         "n8n access is required only for pull and push operations"
       ],
       "publisher": "Province of British Columbia",
-      "review": {
-        "advisories": 1,
-        "content-digest": "sha256:bae3f05e05510390e595d773fb696ca0040e6723138e8ac5879a8e650957622e",
-        "method": "automated-policy-scan",
-        "policy-version": 2,
-        "reviewers": [],
-        "risk": "high",
-        "status": "auto-scanned"
-      },
       "risk": "high",
-      "route": {
-        "type": "community"
-      },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
         "path": "skills/community/n8n-workflow-builder",
@@ -1089,10 +965,14 @@
         "secret-names": []
       },
       "checks": {
+        "advisories": 0,
         "content-digest": "sha256:da1d7ed5518eb8f00a45a8fd59a18f88cb57fcaaeaa763847bdfa61064acd2ac",
         "findings": [],
+        "method": "automated-policy-scan",
         "outcome": "passed",
-        "policy-version": 2
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
       },
       "compatibility": {
         "not-ready-on": []
@@ -1116,7 +996,10 @@
           "size": 32927
         }
       ],
-      "id": "bcgov-public/openshift-deployment",
+      "id": "bcgov-public/skill/openshift-deployment",
+      "legacy-ids": [
+        "bcgov-public/openshift-deployment"
+      ],
       "license": "Apache-2.0",
       "lifecycle": "active",
       "maintainers": [
@@ -1124,28 +1007,14 @@
         "@DerekRoberts"
       ],
       "name": "openshift-deployment",
-      "policy": {
-        "findings": [],
-        "outcome": "passed",
-        "policy-version": 2
+      "policy-route": {
+        "type": "community"
       },
       "prerequisites": [
         "Access to a BC Gov Private Cloud project for live validation"
       ],
       "publisher": "Province of British Columbia",
-      "review": {
-        "advisories": 0,
-        "content-digest": "sha256:da1d7ed5518eb8f00a45a8fd59a18f88cb57fcaaeaa763847bdfa61064acd2ac",
-        "method": "automated-policy-scan",
-        "policy-version": 2,
-        "reviewers": [],
-        "risk": "elevated",
-        "status": "auto-scanned"
-      },
       "risk": "elevated",
-      "route": {
-        "type": "community"
-      },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
         "path": "skills/community/openshift-deployment",
@@ -1190,7 +1059,9 @@
         "content-digest": "sha256:74a63da025d6cdf174b3356f84c9c6dab324fb77a5fd1e76a052b93788950cae",
         "findings": [],
         "outcome": "passed",
-        "policy-version": 2
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "unreviewed"
       },
       "compatibility": {
         "not-ready-on": []
@@ -1209,7 +1080,10 @@
           "size": 2589
         }
       ],
-      "id": "bcgov-public/repo-hardening",
+      "id": "bcgov-public/skill/repo-hardening",
+      "legacy-ids": [
+        "bcgov-public/repo-hardening"
+      ],
       "license": "Apache-2.0",
       "lifecycle": "active",
       "maintainers": [
@@ -1217,27 +1091,16 @@
         "@DerekRoberts"
       ],
       "name": "repo-hardening",
-      "policy": {
-        "findings": [],
-        "outcome": "passed",
-        "policy-version": 2
+      "policy-route": {
+        "owner-team": "@bcgov/security",
+        "type": "specialty-review"
       },
       "prerequisites": [
         "GitHub repository with branch protection enabled",
         "Access to repo settings and CI permissions"
       ],
       "publisher": "Province of British Columbia",
-      "review": {
-        "content-digest": "sha256:74a63da025d6cdf174b3356f84c9c6dab324fb77a5fd1e76a052b93788950cae",
-        "reviewers": [],
-        "risk": "high",
-        "status": "unreviewed"
-      },
       "risk": "high",
-      "route": {
-        "owner-team": "@bcgov/security",
-        "type": "specialty-review"
-      },
       "schema-version": "bcgov-extension/v1alpha1",
       "source": {
         "path": "skills/security/repo-hardening",
@@ -1250,6 +1113,17 @@
       "type": "skill"
     }
   ],
+  "legacy-ids": {
+    "bcgov-public/azure-networking": "bcgov-public/skill/azure-networking",
+    "bcgov-public/bcgov-create-extension": "bcgov-public/skill/bcgov-create-extension",
+    "bcgov-public/bcgov-find-extension": "bcgov-public/skill/bcgov-find-extension",
+    "bcgov-public/github-actions": "bcgov-public/skill/github-actions",
+    "bcgov-public/github-repo-setup": "bcgov-public/skill/github-repo-setup",
+    "bcgov-public/n8n-runbook-parser": "bcgov-public/skill/n8n-runbook-parser",
+    "bcgov-public/n8n-workflow-builder": "bcgov-public/skill/n8n-workflow-builder",
+    "bcgov-public/openshift-deployment": "bcgov-public/skill/openshift-deployment",
+    "bcgov-public/repo-hardening": "bcgov-public/skill/repo-hardening"
+  },
   "policy-version": 2,
   "release-state": "development",
   "repository": "https://github.com/bcgov/agent-marketplace",

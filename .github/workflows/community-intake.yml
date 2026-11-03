@@ -31,7 +31,10 @@ jobs:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       ORG: bcgov
-      GH_TOKEN: ${{ github.token }}
+      # Must read org membership and search the author's open PRs. The default
+      # job token is a fallback only; inability to confirm membership blocks
+      # the PR and emits a diagnostic.
+      GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -66,9 +69,6 @@ jobs:
       - name: Verify contributor organization membership
         id: membership
         if: steps.changes.outputs.has_assets == 'true'
-        env:
-          # Keep the org-readable credential scoped to this read-only lookup.
-          GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}
         run: |
           set -euo pipefail
 

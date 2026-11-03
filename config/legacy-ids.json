@@ -1,0 +1,11 @@
+{
+    "bcgov-public/azure-networking":  "bcgov-public/skill/azure-networking",
+    "bcgov-public/bcgov-create-extension":  "bcgov-public/skill/bcgov-create-extension",
+    "bcgov-public/bcgov-find-extension":  "bcgov-public/skill/bcgov-find-extension",
+    "bcgov-public/github-actions":  "bcgov-public/skill/github-actions",
+    "bcgov-public/github-repo-setup":  "bcgov-public/skill/github-repo-setup",
+    "bcgov-public/n8n-runbook-parser":  "bcgov-public/skill/n8n-runbook-parser",
+    "bcgov-public/n8n-workflow-builder":  "bcgov-public/skill/n8n-workflow-builder",
+    "bcgov-public/openshift-deployment":  "bcgov-public/skill/openshift-deployment",
+    "bcgov-public/repo-hardening":  "bcgov-public/skill/repo-hardening"
+}

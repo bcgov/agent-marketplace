@@ -18,7 +18,7 @@
     "summary": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 280
+      "maxLength": 1024
     },
     "publisher": {
       "const": "Province of British Columbia"
@@ -45,7 +45,7 @@
     },
     "moved-to": {
       "type": "string",
-      "pattern": "^bcgov-public/[a-z0-9]+(?:-[a-z0-9]+)*$"
+      "pattern": "^bcgov-public/(skill|instructions|prompt|agent)/[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
     "notice": {
       "type": "string",

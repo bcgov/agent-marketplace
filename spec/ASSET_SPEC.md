@@ -31,8 +31,9 @@ for a package to be a valid skill.
 ## Type-specific content
 
 Every content file is UTF-8 Markdown with non-empty content. All four types
-can supply `description` in YAML frontmatter; otherwise the Manifest must
-supply `summary`. Non-skill types require YAML frontmatter.
+can supply `description` in YAML frontmatter. Skills without it must supply
+a Manifest `summary`. Non-skill types require YAML frontmatter and a non-empty
+`description`, independently of marketplace overrides.
 
 - **Skill**: `SKILL.md`; validated by [SKILL.md Spec](./SKILL_SPEC.md).
 - **Prompt**: `<name>.prompt.md`; a focused, reusable request. The `name` and
@@ -42,7 +43,7 @@ supply `summary`. Non-skill types require YAML frontmatter.
   `applyTo` is optional; when omitted, the host decides where the guidance
   applies. The `name` field is optional.
 - **Agent**: `<name>.agent.md`; a focused assistant role with explicit
-  responsibility and boundaries. Its optional frontmatter `name` is a
+  responsibility and boundaries. Its required frontmatter `name` is a
   display name.
 
 ## Marketplace manifest
@@ -54,15 +55,47 @@ explicit declaration of no access. The catalog derives `id`, `type`,
 `specialty`, and `name` from the directory. `display-name` comes from the
 Manifest, then frontmatter `name`, then the directory name verbatim. `summary`
 comes from the Manifest, then frontmatter `description`; there is no body
-fallback. The catalog uses `bcgov-marketplace/v1`.
+fallback. Effective display names are non-blank strings up to 80 characters;
+effective summaries are non-blank strings up to 1,024 characters through either
+source. Native constraints (including the skill format) still apply.
+The catalog uses `bcgov-marketplace/v1`, with `checks`, declared `risk`, and
+`policy-route` evidence; the former `policy`, `review`, and `route` aliases
+are retired. Unknown human-review evidence is not inferred from CODEOWNERS.
+
+Identity is `bcgov-public/<type>/<name>`, where type is `skill`, `instructions`,
+`prompt`, or `agent`. Names are unique within each type across all Specialties.
+Identity fields cannot be overridden in the Manifest. A Specialty-only transfer
+preserves identity and requires reviewed ownership transfer. Published pre-v1
+name-only IDs are inventoried in Admin-owned `config/legacy-ids.json`, from the
+immutable `catalog-2026.10.01` asset (SHA-256
+`f2376c9b0102ea128fac4205ba6387f926b596dfe506d77c65d497be12b11b5a`).
+Only those explicit aliases resolve in the current Catalogue; historical
+snapshots retain their original IDs. This mapping is a finite migration list,
+not a registry for new identities or a heuristic name lookup.
 
 The default lifecycle is `active`. Set `lifecycle: quarantined` with `notice`
 to keep content visible with a warning but block installation. Set
 `lifecycle: removed` with `notice` and remove all content, leaving only the
-Manifest (including `summary`) as a tombstone. On a rename or move, retain
-the old Manifest with `moved-to: bcgov-public/<new-name>` and publish the new
-path as a separate active Extension. Non-active records remain published but
-offer no install actions; drafts are not published.
+Manifest (including `summary`) as a tombstone. A name/type change creates a
+distinct identity: retain the old removed Manifest with
+`moved-to: bcgov-public/<type>/<new-name>`. This pointer is allowed only on a
+non-active record. Targets must exist; self-pointers and cycles fail validation.
+Finite chains may end in active, quarantined or removed records; the Catalogue
+reports the terminal lifecycle without automatic migration. Non-active records
+remain published but offer no install actions. Quarantine retains only content
+that passes the same approved checks as active content; hard-blocked bytes must
+be fixed or directly removed.
+
+`marketplace.py validate --base <trusted-sha>` also checks every trusted-base
+identity and both sides of every changed content path. Every non-draft identity
+on trusted main stays reserved, including before publication. Retirement needs
+a retained non-active Manifest; validation never synthesizes contributor files.
+`analyze <package> --base <trusted-sha>` exposes the same transition facts for
+the trusted merge gate: lifecycle/notice/redirect changes, non-active content,
+restoration, identity replacement and Specialty transfer require human review,
+while remaining valid format changes. Facts include old/new Specialties and
+trusted-base maintainers. Admins retain takedown authority; Community restoration
+needs Admin review, and Specialty restoration/transfer needs the relevant owners.
 
 `compatibility.not-ready-on` is a unique list of lower-case harness identifiers
 such as `github-copilot-vscode`, `claude-code`, or `openai-codex`. It records

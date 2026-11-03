@@ -15,8 +15,7 @@ name: PR
 #
 # Action pinning policy:
 #   * First-party actions owned by GitHub (actions/*) are pinned to a major
-#     version tag — GitHub guarantees those tags forward-only. Easier to read,
-#     Dependabot still bumps majors.
+#     version tag. Dependabot bumps majors.
 #   * Third-party actions are pinned to an immutable commit SHA with the
 #     human-readable version in a trailing comment, so a tag hijack cannot
 #     silently swap the action's code under us. Dependabot bumps these too.
@@ -78,10 +77,11 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
+          set -euo pipefail
           git diff --name-status -M "$BASE_SHA" HEAD -- skills prompts instructions agents |
             awk -F '\t' '$1 ~ /^R/ {
               print "Extension path rename: " $2 " -> " $3
-              print "- Extension path rename: `" $2 "` -> `" $3 "`; found=1
+              print "- Extension path rename: `" $2 "` -> `" $3 "`"
             }' | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Run Security-owned policy fixtures
@@ -112,6 +112,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
@@ -128,7 +130,9 @@ jobs:
         run: uv run python scripts/marketplace.py check
 
       - name: Validate marketplace packages and generated projections
-        run: uv run python scripts/marketplace.py validate
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: uv run python scripts/marketplace.py validate --base "$BASE_SHA"
 
       - name: Regenerate and check CODEOWNERS
         run: |

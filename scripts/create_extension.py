@@ -161,6 +161,11 @@ def _manifest(args) -> dict:
     manifest["display-name"] = args.display_name
   if args.summary != args.description:
     manifest["summary"] = args.summary
+  if (
+    getattr(args, "support", "https://github.com/bcgov/agent-marketplace/issues")
+    != "https://github.com/bcgov/agent-marketplace/issues"
+  ):
+    manifest["support"] = args.support
   if getattr(args, "not_ready_on", []):
     manifest["compatibility"] = {"not-ready-on": args.not_ready_on}
   return manifest
@@ -171,10 +176,10 @@ def initialize(args) -> dict:
   extension_type = getattr(args, "extension_type", "skill")
   marketplace = args.marketplace.resolve()
   package = _package_dir(marketplace, args.name, extension_type, args.specialty)
-  for directory in TYPE_DIRECTORIES.values():
-    existing = marketplace / directory / args.specialty / args.name
-    if existing.exists():
-      raise CreateError(f"extension id is already in use: bcgov-public/{args.name}")
+  if any((marketplace / TYPE_DIRECTORIES[extension_type]).glob(f"*/{args.name}")):
+    raise CreateError(
+      f"extension id is already in use: bcgov-public/{extension_type}/{args.name}"
+    )
   package.mkdir(parents=True)
   artifact_filename = ARTIFACT_FILENAMES[extension_type].format(name=args.name)
   (package / artifact_filename).write_text(

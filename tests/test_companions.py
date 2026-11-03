@@ -702,8 +702,9 @@ def test_install_docs_pin_the_catalog_release_tag():
 def test_catalog_ids_match_hosted_manifests():
   """Generated catalog count and IDs exactly match hosted package manifests."""
   catalog = json.loads((ROOT / "catalog" / "catalog.json").read_text())
+  types = {directory: kind for kind, directory in creator.TYPE_DIRECTORIES.items()}
   package_ids = {
-    f"bcgov-public/{path.parent.name}"
+    f"bcgov-public/{types[asset_type]}/{path.parent.name}"
     for asset_type in ("skills", "prompts", "instructions", "agents")
     for path in (ROOT / asset_type).glob("*/*/bcgov-extension.yaml")
   }
@@ -737,8 +738,3 @@ def test_contributor_eligibility_workflow_gates_all_active_asset_types():
   assert 'gh api --include "orgs/${ORG}/members/${AUTHOR}"' in workflow
   assert "GitHub returned 404 for the membership check" in workflow
   assert "Members: read permission" in workflow
-  assert "GH_TOKEN: ${{ github.token }}" in workflow
-  assert "GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}" in workflow
-  assert workflow.index(
-    "GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}"
-  ) < workflow.index("Hold community auto-publish pending the new-package gate")

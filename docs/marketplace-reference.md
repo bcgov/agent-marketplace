@@ -41,10 +41,16 @@ Each package lives under a review and lifecycle model:
 - `active` — available through default discovery;
 - `quarantined` — content stays available for inspection, but installation is blocked;
 - `removed` — content is deleted and a Manifest-only tombstone remains;
-- `moved-to` — an old id points to a new active id after a rename or move.
+- `moved-to` is a pointer on a non-active record, not a lifecycle state. Finite
+  replacement chains may terminate in any lifecycle; installs remain blocked
+  for quarantined/removed terminals and no automatic migration occurs.
 
 Non-active records require a `notice`, remain accessible by direct lookup and
-cannot be installed. Drafts are not published.
+cannot be installed. A Specialty-only transfer preserves the canonical
+`bcgov-public/<type>/<name>` identity. A name/type change retains an old removed
+Manifest pointing to the distinct replacement identity. Every trusted-main
+identity stays reserved even before publication. See the asset spec for the
+finite legacy-ID mapping and trusted-base transition analysis.
 
 Review is attached to the exact immutable source revision. Changed bytes invalidate prior review evidence.
 
@@ -81,7 +87,7 @@ groups blocking and advisory findings in the output and, in CI, the GitHub job
 summary. Blocking findings fail the check; advisory-only findings do not. Each
 finding records its rule ID, category, severity, disposition, file, line,
 field, remediation and Security policy version. The same records are stored in
-the catalogue's `extensions[].policy.findings` for published Extensions.
+the catalogue's `extensions[].checks.findings` for published Extensions.
 Capability risk is derived from declared Manifest capabilities only;
 undeclared use is reported by the `undeclared-*` rules instead.
 

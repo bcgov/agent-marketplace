@@ -169,20 +169,41 @@ def _tokens(value: str) -> set[str]:
   return {token for token in re.findall(r"[a-z0-9]+", value.lower()) if len(token) > 1}
 
 
+def lookup_extension(catalog: dict, identity: str) -> dict | None:
+  """Resolve exact IDs or explicit current aliases without guessing by name."""
+  canonical = catalog.get("legacy-ids", {}).get(identity, identity)
+  return next(
+    (record for record in catalog["extensions"] if record["id"] == canonical), None
+  )
+
+
 def search(catalog: dict, query: str, extension_type: str | None = None) -> list[dict]:
   """Return active matches, or a requested non-active id with its warning."""
   if extension_type is not None and extension_type not in KNOWN_EXTENSION_TYPES:
     raise FinderError(f"unsupported extension type: {extension_type}")
   query_tokens = _tokens(query)
+  requested = (
+    lookup_extension(catalog, query.strip())
+    if query.strip().startswith("bcgov-public/")
+    else None
+  )
+  if query.strip().startswith("bcgov-public/") and requested is None:
+    return []
   ranked = []
   for record in catalog["extensions"]:
-    if (
-      record["lifecycle"] != "active" and query.strip().lower() != record["id"].lower()
-    ):
+    if record["lifecycle"] != "active" and record is not requested:
       continue
     if extension_type is not None and record.get("type") != extension_type:
       continue
-    name_tokens = _tokens(record["id"] + " " + record["display-name"])
+    if requested is not None and record is not requested:
+      continue
+    name_tokens = _tokens(
+      record["id"]
+      + " "
+      + record["display-name"]
+      + " "
+      + " ".join(record.get("legacy-ids", []))
+    )
     summary_tokens = _tokens(record["summary"])
     prerequisite_tokens = _tokens(" ".join(record["prerequisites"]))
     exact_name = (
@@ -667,7 +688,7 @@ def _retry_registration(args) -> dict:
 
 def _reviewed_install(args, catalog: dict) -> dict:
   """Install one marketplace-reviewed package from its catalog record."""
-  record = next((item for item in catalog["extensions"] if item["id"] == args.id), None)
+  record = lookup_extension(catalog, args.id)
   if record is None:
     raise FinderError(f"catalog has no extension {args.id!r}")
   if record["lifecycle"] != "active":
@@ -680,7 +701,17 @@ def _reviewed_install(args, catalog: dict) -> dict:
       f"extension type is {extension_type!r}; installation is not active for this type"
     )
   project = args.project.resolve()
-  name = record["id"].split("/", 1)[1]
+  checks = (
+    record["checks"]
+    if catalog.get("schema-version") == "bcgov-marketplace/v1"
+    else record.get("policy", {})
+  )
+  review = (
+    checks
+    if catalog.get("schema-version") == "bcgov-marketplace/v1"
+    else record.get("review", {})
+  )
+  name = record["id"].rsplit("/", 1)[-1]
   target = project / ".github" / "skills" / name
   print(
     json.dumps(
@@ -691,7 +722,7 @@ def _reviewed_install(args, catalog: dict) -> dict:
         "source": record["source"],
         "digest": record["content-digest"],
         "capabilities": record["capabilities"],
-        "review": record["review"],
+        "checks": checks,
         "target": str(target),
       },
       indent=2,
@@ -716,14 +747,14 @@ def _reviewed_install(args, catalog: dict) -> dict:
     "extension-type": extension_type,
     "source": record["source"],
     "package-tree-digest": record["content-digest"],
-    "scan": record["policy"],
+    "scan": checks,
     "declared-capabilities": record["capabilities"],
     "granted-capabilities": record["capabilities"],
     "install-target": str(target),
     "scope": "project",
     "installed-at": _now(),
     "trust": "Marketplace reviewed",
-    "review": record["review"],
+    "review": review,
     "registration": None,
   }
   receipt_path = _write_receipt(project, name, receipt)

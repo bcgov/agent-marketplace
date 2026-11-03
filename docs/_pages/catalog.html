@@ -103,9 +103,7 @@
     skill: 'Skill',
     prompt: 'Prompt',
     instructions: 'Instructions',
-    agent: 'Agent',
-    hook: 'Hook',
-    mcp: 'MCP server'
+    agent: 'Agent'
   };
 
   const TRUST_LABELS = {
@@ -323,13 +321,13 @@
     }
 
     const source = record.source || {};
-    const review = record.review || {};
-    const revision = source.revision || review.revision || 'not available';
+    const checks = record.checks || {};
+    const revision = source.revision || 'not available';
     const sourceUrl = source.repository && source.path
       ? `${source.repository}/tree/${revision}/${source.path}`
       : null;
-    const status = review.status || 'unreviewed';
-    const reviewers = (review.reviewers || []).join(', ');
+    const status = checks.status || 'unreviewed';
+    const reviewers = (checks.reviewers || []).join(', ');
     const repoPath = (source.repository || '').replace(/^https?:\/\/github\.com\//, '');
 
     // The automated installer currently targets skills; other asset types use
@@ -385,11 +383,11 @@
       <p>${escapeHtml(TRUST_EVIDENCE[status] || TRUST_EVIDENCE.unreviewed)}</p>
       <dl>
         <div><dt>Trust</dt><dd><span class="trust-label" data-status="${escapeHtml(status)}">${escapeHtml(TRUST_LABELS[status] || status)}</span></dd></div>
-        ${review.risk ? `<div><dt>Access level</dt><dd><span class="cat-row-risk" data-risk="${escapeHtml(review.risk)}">${escapeHtml(RISK_LABELS[review.risk] || review.risk)}</span></dd></div>` : ''}
+        ${record.risk ? `<div><dt>Access level</dt><dd><span class="cat-row-risk" data-risk="${escapeHtml(record.risk)}">${escapeHtml(RISK_LABELS[record.risk] || record.risk)}</span></dd></div>` : ''}
         <div><dt>Type</dt><dd>${escapeHtml(TYPE_LABELS[record.type] || record.type || 'Unknown')}</dd></div>
         <div><dt>Reviewers</dt><dd>${escapeHtml(reviewers || (status === 'auto-scanned' ? 'Automated scan only' : 'Not published'))}</dd></div>
-        <div><dt>Policy</dt><dd>${escapeHtml((record.policy || {}).outcome || 'not available')}</dd></div>
-        ${typeof review.advisories === 'number' ? `<div><dt>Advisories</dt><dd>${review.advisories}</dd></div>` : ''}
+        <div><dt>Policy</dt><dd>${escapeHtml(checks.outcome || 'not available')}</dd></div>
+        ${typeof checks.advisories === 'number' ? `<div><dt>Advisories</dt><dd>${checks.advisories}</dd></div>` : ''}
         <div><dt>Maintainers</dt><dd>${escapeHtml((record.maintainers || []).join(', ') || 'Unknown')}</dd></div>
         <div><dt>License</dt><dd>${escapeHtml(record.license || 'Not specified')}</dd></div>
         <div><dt>Prerequisites</dt><dd>${escapeHtml((record.prerequisites || ['None declared']).join('; '))}</dd></div>
