@@ -344,6 +344,15 @@ def manifest_paths(root: Path) -> list[Path]:
 
 def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]:
   """Validate one author-controlled manifest and package identity."""
+  if not path.exists():
+    return None, [
+      _diagnostic(
+        path,
+        "<root>",
+        "Add bcgov-extension.yaml alongside the native file on the same branch; "
+        "declare maintainers and capabilities.",
+      )
+    ]
   try:
     manifest = load_yaml(path)
   except PublicMarketplaceError as exc:
@@ -359,7 +368,7 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
   registry = (
     {item["id"] for item in load_specialties(root)}
     if (root / "config" / "specialties.yaml").exists()
-    else {"security"}
+    else set()
   )
   if (
     len(parts) != 3

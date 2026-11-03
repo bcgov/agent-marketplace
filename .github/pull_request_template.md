@@ -1,33 +1,28 @@
-<!--
-  Thanks for contributing a skill! Fill in the sections below so reviewers can
-  evaluate quickly. Delete any section that doesn't apply.
--->
+## What changes and why
 
-## What this PR changes
+<!-- Describe the useful task, intended users, and Extension type. Link an issue if relevant. -->
 
-<!-- One or two sentences. Link the skill: skills/<bucket>/<name>/SKILL.md -->
+## Package and provenance
 
-## Why
+<!-- List the native file and matching bcgov-extension.yaml paths on this branch.
+For an edit or Specialty transfer, identify the existing type/name and old/new paths.
+Describe equivalent searches and attribution/license for reused content. -->
 
-<!-- Who needs this and what problem does it solve? When should an agent fire it? -->
+## Access and review
 
-## Upstream search and provenance
+<!-- Describe declared capabilities, known limitations, and any Specialty owner review.
+CI derives policy evidence for this revision; do not author review/approval fields. -->
 
-<!-- Link equivalent searches. For federated content, give repository, full commit SHA, package path, digest, and license. -->
+- [ ] Both the native content and its matching Manifest are on this PR's head branch.
+- [ ] Maintainers and actual capabilities are declared; no secret values are committed.
+- [ ] I read the check details for this revision and addressed blocking failures.
+- [ ] Any remaining review holds and requested owners are described below.
 
-## Capabilities and review evidence
+<!-- Browser contributors do not need to run local commands.
+Checks may await a maintainer's fork-run approval. Record pending checks honestly.
+Specialty PRs must be ready for review to request CODEOWNERS automatically. -->
 
-<!-- Summarize filesystem, network, command, environment, secret-name, and data-class capabilities. Human review fields are generated, never authored. -->
+## Validation and reviewer notes
 
-## Checklist
-
-- [ ] Followed [spec/SKILL_SPEC.md](../spec/SKILL_SPEC.md) (7 sections, ≤500 lines, kebab-case name, flat resource dirs).
-- [ ] Added or updated `bcgov-extension.yaml` and declared every material capability.
-- [ ] Updated `SKILL.md` when behaviour changed (description, Use When, Workflow, Examples).
-- [ ] Ran `make verify` locally and it passed without executing contributed package scripts.
-- [ ] Confirmed no secrets, tokens, or credentials are committed.
-- [ ] Reviewed the exact head revision and generated package digest shown by CI.
-
-## Notes for reviewers
-
-<!-- Anything reviewers should know: tradeoffs, alternatives considered, follow-ups. -->
+<!-- Link the relevant check output, or explain what is still pending. Include any
+optional local validation or author evaluation and its limits. -->
