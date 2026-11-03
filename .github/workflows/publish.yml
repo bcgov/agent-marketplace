@@ -1,0 +1,96 @@
+name: Publish Catalogue and site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Reconcile latest main, or render newest accepted Catalogue
+        type: choice
+        options: [reconcile, newest]
+        default: reconcile
+
+permissions: {}
+
+# Queued runs intentionally coalesce. Always resolve latest main when starting.
+concurrency:
+  group: publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      # Do not create an environment deployment merely by starting a disabled run.
+      # Actual Pages records are created only by the guarded deploy-pages step.
+      deployment: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Resolve latest trusted main after queueing
+        run: |
+          set -euo pipefail
+          git fetch origin main --tags
+          git checkout --detach origin/main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.11.19"
+          enable-cache: true
+
+      - name: Validate, build and reconcile immutable release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODE: ${{ inputs.mode || 'reconcile' }}
+        run: |
+          set -euo pipefail
+          uv run python scripts/publish.py --output "$RUNNER_TEMP/publication" --mode "$MODE"
+
+      - name: Guard Pages artifact upload against disable or supersession
+        id: artifact-guard
+        if: steps.release.outputs.allowed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: uv run python scripts/publish.py --output "$RUNNER_TEMP/publication" --mode check-live
+
+      - uses: actions/upload-pages-artifact@v5
+        if: steps.artifact-guard.outputs.allowed == 'true'
+        with:
+          path: ${{ runner.temp }}/publication/docs
+
+      - name: Recheck current main and newest accepted snapshot before deploy
+        id: deploy-guard
+        if: steps.artifact-guard.outputs.allowed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: uv run python scripts/publish.py --output "$RUNNER_TEMP/publication" --mode check-live
+
+      - name: Deploy the exact guarded artifact
+        id: deployment
+        if: steps.deploy-guard.outputs.allowed == 'true'
+        uses: actions/deploy-pages@v5
+
+      - name: Report actual deployment evidence
+        if: success() && steps.deployment.outcome == 'success'
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          printf 'Successful Pages deployment: %s\nRun: %s\n' "$PAGE_URL" "$RUN_URL" >> "$GITHUB_STEP_SUMMARY"

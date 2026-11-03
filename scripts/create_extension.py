@@ -318,12 +318,7 @@ def submit(args) -> dict:
     raise CreateError(f"checkout is on {current_branch!r}, expected {args.branch!r}")
   _validate(marketplace, args.name, args.specialty, extension_type)
   package_path = package.relative_to(marketplace).as_posix()
-  allowed = (
-    f"{package_path}/",
-    "catalog/catalog.json",
-    "docs/assets/catalog.json",
-    "docs/_generated/catalog-cards.html",
-  )
+  allowed = (f"{package_path}/",)
   changed = _run(["git", "status", "--porcelain"], marketplace).splitlines()
   unexpected = []
   for line in changed:
@@ -340,9 +335,6 @@ def submit(args) -> dict:
       "git",
       "add",
       package_path,
-      "catalog/catalog.json",
-      "docs/assets/catalog.json",
-      "docs/_generated/catalog-cards.html",
     ],
     marketplace,
   )

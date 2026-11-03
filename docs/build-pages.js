@@ -19,21 +19,11 @@ function replaceAll(value, token, replacement) {
   return value.split(token).join(replacement);
 }
 
-// Read the single source of truth for the published revision, installer
-// version, and release state so pages never carry a hand-edited SHA that can
-// drift from what the catalog was generated at.
+// Snapshot coordinates come from the exact selected immutable asset. Site
+// source/run and actual release evidence are separately recorded in site-build.json.
 function readReleaseConfig() {
-  const configPath = path.join(docsDir, "..", "config", "marketplace.yaml");
-  const text = fs.readFileSync(configPath, "utf8");
-  const field = (name) => {
-    const match = text.match(new RegExp(`^${name}:[ \\t]*(\\S+)[ \\t]*$`, "m"));
-    return match ? match[1].replace(/^["']|["']$/g, "") : "";
-  };
-  return {
-    version: field("version"),
-    revision: field("revision"),
-    releaseState: field("release-state"),
-  };
+  const catalog = JSON.parse(fs.readFileSync(path.join(docsDir, "assets", "catalog.json"), "utf8"));
+  return {version: catalog.version, revision: catalog.revision, releaseState: catalog["release-state"]};
 }
 
 function releaseBanner(state, revision) {
@@ -97,6 +87,10 @@ for (const filename of fs.readdirSync(pagesDir).sort()) {
     releaseBanner(release.releaseState, release.revision),
   );
 
+  const meta = JSON.parse(fs.readFileSync(path.join(docsDir, "assets", "site-build.json"), "utf8"));
+  const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));
+  const coordinates = `<p class="build-coordinates">Catalogue ${escape(release.version)} ? source ${escape(release.revision)} ? asset ${escape(meta.catalogue["asset-digest"])}<br>Site source ${escape(meta.site.source)} ? run ${escape(meta.site.run)}${meta.catalogue.release?.published_at ? ` ? release published ${escape(meta.catalogue.release.published_at)}` : ""}</p>`;
+  footer = footer.replace("{{BUILD_COORDINATES}}", coordinates);
   const output = `${header.trimEnd()}\n${content}\n${footer.trimStart()}`;
   fs.writeFileSync(path.join(docsDir, filename), output, "utf8");
 }

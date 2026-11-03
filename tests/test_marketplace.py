@@ -60,8 +60,6 @@ def _root(tmp_path: Path) -> Path:
     "schema-version": "bcgov-marketplace/v1alpha1",
     "release-state": "published",
     "repository": "https://github.com/bcgov/agent-marketplace",
-    "revision": "a" * 40,
-    "version": "catalog-2026.01.01",
     "approved-discovery-sources": [],
   }
   config_path = tmp_path / "config" / "marketplace.yaml"
@@ -1323,7 +1321,7 @@ def test_generation_is_deterministic_and_escaped(tmp_path):
   catalog = json.loads((root / "catalog" / "catalog.json").read_text())
   cards = (root / "docs" / "_generated" / "catalog-cards.html").read_text()
   assert catalog["count"] == 1
-  assert catalog["extensions"][0]["source"]["revision"] == "a" * 40
+  assert catalog["extensions"][0]["source"]["revision"] == "0" * 40
   assert "Demo &lt;script&gt;" in cards
   assert "Demo <script>" not in cards
 
@@ -1477,44 +1475,24 @@ def test_config_rejects_unknown_intake_key(tmp_path):
     m.load_marketplace_config(root)
 
 
-def test_config_requires_release_version(tmp_path):
-  """The release tag is a required field; a config without it fails closed."""
+def test_config_rejects_historical_revision_stamping(tmp_path):
+  """Snapshot coordinates belong to immutable assets, not authored config."""
   root = _root(tmp_path)
-  config_path = root / "config" / "marketplace.yaml"
-  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-  del config["version"]
-  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
-  with pytest.raises(m.MarketplaceError, match="missing keys"):
+  path = root / "config/marketplace.yaml"
+  config = yaml.safe_load(path.read_text())
+  config["revision"] = "a" * 40
+  path.write_text(yaml.safe_dump(config))
+  with pytest.raises(m.MarketplaceError, match="unexpected keys"):
     m.load_marketplace_config(root)
 
 
-def test_config_rejects_non_calver_version(tmp_path):
-  """The version must be a catalog-YYYY.MM.DD release tag, not a free string."""
-  root = _root(tmp_path)
-  config_path = root / "config" / "marketplace.yaml"
-  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-  config["version"] = "v1.2.3"
-  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
-  with pytest.raises(m.MarketplaceError, match="catalog-YYYY.MM.DD"):
-    m.load_marketplace_config(root)
-
-
-def test_config_accepts_dated_rerelease_suffix(tmp_path):
-  """A second release on the same day carries a numeric .N suffix."""
-  root = _root(tmp_path)
-  config_path = root / "config" / "marketplace.yaml"
-  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-  config["version"] = "catalog-2026.10.01.2"
-  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
-  assert m.load_marketplace_config(root)["version"] == "catalog-2026.10.01.2"
-
-
-def test_catalog_exposes_release_version(tmp_path):
-  """The generated catalog carries the release tag at the top level."""
+def test_catalog_coordinates_are_explicit_builder_inputs(tmp_path):
+  """A snapshot is bound to the selected source SHA and allocated tag."""
   root = _root(tmp_path)
   _package(root)
-  catalog, _ = m.build_catalog(root)
-  assert catalog["version"] == "catalog-2026.01.01"
+  catalog, _ = m.build_catalog(root, revision="b" * 40, version="catalog-2026.11.03")
+  assert catalog["version"] == "catalog-2026.11.03"
+  assert catalog["extensions"][0]["source"]["revision"] == "b" * 40
 
 
 def test_namespace_of_detects_specialty_for_every_type(tmp_path):

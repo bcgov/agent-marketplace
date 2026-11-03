@@ -14,7 +14,7 @@ instructions/<bucket>/<name>/<name>.instructions.md  instruction content
 agents/<bucket>/<name>/<name>.agent.md  agent definition
 <type>/<bucket>/<name>/bcgov-extension.yaml  author-controlled package metadata
 scripts/marketplace.py                validation, scanning, digesting, and generation
-catalog/catalog.json                 generated machine-readable catalog
+docs/assets/catalog.json             CI-built immutable release asset, served by Pages
 docs/                                public website source and generated pages
 spec/SKILL_SPEC.md                   authoritative skill specification
 ```

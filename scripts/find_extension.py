@@ -22,15 +22,7 @@ from pathlib import Path, PurePosixPath
 import yaml
 
 POLICY_VERSION = "bcgov-finder-policy/1.0"
-MARKETPLACE_REVISION = "d00c5470891a7c04ceda598c0e7004f9383183b6"
-DEFAULT_CATALOG = (
-  "https://raw.githubusercontent.com/bcgov/agent-marketplace/main/catalog/catalog.json"
-)
-PINNED_CATALOG = (
-  "https://raw.githubusercontent.com/bcgov/agent-marketplace/"
-  f"{MARKETPLACE_REVISION}/catalog/catalog.json"
-)
-LOCAL_CATALOG = Path(__file__).resolve().parents[1] / "catalog" / "catalog.json"
+DEFAULT_CATALOG = "https://bcgov.github.io/agent-marketplace/assets/catalog.json"
 MAX_DOWNLOAD_BYTES = 25 * 1024 * 1024
 MAX_PACKAGE_BYTES = 2 * 1024 * 1024
 MAX_FILE_BYTES = 512 * 1024
@@ -134,8 +126,6 @@ class FinderError(Exception):
 def load_catalog(source: str) -> dict:
   """Load a generated marketplace catalog."""
   candidates = [source]
-  if source == DEFAULT_CATALOG:
-    candidates.extend([str(LOCAL_CATALOG), PINNED_CATALOG])
   failures = []
   for candidate in candidates:
     try:
@@ -149,15 +139,6 @@ def load_catalog(source: str) -> dict:
         "bcgov-marketplace-catalog/v1alpha1",
       }:
         raise FinderError(f"unsupported catalog schema in {candidate}")
-      if (
-        candidate == PINNED_CATALOG and catalog.get("revision") != MARKETPLACE_REVISION
-      ):
-        raise FinderError("pinned catalog revision does not match the companion")
-      if candidate != source:
-        print(
-          f"WARNING: using fallback catalog {candidate} after {failures[-1]}",
-          file=sys.stderr,
-        )
       return catalog
     except (FinderError, OSError, UnicodeError, json.JSONDecodeError) as exc:
       failures.append(str(exc))

@@ -18,6 +18,6 @@ make docs
 
 Edit source pages under `_pages/` and shared chrome under `_partials/`. Do not hand-edit root HTML outputs or `_generated/catalog-cards.html`; `scripts/marketplace.py` generates catalog projections from closed package metadata.
 
-`build.sh` invokes `build-pages.js` to insert generated cards and assemble pages, then `generate-search-index.js` assigns heading anchors and writes `assets/search-index.json`. CI rebuilds and rejects drift. GitHub Pages publishes the complete `docs/` directory, including `assets/catalog.json` for machine-readable discovery.
+`build.sh` invokes `build-pages.js` to insert generated cards and assemble pages, then `generate-search-index.js` assigns heading anchors and writes `assets/search-index.json`. CI validates source and builds in an isolated directory (`bash docs/build.sh /tmp/site/docs`). The single `publish.yml` workflow stages the site around the exact release asset at `assets/catalog.json`. Generated Catalogue, root HTML, search index and cards are ignored. Authored pages/configuration and CODEOWNERS stay tracked. See [publication.md](publication.md) for controls and recovery.
 
 Phase 6 cleanup decisions are tracked in [CLEANUP_CHANGELOG.md](CLEANUP_CHANGELOG.md).

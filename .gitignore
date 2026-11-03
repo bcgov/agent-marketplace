@@ -233,3 +233,13 @@ node_modules/
 .agents/skills
 
 working/
+
+# CI-built projections; authored docs/config and CODEOWNERS remain tracked.
+/catalog/catalog.json
+/docs/*.html
+/docs/assets/catalog.json
+/docs/assets/search-index.json
+/docs/assets/site-build.json
+/docs/assets/contribute.json
+/docs/_generated/catalog-cards.html
+/digests.txt

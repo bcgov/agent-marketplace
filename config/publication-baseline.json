@@ -1,0 +1,17 @@
+{
+  "tag": "catalog-2026.10.01",
+  "target": "246f032d1b99d594834e16e1654a37eb2c09ef56",
+  "digest": "sha256:f2376c9b0102ea128fac4205ba6387f926b596dfe506d77c65d497be12b11b5a",
+  "ids": [
+    "bcgov-public/azure-networking",
+    "bcgov-public/bcgov-create-extension",
+    "bcgov-public/bcgov-find-extension",
+    "bcgov-public/github-actions",
+    "bcgov-public/github-repo-setup",
+    "bcgov-public/n8n-runbook-parser",
+    "bcgov-public/n8n-workflow-builder",
+    "bcgov-public/openshift-deployment",
+    "bcgov-public/repo-hardening"
+  ],
+  "source": "2046da7b0de0f673bf39208b35385c1516be4c75"
+}
