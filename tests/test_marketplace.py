@@ -144,7 +144,9 @@ def test_specialty_and_security_policy_reject_invalid_data(tmp_path):
   policy = yaml.safe_load(path.read_text())
   policy["blocking"].append("unknown-rule")
   path.write_text(yaml.safe_dump(policy))
-  with pytest.raises(m.MarketplaceError, match="unknown-rule"):
+  with pytest.raises(
+    m.MarketplaceError, match="security-policy.yaml: blocking: Remove"
+  ):
     m.load_security_policy(root)
 
 
@@ -381,6 +383,59 @@ def test_scanner_cli_reports_invalid_manifest_without_echoing_content(tmp_path, 
     assert "ERROR" in output.err
 
 
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+@pytest.mark.parametrize("failure", ["identity", "yaml", "artifact"])
+def test_public_validation_diagnostics_do_not_echo_package_directory(
+  tmp_path, monkeypatch, capsys, command, failure
+):
+  """Invalid packages retain safe file/field corrections without path disclosure."""
+  root = _root(tmp_path)
+  sentinel = "AKIA" + "R" * 16
+  package = _package(root, name=sentinel, manifest=_manifest())
+  if failure == "yaml":
+    (package / m.MANIFEST_NAME).write_text("[invalid]: value\n", encoding="utf-8")
+  elif failure == "artifact":
+    (package / "SKILL.md").write_text("", encoding="utf-8")
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  if summary.exists():
+    report += summary.read_text(encoding="utf-8")
+  assert sentinel not in report
+  assert str(root) not in report
+  assert m.MANIFEST_NAME in report
+  if failure == "yaml":
+    assert "line 1, column 1" in report
+    assert "replace the key" in report
+  else:
+    assert "id:" in report
+    assert "Use bcgov-public/" in report
+  if failure == "artifact":
+    assert "SKILL.md" in report
+    assert "Add" in report
+
+
+def test_public_analysis_does_not_echo_internal_configuration_errors(tmp_path, capsys):
+  """Unexpected config fields cannot bypass the public error projection."""
+  root = _root(tmp_path)
+  package = _package(root)
+  sentinel = "AKIA" + "S" * 16
+  path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(path.read_text(encoding="utf-8"))
+  config[sentinel] = sentinel
+  path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  assert m.main(["--root", str(root), "analyze", str(package)]) == 1
+  output = capsys.readouterr()
+  assert sentinel not in output.out + output.err
+  assert m.MANIFEST_NAME in output.err
+  assert "correct" in output.err
+
+
 @pytest.mark.parametrize("command", ["check", "scan", "analyze", "validate"])
 @pytest.mark.parametrize("invalid_field", ["maintainers", "support", "unknown"])
 def test_invalid_manifest_diagnostics_keep_field_and_fix_without_values(
@@ -412,6 +467,43 @@ def test_invalid_manifest_diagnostics_keep_field_and_fix_without_values(
   field = invalid_field if invalid_field != "unknown" else "root"
   assert field in report
   assert "Use" in report or "remove unknown fields" in report
+
+
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+@pytest.mark.parametrize(
+  ("field", "expected"),
+  [
+    ("schema-version", ("bcgov-extension/v1alpha1",)),
+    ("publisher", ("Province of British Columbia",)),
+    ("license", ("Apache-2.0",)),
+    ("lifecycle", ("active", "quarantined", "removed")),
+    ("maintainers", ("^@[A-Za-z0-9]",)),
+    ("support", ("valid uri", "^https://")),
+  ],
+)
+def test_public_schema_corrections_include_trusted_expected_values(
+  tmp_path, monkeypatch, capsys, command, field, expected
+):
+  """Known schema constraints provide concrete fixes without authored values."""
+  root = _root(tmp_path)
+  sentinel = "AKIA" + "U" * 16
+  manifest = _manifest()
+  manifest[field] = [sentinel] if field == "maintainers" else sentinel
+  package = _package(root, manifest=manifest)
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  if summary.exists():
+    report += summary.read_text(encoding="utf-8")
+  assert sentinel not in report
+  assert m.MANIFEST_NAME in report
+  assert field in report
+  assert all(value in report for value in expected)
 
 
 def test_demo_cli_reports_invalid_fixture_without_echoing_manifest(
@@ -479,22 +571,60 @@ def test_cli_rejects_missing_secret_patterns(tmp_path, capsys, command):
     ([], "required type"),
     ({"synthetic": 62}, "required type"),
     ({"synthetic": "["}, "regular expression"),
+    ({"synthetic": "a{4294967296}"}, "regular expression"),
+    ({"synthetic": "(" * 600}, "regular expression"),
   ],
 )
-def test_check_rejects_malformed_secret_patterns(tmp_path, capsys, patterns, fix):
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+def test_cli_rejects_malformed_secret_patterns(
+  tmp_path, capsys, patterns, fix, command
+):
   """Malformed credential detectors fail closed with a policy field correction."""
   root = _root(tmp_path)
-  _package(root)
+  package = _package(root)
   path = root / "config" / "security-policy.yaml"
   policy = yaml.safe_load(path.read_text(encoding="utf-8"))
   policy["secret-patterns"] = patterns
   path.write_text(yaml.safe_dump(policy), encoding="utf-8")
-  assert m.main(["--root", str(root), "check"]) == 1
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
   output = capsys.readouterr()
   assert "security-policy.yaml" in output.err
   assert "secret-patterns" in output.err
   assert fix in output.err
   assert "Traceback" not in output.out + output.err
+
+
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+def test_cli_rejects_unknown_policy_rules_without_echoing_them(
+  tmp_path, monkeypatch, capsys, command
+):
+  """Unknown rules fail closed with a safe policy field and correction."""
+  sentinel = "AKIA" + "T" * 16
+  directory = tmp_path / sentinel
+  directory.mkdir()
+  root = _root(directory)
+  package = _package(root)
+  path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(path.read_text(encoding="utf-8"))
+  policy["blocking"].append(sentinel)
+  path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  if summary.exists():
+    report += summary.read_text(encoding="utf-8")
+  assert sentinel not in report
+  assert "config/security-policy.yaml: blocking:" in report
+  assert "Remove unimplemented rule IDs" in report
+  assert "Traceback" not in report
 
 
 def test_catalog_exposes_policy_version_and_advisory_finding(tmp_path):
@@ -629,7 +759,14 @@ def test_manifest_id_matches_directory(tmp_path):
   root = _root(tmp_path)
   package = _package(root, name="folder", manifest=_manifest("other"))
   _, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
-  assert any("bcgov-public/folder" in error for error in errors)
+  assert any("id: Use bcgov-public/<package-name>" in error for error in errors)
+  (package / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump(_manifest("folder")), encoding="utf-8"
+  )
+  _, corrected_errors = m.validate_manifest(
+    package / m.MANIFEST_NAME, m.load_schema(root)
+  )
+  assert corrected_errors == []
 
 
 def test_manifest_paths_include_canonical_layouts(tmp_path):
@@ -1000,6 +1137,31 @@ def test_wildcard_capability_is_flagged_but_not_blocking(tmp_path):
   assert result["outcome"] == "passed"
   assert any(item["code"] == "wildcard-capability" for item in result["findings"])
   assert m.capability_risk(manifest) == "high"
+
+
+@pytest.mark.parametrize(
+  ("filesystem", "risk"),
+  [
+    ({"read": ["*"], "write": []}, "high"),
+    ({"read": [], "write": ["*"]}, "high"),
+    ({"read": ["repo/.github/**"], "write": []}, "low"),
+    ({"read": [], "write": ["repo/.github/**"]}, "elevated"),
+  ],
+)
+def test_public_analysis_reports_declared_filesystem_risk(
+  tmp_path, capsys, filesystem, risk
+):
+  """Complete packages expose blanket and bounded filesystem risk in CLI JSON."""
+  root = _root(tmp_path)
+  manifest = _manifest()
+  manifest["capabilities"]["filesystem"] = filesystem
+  package = _package(root, manifest=manifest)
+  assert m.main(["--root", str(root), "analyze", str(package)]) == 0
+  result = json.loads(capsys.readouterr().out)
+  assert result["risk"] == risk
+  assert result["classification"] == "needs-review"
+  assert result["scan"]["outcome"] == "passed"
+  assert all(item["disposition"] == "advisory" for item in result["scan"]["findings"])
 
 
 def test_community_package_is_auto_scanned(tmp_path):

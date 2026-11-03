@@ -123,6 +123,39 @@ class MarketplaceError(Exception):
   """Represent one or more user-correctable marketplace validation failures."""
 
 
+class PublicDiagnostic(str):
+  """Mark a diagnostic built from safe file labels and trusted corrections."""
+
+
+class PublicMarketplaceError(MarketplaceError):
+  """Expose only diagnostics whose public provenance has been preserved."""
+
+
+def _diagnostic(path: Path, location: str, correction: str) -> PublicDiagnostic:
+  """Label a known file without disclosing arbitrary directories or filenames."""
+  files = {
+    **{name: name for name in ROOT_FILES},
+    **{
+      f"{name}.yaml": f"config/{name}.yaml"
+      for name in ("marketplace", "security-policy", "specialties")
+    },
+    **{
+      f"{name}.schema.json": f"schemas/{name}.schema.json"
+      for name in ("bcgov-extension-v1alpha1", "security-policy", "specialties")
+    },
+  }
+  label = files.get(path.name, "extension file")
+  return PublicDiagnostic(f"{label}: {location}: {correction}")
+
+
+def _validation_error(errors: list[str]) -> MarketplaceError:
+  """Preserve safe provenance when aggregating package validation diagnostics."""
+  message = "\n".join(errors)
+  if errors and all(isinstance(error, PublicDiagnostic) for error in errors):
+    return PublicMarketplaceError(message)
+  return MarketplaceError(message)
+
+
 class StrictYAMLError(yaml.constructor.ConstructorError):
   """Carry a fixed public correction and a YAML source location."""
 
@@ -192,10 +225,14 @@ def load_yaml_text(
       if isinstance(exc, StrictYAMLError)
       else "invalid YAML syntax; correct the YAML formatting and scalar values."
     )
-    raise MarketplaceError(f"{path}: {location}: {context}: {correction}") from exc
+    raise PublicMarketplaceError(
+      _diagnostic(path, location, f"{context}: {correction}")
+    ) from exc
   if not isinstance(value, dict):
-    raise MarketplaceError(
-      f"{path}: <root>: {context}: use a top-level mapping with named fields."
+    raise PublicMarketplaceError(
+      _diagnostic(
+        path, "<root>", f"{context}: use a top-level mapping with named fields."
+      )
     )
   return value
 
@@ -205,12 +242,14 @@ def load_yaml(path: Path) -> dict:
   try:
     text = path.read_text(encoding="utf-8")
   except UnicodeError as exc:
-    raise MarketplaceError(
-      f"{path}: <root>: invalid UTF-8; save the YAML file as UTF-8 text."
+    raise PublicMarketplaceError(
+      _diagnostic(path, "<root>", "invalid UTF-8; save the YAML file as UTF-8 text.")
     ) from exc
   except OSError as exc:
-    raise MarketplaceError(
-      f"{path}: <root>: cannot read YAML; check the file exists and is readable."
+    raise PublicMarketplaceError(
+      _diagnostic(
+        path, "<root>", "cannot read YAML; check the file exists and is readable."
+      )
     ) from exc
   return load_yaml_text(text, path)
 
@@ -221,10 +260,12 @@ def load_schema(root: Path) -> dict:
   try:
     return json.loads(path.read_text(encoding="utf-8"))
   except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-    raise MarketplaceError(f"{path}: invalid JSON Schema: {exc}") from exc
+    raise PublicMarketplaceError(
+      _diagnostic(path, "<root>", "Restore a readable UTF-8 JSON Schema file.")
+    ) from exc
 
 
-def _schema_diagnostic(path: Path, error) -> str:
+def _schema_diagnostic(path: Path, error) -> PublicDiagnostic:
   """Describe a schema failure using only schema-owned fields and constraints."""
   schema_path = list(error.absolute_schema_path)
   fields = {
@@ -245,6 +286,16 @@ def _schema_diagnostic(path: Path, error) -> str:
     fix = "Add required fields: " + ", ".join(missing) + "."
   elif constraint == "type":
     fix = f"Use the required type: {error.validator_value}."
+  elif constraint == "const":
+    fix = f"Use the required value: {json.dumps(error.validator_value)}."
+  elif constraint == "enum":
+    choices = ", ".join(json.dumps(value) for value in error.validator_value)
+    fix = f"Use one of these allowed values: {choices}."
+  elif constraint == "pattern":
+    shape = f"valid {error.schema['format']}" if "format" in error.schema else "value"
+    fix = f"Use a {shape} matching this required pattern: {error.validator_value}."
+  elif constraint == "format":
+    fix = f"Use a valid {error.validator_value} value."
   elif constraint == "additionalProperties":
     fix = "Additional properties are not allowed; remove unknown fields."
   elif constraint == "uniqueItems":
@@ -255,7 +306,7 @@ def _schema_diagnostic(path: Path, error) -> str:
     fix = f"Remove content to meet {constraint}: {error.validator_value}."
   else:
     fix = f"Use a value matching the documented {constraint} constraint."
-  return f"{path}: {location}: {fix}"
+  return _diagnostic(path, location, fix)
 
 
 def manifest_paths(root: Path) -> list[Path]:
@@ -282,6 +333,8 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
   """Validate one author-controlled manifest and package identity."""
   try:
     manifest = load_yaml(path)
+  except PublicMarketplaceError as exc:
+    return None, [PublicDiagnostic(str(exc))]
   except MarketplaceError as exc:
     return None, [str(exc)]
   validator = Draft202012Validator(schema, format_checker=FormatChecker())
@@ -290,7 +343,11 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
   )
   expected_id = f"bcgov-public/{path.parent.name}"
   if manifest.get("id") != expected_id:
-    errors.append(f"{path}: id must be {expected_id!r}")
+    errors.append(
+      _diagnostic(
+        path, "id", "Use bcgov-public/<package-name> matching the package directory."
+      )
+    )
   parts = path.parts[-4:-1]
   root = path.parents[3]
   registry = (
@@ -304,7 +361,9 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
     or parts[1] not in {"community", *registry}
   ):
     errors.append(
-      f"{path.parent}: package must use a canonical type/specialty/name path"
+      _diagnostic(
+        path, "<root>", "Place the package under a canonical type/specialty/name path."
+      )
     )
   else:
     artifact_path = path.parent / ARTIFACT_FILES[parts[0]]
@@ -318,22 +377,28 @@ def _validate_artifact(
   """Validate the portable frontmatter required by one declarative asset type."""
   errors = []
   if not path.is_file():
-    return [f"{manifest_path.parent}: missing {path.name}"]
+    return [_diagnostic(path, "<root>", "Add the required content file.")]
   try:
     text = path.read_text(encoding="utf-8")
   except (OSError, UnicodeError):
-    return [f"{path}: cannot read UTF-8 content; save a readable UTF-8 text file."]
+    return [_diagnostic(path, "<root>", "Save a readable UTF-8 text file.")]
   if extension_type == "skill":
-    return [] if text.strip() else [f"{path}: content must not be empty"]
+    return (
+      [] if text.strip() else [_diagnostic(path, "<root>", "Add non-empty content.")]
+    )
   match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)", text, re.DOTALL)
   if not match:
-    return [f"{path}: expected a YAML frontmatter block"]
+    return [
+      _diagnostic(
+        path, "frontmatter", "Add a YAML frontmatter block between --- delimiters."
+      )
+    ]
   try:
     frontmatter = load_yaml_text(
       match.group(1), path, context="YAML frontmatter", line_offset=1
     )
-  except MarketplaceError as exc:
-    return [str(exc)]
+  except PublicMarketplaceError as exc:
+    return [PublicDiagnostic(str(exc))]
 
   required = {
     "prompt": {"description"},
@@ -342,9 +407,13 @@ def _validate_artifact(
   }[extension_type]
   for field in sorted(required):
     if not isinstance(frontmatter.get(field), str) or not frontmatter[field].strip():
-      errors.append(f"{path}: frontmatter field {field!r} must be a non-empty string")
+      errors.append(
+        _diagnostic(path, f"frontmatter.{field}", "Add a non-empty string.")
+      )
   if not text[match.end() :].strip():
-    errors.append(f"{path}: content after frontmatter must not be empty")
+    errors.append(
+      _diagnostic(path, "<root>", "Add non-empty content after frontmatter.")
+    )
   return errors
 
 
@@ -814,7 +883,7 @@ def analyze_submission(root: Path, package_dir: Path) -> dict:
     raise MarketplaceError("submission package must be inside the marketplace") from exc
   manifest, errors = validate_manifest(package_dir / MANIFEST_NAME, load_schema(root))
   if errors or manifest is None:
-    raise MarketplaceError("\n".join(errors))
+    raise _validation_error(errors)
   parts = prospective_path.split("/")
   if (
     len(parts) != 3
@@ -874,7 +943,7 @@ def intake_submission(
   package_dir = package_dir.resolve()
   manifest, errors = validate_manifest(package_dir / MANIFEST_NAME, load_schema(root))
   if errors or manifest is None:
-    raise MarketplaceError("\n".join(errors))
+    raise _validation_error(errors)
   config = load_marketplace_config(root)
   scan = scan_package(package_dir, manifest)
   risk = capability_risk(manifest)
@@ -981,7 +1050,7 @@ def _validated_config(root: Path, name: str, schema_name: str) -> dict:
     for error in Draft202012Validator(schema).iter_errors(data)
   )
   if errors:
-    raise MarketplaceError(errors[0])
+    raise PublicMarketplaceError(errors[0])
   return data
 
 
@@ -1026,16 +1095,23 @@ def load_security_policy(root: Path) -> dict:
   }
   unknown = set(policy["blocking"]) - implemented
   if unknown:
-    raise MarketplaceError(
-      f"security policy contains unimplemented rules: {sorted(unknown)}"
+    raise PublicMarketplaceError(
+      _diagnostic(
+        root / "config" / "security-policy.yaml",
+        "blocking",
+        "Remove unimplemented rule IDs; use only rules supported by this scanner.",
+      )
     )
   for expression in policy["secret-patterns"].values():
     try:
       re.compile(expression)
-    except re.error as exc:
-      raise MarketplaceError(
-        f"{root / 'config' / 'security-policy.yaml'}: secret-patterns: "
-        "invalid regular expression; correct the pattern syntax."
+    except (re.error, OverflowError, RecursionError) as exc:
+      raise PublicMarketplaceError(
+        _diagnostic(
+          root / "config" / "security-policy.yaml",
+          "secret-patterns",
+          "invalid regular expression; correct the pattern syntax.",
+        )
       ) from exc
   return policy
 
@@ -1582,7 +1658,7 @@ def main(argv: list[str] | None = None) -> int:
       manifest_path = args.package / MANIFEST_NAME
       manifest, errors = validate_manifest(manifest_path, load_schema(root))
       if errors or manifest is None:
-        raise MarketplaceError("\n".join(errors))
+        raise _validation_error(errors)
       print(
         json.dumps(
           public_scan(scan_package(args.package, manifest)), indent=2, sort_keys=True
@@ -1607,7 +1683,16 @@ def main(argv: list[str] | None = None) -> int:
         )
       )
   except MarketplaceError as exc:
-    print(f"ERROR: {exc}", file=sys.stderr)
+    message = str(exc)
+    if args.command in {"scan", "analyze"} and not isinstance(
+      exc, PublicMarketplaceError
+    ):
+      message = _diagnostic(
+        Path(MANIFEST_NAME),
+        "<root>",
+        "Extension validation failed; correct the package or repository configuration.",
+      )
+    print(f"ERROR: {message}", file=sys.stderr)
     return 1
   return 0
 
