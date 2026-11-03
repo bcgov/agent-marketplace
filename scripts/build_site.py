@@ -6,6 +6,7 @@ import argparse
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import marketplace
@@ -80,6 +81,10 @@ def build_site(
     )
   for script in ("build-pages.js", "generate-search-index.js"):
     subprocess.run(["node", str(root / "docs" / script), str(output)], check=True)
+  subprocess.run(
+    [sys.executable, str(root / "scripts/check_links.py"), str(output), "--site"],
+    check=True,
+  )
   if (assets / "catalog.json").read_bytes() != content:
     raise ValueError("Site build altered immutable Catalogue bytes")
   return output

@@ -372,37 +372,6 @@ def test_creator_accepts_registry_specialty(tmp_path):
   )
 
 
-def test_getting_started_describes_portable_marketplace_workflows():
-  """Shared companions install remotely and do not require maintainer tooling."""
-  page = (ROOT / "docs" / "_pages" / "getting-started.html").read_text(encoding="utf-8")
-  assert "bcgov-find-extension" in page
-  assert "bcgov-create-extension" in page
-  assert "skills/community/" in page
-  assert "apm install" in page
-  assert "npx skills add" in page
-  assert "do not require a marketplace checkout" in page
-  assert "--global" not in page
-
-
-def test_install_docs_distinguish_published_sha_from_latest_source():
-  """Consumer guides state the same immutable native placement boundary."""
-  paths = (
-    ROOT / "docs" / "getting-started.md",
-    ROOT / "docs" / "how-to-use-the-marketplace.md",
-    ROOT
-    / "skills"
-    / "community"
-    / "bcgov-find-extension"
-    / "references"
-    / "INSTALLATION.md",
-  )
-  for path in paths:
-    content = " ".join(path.read_text(encoding="utf-8").lower().split())
-    assert "latest published" in content
-    assert "latest source" in content
-    assert "sha-256" in content
-
-
 def test_catalog_ids_match_hosted_manifests():
   """Generated catalog count and IDs exactly match hosted package manifests."""
   import marketplace
@@ -417,14 +386,3 @@ def test_catalog_ids_match_hosted_manifests():
   catalog_ids = {record["id"] for record in catalog["extensions"]}
   assert catalog["count"] == len(package_ids)
   assert catalog_ids == package_ids
-
-
-def test_asset_format_guide_documents_supported_types_and_claim_limits():
-  """The public guide distinguishes supported formats from tested compatibility."""
-  page = (ROOT / "docs" / "_pages" / "asset-formats.html").read_text(encoding="utf-8")
-  spec = (ROOT / "spec" / "ASSET_SPEC.md").read_text(encoding="utf-8")
-  for extension_type in ("Skill", "Prompt", "Instructions", "Agent"):
-    assert extension_type in page
-  assert "not-ready-on" in spec
-  assert "does not mean the asset was runtime-tested" in spec
-  assert "openai.yaml" in spec

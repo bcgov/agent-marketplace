@@ -1,17 +1,9 @@
-# Security policy
+# Security reporting and takedown
 
-## Report privately
+Report vulnerabilities privately through [Report a vulnerability](https://github.com/bcgov/agent-marketplace/security/advisories/new). Private vulnerability reporting was enabled in the 2026-11-03 inventory; if that entry point becomes unavailable, use your organization's established private Security escalation channel. Do not open a public issue containing sensitive reproduction details or secret values.
 
-Do not open a public issue for a suspected vulnerability, exposed credential, malicious instruction, or marketplace bypass.
+This covers the marketplace engine, workflows and any published skill, instructions, prompt or agent: exposed credentials, undeclared access, malicious guidance, package integrity, ownership abuse and unsafe publication behavior. Include canonical identity, exact source SHA, Catalogue tag/digest, affected native paths and a minimal non-sensitive reproduction. Explain observed impact separately from suspected impact. Automated checks and declared access are not safety or runtime certification.
 
-Use [GitHub private vulnerability reporting](https://github.com/bcgov/agent-marketplace/security/advisories/new). Include the affected package ID, immutable revision, package-tree digest, evidence, and any known installations. Do not include live secrets; revoke them first and provide only a redacted identifier.
+Security assesses the report privately with Admins and relevant Specialty owners. Admins can stop publication and automatic routes, remove hard-blocked bytes and publish a reviewed tombstone with a useful safe notice. Quarantine retains content only if it passes the same approved checks: it cannot preserve a secret or other hard-blocked bytes. Rotate/revoke an exposed credential through its owner immediately; do not wait for Catalogue recovery. If historical releases/history require platform removal, coordinate privately with Security and repository administrators; ordinary publication never overwrites historical assets.
 
-Marketplace maintainers acknowledge critical reports within one business day. They may quarantine an entry immediately while evidence is assessed. Publication, quarantine, and removal decisions remain human actions bound to an exact revision and digest.
-
-## Scope
-
-Reports may cover the marketplace generator and scanner, companion skills, generated catalog, native file placement and integrity comparisons, CI controls, or hosted and federated Agent Skill packages. Hooks, MCP servers, custom agents, and organization-wide distribution are outside the marketplace MVP.
-
-## Public follow-up
-
-After remediation, maintainers publish non-sensitive removal or update guidance and link it from the affected catalog record or issue. Installed native files and optional local comparison reports are not centrally collected as analytics.
+Already installed copies cannot be recalled remotely. Publish safe public advisories and exact native-path removal guidance when appropriate; never expose the private report or credential values. Restoration requires corrected passing content and reviewed lifecycle/ownership approval: Admins for Community, relevant owners for Specialty. [Operations](OPERATIONS.md#incident-response) defines kill switches, current-data recovery and the sole-owner incident procedure. No response-time guarantee is implied.

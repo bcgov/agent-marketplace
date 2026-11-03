@@ -32,9 +32,7 @@ An agent client or platform through which a person discovers or uses agent asset
 _Avoid_: Model (a model may be used by a harness but is not the harness)
 
 **Compatibility claim**:
-Author-declared information about harness readiness. `not-ready-on` lists
-exclusions only; an absent or empty list is not a marketplace runtime-test
-result.
+Author-declared information about harness readiness and known exclusions. An absent exclusion is not a marketplace runtime-test result.
 _Avoid_: Verified compatibility, certification
 
 **Community**:
@@ -60,3 +58,35 @@ _Avoid_: Safe, secure, certified
 **BC Gov GitHub member**:
 A person whose GitHub account belongs to the `bcgov` organization. This is the marketplace's contributor-eligibility proxy, not proof of employment by the Province of British Columbia.
 _Avoid_: Verified BC Gov staff
+
+**Manifest**:
+The author's declaration of an Extension's marketplace metadata, contacts, access and lifecycle.
+_Avoid_: Receipt, runtime configuration
+
+**Catalogue**:
+The marketplace's published collection of Extension metadata, lifecycle notices and revision-specific evidence.
+_Avoid_: Catalog, package registry
+
+**Stable Extension identity**:
+The reserved identity of an Extension determined by its type and name, independent of Specialty ownership.
+_Avoid_: Package path, display name
+
+**Tombstone**:
+A retained removed Extension record that reserves its identity and explains its withdrawal or replacement.
+_Avoid_: Deleted identity
+
+**Snapshot**:
+A particular accepted version of the Catalogue whose source and exact bytes remain identifiable independently of the current site.
+_Avoid_: Latest source, site build
+
+**Declared access**:
+The author's account of the filesystem, network, commands, environment, secret names and data classes an Extension may use.
+_Avoid_: Detected access, safety certification
+
+**Recognized deterministic finding**:
+An automated observation produced by an explicit marketplace checking rule, with coverage limited to that rule.
+_Avoid_: Complete capability analysis
+
+**Policy route**:
+The handling an Extension change requires under marketplace eligibility, ownership and lifecycle policy; it does not establish completed human review or runtime safety.
+_Avoid_: Review evidence, approval

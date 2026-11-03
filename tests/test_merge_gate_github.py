@@ -48,11 +48,13 @@ class GitHub:
     config["dependency-intake"] = {"auto-merge": False}
     self.base["config/marketplace.yaml"] = yaml.safe_dump(config).encode()
     self.head = dict(self.base)
-    for path in (ROOT / "docs/demos/fixtures/benign-submission").rglob("*"):
+    for path in (ROOT / "tests/fixtures/submissions/benign-submission").rglob("*"):
       if path.is_file():
         self.head[
           "skills/community/demo/"
-          + path.relative_to(ROOT / "docs/demos/fixtures/benign-submission").as_posix()
+          + path.relative_to(
+            ROOT / "tests/fixtures/submissions/benign-submission"
+          ).as_posix()
         ] = path.read_bytes()
     self.pr = {
       "number": 71,

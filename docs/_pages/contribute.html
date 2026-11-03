@@ -3,8 +3,14 @@
 
 <h1>Contribute an Extension</h1>
 <p>Share a skill, instructions, prompt or agent. Start with Community unless a registered Specialty fits. You can create both required files and one pull request using github.com alone. No local tools are required for this browser journey.</p>
-<p>Prefer working with an agent? <a href="getting-started.html">Use bcgov-create-extension</a>. For a local checkout, follow <a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
+<p>Prefer working with an agent? <a href="install.html#finder">Use bcgov-create-extension</a>. For a local checkout, follow <a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
 
+<h2 id="authoring-paths">Three authoring paths</h2>
+<p><strong>With an agent:</strong> use <code>bcgov-create-extension</code> to search for an existing solution, scaffold a native package, validate, inspect the diff and request explicit consent before opening a draft PR. <strong>Locally:</strong> create the same two files, validate and push signed commits following the repository guide. <strong>In a browser:</strong> complete the starter below, then create both files in the same fork branch and one PR.</p>
+<p>Declare actual access in the <a href="reference.html#manifest">Manifest</a>, add useful task instructions and validate before requesting review. Maintainers are contacts; editing another person's Community Extension needs human review unless the trusted-base individual maintainer eligibility is satisfied. Public bcgov membership is the automatic eligibility proxy, not proof of employment. Unknown/private membership holds for review; a public-membership 404 alone does not prove nonmembership.</p>
+<p>All publication and automatic merge switches are currently off pending <a href="https://github.com/bcgov/agent-marketplace/issues/43">repository activation</a>. After activation, eligible Community changes within the ten-new-identities/seven-day budget and elevated declared-risk ceiling can take the Community route only with Security-approved blockers and every required check. Exceeded or unavailable quota holds. Hard format/security failures remain failures. Specialty, non-maintainer edits, restoration and ownership changes require human review.</p>
+<h2 id="specialties">Specialties and onboarding</h2>
+<p>Choose Community or an active registered Specialty from the starter. Specialty owners review both native and Manifest files; the policy route is not proof that review occurred. To register a Specialty, agree scope and team coverage with Admins, add its registry entry and generated ownership in a reviewed PR, and prove reviewer delivery for both paths. Aim for at least two team members; document sole-owner coverage. See <a href="https://github.com/bcgov/agent-marketplace/blob/main/OPERATIONS.md#ownership-and-onboarding">ownership procedures</a>.</p>
 <style>
     .browser-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; margin: 1rem 0; }
     .browser-fields label { display: flex; flex-direction: column; gap: .4rem; font-weight: 600; min-width: 0; }
@@ -62,7 +68,7 @@
     <p><code id="manifest-path"></code></p>
     <pre><code id="manifest-stub"></code></pre>
     <p><a id="add-manifest" target="_blank" rel="noopener">Add matching Manifest on existing branch (new tab)</a></p>
-    <p>This second link prefills only the Manifest. You can also use <strong>Add file → Create new file</strong> in the repository and branch containing file 1, then copy the exact path and Manifest above. Commit directly to that existing branch. Do not create a second branch. <code>maintainers</code> and <code>capabilities</code> are the only mandatory authored Manifest fields. <code>none</code> means no declared access; replace it with the actual <a href="https://github.com/bcgov/agent-marketplace/blob/main/spec/ASSET_SPEC.md">capability declarations</a> if your Extension needs access. Never include secret values.</p>
+    <p>This second link prefills only the Manifest. You can also use <strong>Add file → Create new file</strong> in the repository and branch containing file 1, then copy the exact path and Manifest above. Commit directly to that existing branch. Do not create a second branch. <code>maintainers</code> and <code>capabilities</code> are the only mandatory authored Manifest fields. <code>none</code> means no declared access; replace it with the actual <a href="reference.html#manifest">capability declarations</a> if your Extension needs access. Never include secret values.</p>
 
     <h3>3. Open one pull request containing both files</h3>
     <p><a id="open-pr" target="_blank" rel="noopener">Compare branch and open one PR (new tab)</a></p>
