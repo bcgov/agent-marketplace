@@ -56,5 +56,5 @@ github-markdown-css from a CDN, so no local Markdown tooling is needed.
 <ENV>=<value> tools/n8n/workflows/<name>.local.sh   # prints a file:// URL — click to open
 ```
 
-Read-only and idempotent: safe to re-run any time, like firing the webhook. Shellcheck the
+Review side effects, inputs and concurrency before execution. Keep namespace, group, script and report names as the same author-reviewed literals used in the JSON. Shellcheck the
 generated `<name>.local.sh` before committing it.

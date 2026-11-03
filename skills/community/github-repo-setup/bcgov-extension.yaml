@@ -1,10 +1,10 @@
 display-name: GitHub Repository Setup
-summary: Assess a GitHub repository against BC Gov DevOps and security standards and produce an evidence-based maturity report.
+summary: Assess repository practices using an explicit local rubric, evidence gaps and scoring coverage.
 maintainers:
   - "@mishraomp"
   - "@DerekRoberts"
 prerequisites:
-  - GitHub CLI authenticated for the repository being assessed
+  - Supplied repository evidence; authorized GitHub metadata access is optional
 capabilities:
   filesystem:
     read:
@@ -14,12 +14,13 @@ capabilities:
   network:
     - api.github.com
     - github.com
-    - www.first.org
   commands:
     - gh
-    - npm
   environment-variables:
-    - "*"
-  secret-names: []
+    - GH_HOST
+    - GH_REPO
+  secret-names:
+    - GH_TOKEN
+    - GITHUB_TOKEN
   data-classes:
     - INTERNAL

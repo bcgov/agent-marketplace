@@ -1,5 +1,5 @@
 display-name: GitHub Actions
-summary: Author and review GitHub Actions workflows using BC Gov permissions, pinning, fork-gate, and required-check patterns.
+summary: Author and review GitHub Actions workflows using BC Gov permissions, pinning, fork validation and required-check patterns.
 maintainers:
   - "@mishraomp"
   - "@DerekRoberts"
@@ -13,7 +13,6 @@ capabilities:
       - workspace GitHub configuration after confirmation
   network:
     - docs.github.com
-    - npm.pkg.github.com
   commands:
     - act
     - actionlint
@@ -21,7 +20,10 @@ capabilities:
     - shellcheck
     - yamllint
   environment-variables:
-    - "*"
+    - GITHUB_EVENT_NAME
+    - GITHUB_SHA
+    - GITHUB_REF
+    - GITHUB_REPOSITORY
   secret-names:
     - GITHUB_TOKEN
   data-classes:

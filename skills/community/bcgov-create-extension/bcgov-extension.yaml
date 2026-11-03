@@ -4,7 +4,7 @@ maintainers:
   - "@mishraomp"
   - "@DerekRoberts"
 prerequisites:
-  - GitHub Copilot with Agent Skills support
+  - A client that can read the native guidance
 capabilities:
   filesystem:
     read:
@@ -12,6 +12,7 @@ capabilities:
     write:
       - staged extension draft after confirmation
   network:
+    - bcgov.github.io
     - raw.githubusercontent.com
     - github.com
   commands: []

@@ -14,7 +14,7 @@ VS Code Local project choices. Non-active records have no install action.
 An alias is lookup evidence only: show the canonical ID and obtain explicit
 placement authority. Never automatically follow a replacement pointer.
 
-The Catalogue's full SHA identifies latest published bytes. A main-based link
+For a published snapshot, the Catalogue's full SHA identifies its published source bytes. A development/source preview is not publication evidence. A main-based link
 is latest source, may be ahead of publication, and is never pinned. The catalog
 release tag is snapshot metadata, not a substitute for the selected full SHA.
 No `RELEASE_TAG`-based third-party installer is advertised without layout tests.

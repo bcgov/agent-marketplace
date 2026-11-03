@@ -44,8 +44,320 @@
       "status": "active"
     }
   ],
-  "count": 9,
+  "count": 12,
   "extensions": [
+    {
+      "capabilities": {
+        "commands": [],
+        "data-classes": [],
+        "environment-variables": [],
+        "filesystem": {
+          "read": [],
+          "write": []
+        },
+        "network": [],
+        "secret-names": []
+      },
+      "checks": {
+        "advisories": 0,
+        "content-digest": "sha256:7af4a5a7043ea7ef95bd98aa3a9b99449aacf948dc27e598ff813d68fba31bf0",
+        "findings": [],
+        "method": "automated-policy-scan",
+        "outcome": "passed",
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
+      },
+      "compatibility": {
+        "not-ready-on": []
+      },
+      "content-digest": "sha256:7af4a5a7043ea7ef95bd98aa3a9b99449aacf948dc27e598ff813d68fba31bf0",
+      "display-name": "acceptance-reviewer",
+      "files": [
+        {
+          "path": "acceptance-reviewer.agent.md",
+          "sha256": "7a37a65e53009ca3645e7e0e78465970a4543c3100c1d9ec0b03e3b788d5f355",
+          "size": 772
+        },
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "5cc4b3794f6ffa4fd40bccd83c19875c91f363d3a87303ee8a44144dd367c3c8",
+          "size": 49
+        }
+      ],
+      "id": "bcgov-public/agent/acceptance-reviewer",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/agents/acceptance-reviewer.agent.md",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/agent/acceptance-reviewer",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/agents/community/acceptance-reviewer"
+          },
+          "placements": [
+            {
+              "destination": ".github/agents/acceptance-reviewer.agent.md",
+              "sha256": "7a37a65e53009ca3645e7e0e78465970a4543c3100c1d9ec0b03e3b788d5f355",
+              "source": "acceptance-reviewer.agent.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "agents/community/acceptance-reviewer",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/agents/community/acceptance-reviewer",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
+      "legacy-ids": [],
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@Krocodial"
+      ],
+      "name": "acceptance-reviewer",
+      "policy-route": {
+        "type": "community"
+      },
+      "prerequisites": [],
+      "publisher": "Province of British Columbia",
+      "risk": "low",
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "agents/community/acceptance-reviewer",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+      },
+      "specialty": "community",
+      "summary": "Review supplied acceptance criteria against supplied evidence and identify missing proof and next checks.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "agent"
+    },
+    {
+      "capabilities": {
+        "commands": [],
+        "data-classes": [
+          "INTERNAL"
+        ],
+        "environment-variables": [],
+        "filesystem": {
+          "read": [
+            "docs/runbooks/**/*.md"
+          ],
+          "write": [
+            "docs/runbooks/**/*.md"
+          ]
+        },
+        "network": [],
+        "secret-names": []
+      },
+      "checks": {
+        "advisories": 0,
+        "content-digest": "sha256:c0cbf61bf2c253afd6d30471a185bb1205046e523123037c219b8fc4e347ab23",
+        "findings": [],
+        "method": "automated-policy-scan",
+        "outcome": "passed",
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
+      },
+      "compatibility": {
+        "not-ready-on": []
+      },
+      "content-digest": "sha256:c0cbf61bf2c253afd6d30471a185bb1205046e523123037c219b8fc4e347ab23",
+      "display-name": "runbook-review-evidence",
+      "files": [
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "4492e9d71aa80759db5b0db301fa10be6b5b5a3aa3559ddf5df63d87daed7527",
+          "size": 246
+        },
+        {
+          "path": "runbook-review-evidence.instructions.md",
+          "sha256": "319dabfd4089cbd011a76f1bfb5eec53da9ee25250818a15fe9bc43208a9c608",
+          "size": 728
+        }
+      ],
+      "id": "bcgov-public/instructions/runbook-review-evidence",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/instructions/runbook-review-evidence.instructions.md",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/instructions/runbook-review-evidence",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/instructions/community/runbook-review-evidence"
+          },
+          "placements": [
+            {
+              "destination": ".github/instructions/runbook-review-evidence.instructions.md",
+              "sha256": "319dabfd4089cbd011a76f1bfb5eec53da9ee25250818a15fe9bc43208a9c608",
+              "source": "runbook-review-evidence.instructions.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "instructions/community/runbook-review-evidence",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/instructions/community/runbook-review-evidence",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
+      "legacy-ids": [],
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@Krocodial"
+      ],
+      "name": "runbook-review-evidence",
+      "policy-route": {
+        "type": "community"
+      },
+      "prerequisites": [],
+      "publisher": "Province of British Columbia",
+      "risk": "elevated",
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "instructions/community/runbook-review-evidence",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+      },
+      "specialty": "community",
+      "summary": "When revising operational runbooks, state prerequisites, expected observations, recovery steps and actual validation evidence.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "instructions"
+    },
+    {
+      "capabilities": {
+        "commands": [],
+        "data-classes": [],
+        "environment-variables": [],
+        "filesystem": {
+          "read": [],
+          "write": []
+        },
+        "network": [],
+        "secret-names": []
+      },
+      "checks": {
+        "advisories": 0,
+        "content-digest": "sha256:9e7e80ac70613e7720ed083fca10ac393afcd35899e2443dfd6a681fe157e231",
+        "findings": [],
+        "method": "automated-policy-scan",
+        "outcome": "passed",
+        "policy-version": 2,
+        "reviewers": [],
+        "status": "auto-scanned"
+      },
+      "compatibility": {
+        "not-ready-on": []
+      },
+      "content-digest": "sha256:9e7e80ac70613e7720ed083fca10ac393afcd35899e2443dfd6a681fe157e231",
+      "display-name": "change-summary",
+      "files": [
+        {
+          "path": "bcgov-extension.yaml",
+          "sha256": "5cc4b3794f6ffa4fd40bccd83c19875c91f363d3a87303ee8a44144dd367c3c8",
+          "size": 49
+        },
+        {
+          "path": "change-summary.prompt.md",
+          "sha256": "771f5dbe0b76f4bfba92376d011bedbfc485b5a32267fc3a81101fb2e8736d72",
+          "size": 667
+        }
+      ],
+      "id": "bcgov-public/prompt/change-summary",
+      "install-options": [
+        {
+          "client": "VS Code Local",
+          "destination": ".github/prompts/change-summary.prompt.md",
+          "destination-root": "project",
+          "evidence": {
+            "contract": "native-project-layout/v1",
+            "runtime-evaluation": false,
+            "tested": "fixture placement and byte comparisons"
+          },
+          "extension-id": "bcgov-public/prompt/change-summary",
+          "id": "vscode-project",
+          "install": "Download the full-SHA source. Inspect every destination and collision; explicitly copy only the mapped native files. Keep skill resources together. Do not copy the marketplace Manifest.",
+          "installer": "manual",
+          "integrity": "A SHA URL pins source; manual download does not verify bytes. Compare each downloaded and installed file with its listed SHA-256. The repository helper performs these comparisons.",
+          "latest-source": {
+            "label": "latest source",
+            "url": "https://github.com/bcgov/agent-marketplace/tree/main/prompts/community/change-summary"
+          },
+          "placements": [
+            {
+              "destination": ".github/prompts/change-summary.prompt.md",
+              "sha256": "771f5dbe0b76f4bfba92376d011bedbfc485b5a32267fc3a81101fb2e8736d72",
+              "source": "change-summary.prompt.md"
+            }
+          ],
+          "remove": "Inspect mapped destinations, then explicitly delete those files only. Preserve unrelated guidance.",
+          "scope": "project",
+          "source": {
+            "path": "prompts/community/change-summary",
+            "repository": "https://github.com/bcgov/agent-marketplace",
+            "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+          },
+          "source-label": "Catalogue source",
+          "source-url": "https://github.com/bcgov/agent-marketplace/tree/2046da7b0de0f673bf39208b35385c1516be4c75/prompts/community/change-summary",
+          "update": "Select the desired published SHA, compare source and installed bytes, then explicitly replace mapped files. A Specialty path transfer needs explicit source migration; aliases never authorize an overwrite."
+        }
+      ],
+      "legacy-ids": [],
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "maintainers": [
+        "@Krocodial"
+      ],
+      "name": "change-summary",
+      "policy-route": {
+        "type": "community"
+      },
+      "prerequisites": [],
+      "publisher": "Province of British Columbia",
+      "risk": "low",
+      "schema-version": "bcgov-extension/v1alpha1",
+      "source": {
+        "path": "prompts/community/change-summary",
+        "repository": "https://github.com/bcgov/agent-marketplace",
+        "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
+      },
+      "specialty": "community",
+      "summary": "Turn a supplied change description and validation evidence into a concise reviewer summary.",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "type": "prompt"
+    },
     {
       "capabilities": {
         "commands": [
@@ -74,7 +386,7 @@
       },
       "checks": {
         "advisories": 0,
-        "content-digest": "sha256:065a0fc314c870a3d2a4bba7829fba0f5c79bc6963f36080ccaf90e688bb1d99",
+        "content-digest": "sha256:f96fa035aa4fe5722dd27a7d178d70bdbc740223202704282a49a0b171d31242",
         "findings": [],
         "method": "automated-policy-scan",
         "outcome": "passed",
@@ -85,7 +397,7 @@
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:065a0fc314c870a3d2a4bba7829fba0f5c79bc6963f36080ccaf90e688bb1d99",
+      "content-digest": "sha256:f96fa035aa4fe5722dd27a7d178d70bdbc740223202704282a49a0b171d31242",
       "display-name": "Azure Networking",
       "files": [
         {
@@ -95,13 +407,13 @@
         },
         {
           "path": "references/REFERENCE.md",
-          "sha256": "99e86e81f37a71e88ea1e21b99b4e27315a2d32a3f9f1ff2b105eb5673dd7e58",
-          "size": 16159
+          "sha256": "8854bbc1367558306af6a8c3baac28802206dc773ce2d56e4242b3e5c5312ef2",
+          "size": 1303
         },
         {
           "path": "SKILL.md",
-          "sha256": "c7d1309d4e405063b1c2464227965ac450d65739c63d12c5c8ea70b5672ba604",
-          "size": 14187
+          "sha256": "92f5e78b02907e32990cca0c6a8636a62d27bbe6299bca3bf511f1f1283b390d",
+          "size": 2552
         }
       ],
       "id": "bcgov-public/skill/azure-networking",
@@ -127,12 +439,12 @@
           "placements": [
             {
               "destination": ".github/skills/azure-networking/SKILL.md",
-              "sha256": "c7d1309d4e405063b1c2464227965ac450d65739c63d12c5c8ea70b5672ba604",
+              "sha256": "92f5e78b02907e32990cca0c6a8636a62d27bbe6299bca3bf511f1f1283b390d",
               "source": "SKILL.md"
             },
             {
               "destination": ".github/skills/azure-networking/references/REFERENCE.md",
-              "sha256": "99e86e81f37a71e88ea1e21b99b4e27315a2d32a3f9f1ff2b105eb5673dd7e58",
+              "sha256": "8854bbc1367558306af6a8c3baac28802206dc773ce2d56e4242b3e5c5312ef2",
               "source": "references/REFERENCE.md"
             }
           ],
@@ -168,12 +480,12 @@
           "placements": [
             {
               "destination": ".copilot/skills/azure-networking/SKILL.md",
-              "sha256": "c7d1309d4e405063b1c2464227965ac450d65739c63d12c5c8ea70b5672ba604",
+              "sha256": "92f5e78b02907e32990cca0c6a8636a62d27bbe6299bca3bf511f1f1283b390d",
               "source": "SKILL.md"
             },
             {
               "destination": ".copilot/skills/azure-networking/references/REFERENCE.md",
-              "sha256": "99e86e81f37a71e88ea1e21b99b4e27315a2d32a3f9f1ff2b105eb5673dd7e58",
+              "sha256": "8854bbc1367558306af6a8c3baac28802206dc773ce2d56e4242b3e5c5312ef2",
               "source": "references/REFERENCE.md"
             }
           ],
@@ -234,6 +546,7 @@
           ]
         },
         "network": [
+          "bcgov.github.io",
           "raw.githubusercontent.com",
           "github.com"
         ],
@@ -241,7 +554,7 @@
       },
       "checks": {
         "advisories": 0,
-        "content-digest": "sha256:7130e81255053fa800124ffada165428986d78f8e4d90e08bd0601e7d535dc55",
+        "content-digest": "sha256:a343a7c79c4758294676eafc80bed6daaf18e7a909f6fd9b46b61ea6b9ad8b6a",
         "findings": [],
         "method": "automated-policy-scan",
         "outcome": "passed",
@@ -252,18 +565,18 @@
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:7130e81255053fa800124ffada165428986d78f8e4d90e08bd0601e7d535dc55",
+      "content-digest": "sha256:a343a7c79c4758294676eafc80bed6daaf18e7a909f6fd9b46b61ea6b9ad8b6a",
       "display-name": "BC Gov Create Extension",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "695b9c5a38f6f8be4608810f49ce94857fe5542a8588f0772fab995ab03e9772",
-          "size": 524
+          "sha256": "9828e9524801caa5d200d4dbba929b29d5225ce7d3dfd63978dcbf083df02243",
+          "size": 548
         },
         {
           "path": "references/SUBMISSION.md",
-          "sha256": "06d1eed67427ebe2fbf79baa49615866cc0610fed82b859986af751f18c8ad47",
-          "size": 2524
+          "sha256": "94663a7ebdf0f88c32a8fe4a59bc44620982f449abdc608d782b0a44d75c39a2",
+          "size": 2408
         },
         {
           "path": "references/writing-agents.md",
@@ -287,8 +600,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "0c7ee0c3f14cae0897d462ebac34a54f402f2775bb9bb2dc80651e91636f8bc1",
-          "size": 5132
+          "sha256": "7f4ffc4984aac21ff694b381d7255af12a7f67f0f90e90230d9ce6434c0db2a5",
+          "size": 5808
         }
       ],
       "id": "bcgov-public/skill/bcgov-create-extension",
@@ -314,12 +627,12 @@
           "placements": [
             {
               "destination": ".github/skills/bcgov-create-extension/SKILL.md",
-              "sha256": "0c7ee0c3f14cae0897d462ebac34a54f402f2775bb9bb2dc80651e91636f8bc1",
+              "sha256": "7f4ffc4984aac21ff694b381d7255af12a7f67f0f90e90230d9ce6434c0db2a5",
               "source": "SKILL.md"
             },
             {
               "destination": ".github/skills/bcgov-create-extension/references/SUBMISSION.md",
-              "sha256": "06d1eed67427ebe2fbf79baa49615866cc0610fed82b859986af751f18c8ad47",
+              "sha256": "94663a7ebdf0f88c32a8fe4a59bc44620982f449abdc608d782b0a44d75c39a2",
               "source": "references/SUBMISSION.md"
             },
             {
@@ -375,12 +688,12 @@
           "placements": [
             {
               "destination": ".copilot/skills/bcgov-create-extension/SKILL.md",
-              "sha256": "0c7ee0c3f14cae0897d462ebac34a54f402f2775bb9bb2dc80651e91636f8bc1",
+              "sha256": "7f4ffc4984aac21ff694b381d7255af12a7f67f0f90e90230d9ce6434c0db2a5",
               "source": "SKILL.md"
             },
             {
               "destination": ".copilot/skills/bcgov-create-extension/references/SUBMISSION.md",
-              "sha256": "06d1eed67427ebe2fbf79baa49615866cc0610fed82b859986af751f18c8ad47",
+              "sha256": "94663a7ebdf0f88c32a8fe4a59bc44620982f449abdc608d782b0a44d75c39a2",
               "source": "references/SUBMISSION.md"
             },
             {
@@ -430,7 +743,7 @@
         "type": "community"
       },
       "prerequisites": [
-        "GitHub Copilot with Agent Skills support"
+        "A client that can read the native guidance"
       ],
       "publisher": "Province of British Columbia",
       "risk": "elevated",
@@ -453,34 +766,24 @@
         ],
         "environment-variables": [],
         "filesystem": {
-          "read": [],
-          "write": []
+          "read": [
+            "selected package and native placement destinations"
+          ],
+          "write": [
+            "explicitly selected native project or personal skill destinations"
+          ]
         },
         "network": [
+          "bcgov.github.io",
           "raw.githubusercontent.com",
           "github.com"
         ],
         "secret-names": []
       },
       "checks": {
-        "advisories": 1,
-        "content-digest": "sha256:c1d9a8b11c38bd3ef99d8cd4256c8750801623d24a57488d6178dd04790a7c85",
-        "findings": [
-          {
-            "category": "package",
-            "code": "unsupported-trust-claim",
-            "disposition": "advisory",
-            "field": "\u2014",
-            "file": "references/THIRD_PARTY.md",
-            "line": 67,
-            "message": "instruction requires human review",
-            "path": "references/THIRD_PARTY.md",
-            "policy-version": 2,
-            "remediation": "instruction requires human review",
-            "rule-id": "unsupported-trust-claim",
-            "severity": "advisory"
-          }
-        ],
+        "advisories": 0,
+        "content-digest": "sha256:4983983c8ea6ad0030c72c16e163da6bcfc3e3c4e49fa5410a38a3c8f483b53a",
+        "findings": [],
         "method": "automated-policy-scan",
         "outcome": "passed",
         "policy-version": 2,
@@ -490,28 +793,28 @@
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:c1d9a8b11c38bd3ef99d8cd4256c8750801623d24a57488d6178dd04790a7c85",
+      "content-digest": "sha256:4983983c8ea6ad0030c72c16e163da6bcfc3e3c4e49fa5410a38a3c8f483b53a",
       "display-name": "BC Gov Find Extension",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "2ba9fb1c55433f622a197faa6fa95a9ba96641f4525cb53363e6f7f2653e8020",
-          "size": 433
+          "sha256": "bed470278d748763c11966128d25cf4bf6bcb168af650e3828f6ce9383eb0f2f",
+          "size": 584
         },
         {
           "path": "references/INSTALLATION.md",
-          "sha256": "2a30f3d009330525a0ec0104ad1d53fbace8531c454a4c52c5c017cc531a10ac",
-          "size": 3040
+          "sha256": "43dbb6b12a6b95e533981347637e932c66b403f1c7e3224774840cee7f033a4f",
+          "size": 3128
         },
         {
           "path": "references/THIRD_PARTY.md",
-          "sha256": "380128eb33b54a987e7347569210ce5ada797b32c563b38312de408fa50c0807",
-          "size": 4129
+          "sha256": "f93ba4cc4e4e90265d29e5277652387a62dcc7e994967f7d1729bb21c79f1ecd",
+          "size": 535
         },
         {
           "path": "SKILL.md",
-          "sha256": "d7ba4355705559463936171c73db1b0b6bdf0f500f07454939d3dfd01462828d",
-          "size": 5498
+          "sha256": "6d0478bccffd994c84af6432bb737a497fb57da61805df080230f11bdde3e88e",
+          "size": 4901
         }
       ],
       "id": "bcgov-public/skill/bcgov-find-extension",
@@ -537,17 +840,17 @@
           "placements": [
             {
               "destination": ".github/skills/bcgov-find-extension/SKILL.md",
-              "sha256": "d7ba4355705559463936171c73db1b0b6bdf0f500f07454939d3dfd01462828d",
+              "sha256": "6d0478bccffd994c84af6432bb737a497fb57da61805df080230f11bdde3e88e",
               "source": "SKILL.md"
             },
             {
               "destination": ".github/skills/bcgov-find-extension/references/INSTALLATION.md",
-              "sha256": "2a30f3d009330525a0ec0104ad1d53fbace8531c454a4c52c5c017cc531a10ac",
+              "sha256": "43dbb6b12a6b95e533981347637e932c66b403f1c7e3224774840cee7f033a4f",
               "source": "references/INSTALLATION.md"
             },
             {
               "destination": ".github/skills/bcgov-find-extension/references/THIRD_PARTY.md",
-              "sha256": "380128eb33b54a987e7347569210ce5ada797b32c563b38312de408fa50c0807",
+              "sha256": "f93ba4cc4e4e90265d29e5277652387a62dcc7e994967f7d1729bb21c79f1ecd",
               "source": "references/THIRD_PARTY.md"
             }
           ],
@@ -583,17 +886,17 @@
           "placements": [
             {
               "destination": ".copilot/skills/bcgov-find-extension/SKILL.md",
-              "sha256": "d7ba4355705559463936171c73db1b0b6bdf0f500f07454939d3dfd01462828d",
+              "sha256": "6d0478bccffd994c84af6432bb737a497fb57da61805df080230f11bdde3e88e",
               "source": "SKILL.md"
             },
             {
               "destination": ".copilot/skills/bcgov-find-extension/references/INSTALLATION.md",
-              "sha256": "2a30f3d009330525a0ec0104ad1d53fbace8531c454a4c52c5c017cc531a10ac",
+              "sha256": "43dbb6b12a6b95e533981347637e932c66b403f1c7e3224774840cee7f033a4f",
               "source": "references/INSTALLATION.md"
             },
             {
               "destination": ".copilot/skills/bcgov-find-extension/references/THIRD_PARTY.md",
-              "sha256": "380128eb33b54a987e7347569210ce5ada797b32c563b38312de408fa50c0807",
+              "sha256": "f93ba4cc4e4e90265d29e5277652387a62dcc7e994967f7d1729bb21c79f1ecd",
               "source": "references/THIRD_PARTY.md"
             }
           ],
@@ -623,7 +926,7 @@
         "type": "community"
       },
       "prerequisites": [
-        "GitHub Copilot with Agent Skills support"
+        "A client that can read the native guidance"
       ],
       "publisher": "Province of British Columbia",
       "risk": "elevated",
@@ -651,7 +954,10 @@
           "INTERNAL"
         ],
         "environment-variables": [
-          "*"
+          "GITHUB_EVENT_NAME",
+          "GITHUB_SHA",
+          "GITHUB_REF",
+          "GITHUB_REPOSITORY"
         ],
         "filesystem": {
           "read": [
@@ -662,32 +968,16 @@
           ]
         },
         "network": [
-          "docs.github.com",
-          "npm.pkg.github.com"
+          "docs.github.com"
         ],
         "secret-names": [
           "GITHUB_TOKEN"
         ]
       },
       "checks": {
-        "advisories": 1,
-        "content-digest": "sha256:6a3dbd173189659d7bffebae5fea46ddc1262b275b1c2a4fe3a01158e392fcd6",
-        "findings": [
-          {
-            "category": "package",
-            "code": "wildcard-capability",
-            "disposition": "advisory",
-            "field": "capabilities",
-            "file": "bcgov-extension.yaml",
-            "line": 1,
-            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "path": ".",
-            "policy-version": 2,
-            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "rule-id": "wildcard-capability",
-            "severity": "advisory"
-          }
-        ],
+        "advisories": 0,
+        "content-digest": "sha256:deda0ae7ed647b9e9b7cd50a2b30b2d82b163534df456061565c8388a57e1717",
+        "findings": [],
         "method": "automated-policy-scan",
         "outcome": "passed",
         "policy-version": 2,
@@ -697,23 +987,23 @@
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:6a3dbd173189659d7bffebae5fea46ddc1262b275b1c2a4fe3a01158e392fcd6",
+      "content-digest": "sha256:deda0ae7ed647b9e9b7cd50a2b30b2d82b163534df456061565c8388a57e1717",
       "display-name": "GitHub Actions",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "a8e9053299582c59a8f60bee1c354f9d773c88ec33f1662994786b2c55745b27",
-          "size": 653
+          "sha256": "3265431d76041cb7c048665f833137bdbd780cd465560a5dec997cabfc759922",
+          "size": 705
         },
         {
           "path": "references/REFERENCE.md",
-          "sha256": "75bfbe56ba2bddd085b2878c261197d85e60d298f0dd0129647769f463fbe566",
-          "size": 36595
+          "sha256": "72b19a7ecfaf6c3ff63f4440b1132ef44d81ccf939a4c464a9481609d8f891b4",
+          "size": 1316
         },
         {
           "path": "SKILL.md",
-          "sha256": "db4c7c33bcca1413b8cc1fdbd49612ef706c2eb67acf007b1daa79239353a4b3",
-          "size": 23745
+          "sha256": "527f305d91b4ca64b16398fce3090c22e997c21d156c3e49c591dcf78cc1c75c",
+          "size": 2665
         }
       ],
       "id": "bcgov-public/skill/github-actions",
@@ -739,12 +1029,12 @@
           "placements": [
             {
               "destination": ".github/skills/github-actions/SKILL.md",
-              "sha256": "db4c7c33bcca1413b8cc1fdbd49612ef706c2eb67acf007b1daa79239353a4b3",
+              "sha256": "527f305d91b4ca64b16398fce3090c22e997c21d156c3e49c591dcf78cc1c75c",
               "source": "SKILL.md"
             },
             {
               "destination": ".github/skills/github-actions/references/REFERENCE.md",
-              "sha256": "75bfbe56ba2bddd085b2878c261197d85e60d298f0dd0129647769f463fbe566",
+              "sha256": "72b19a7ecfaf6c3ff63f4440b1132ef44d81ccf939a4c464a9481609d8f891b4",
               "source": "references/REFERENCE.md"
             }
           ],
@@ -780,12 +1070,12 @@
           "placements": [
             {
               "destination": ".copilot/skills/github-actions/SKILL.md",
-              "sha256": "db4c7c33bcca1413b8cc1fdbd49612ef706c2eb67acf007b1daa79239353a4b3",
+              "sha256": "527f305d91b4ca64b16398fce3090c22e997c21d156c3e49c591dcf78cc1c75c",
               "source": "SKILL.md"
             },
             {
               "destination": ".copilot/skills/github-actions/references/REFERENCE.md",
-              "sha256": "75bfbe56ba2bddd085b2878c261197d85e60d298f0dd0129647769f463fbe566",
+              "sha256": "72b19a7ecfaf6c3ff63f4440b1132ef44d81ccf939a4c464a9481609d8f891b4",
               "source": "references/REFERENCE.md"
             }
           ],
@@ -826,21 +1116,21 @@
         "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
-      "summary": "Author and review GitHub Actions workflows using BC Gov permissions, pinning, fork-gate, and required-check patterns.",
+      "summary": "Author and review GitHub Actions workflows using BC Gov permissions, pinning, fork validation and required-check patterns.",
       "support": "https://github.com/bcgov/agent-marketplace/issues",
       "type": "skill"
     },
     {
       "capabilities": {
         "commands": [
-          "gh",
-          "npm"
+          "gh"
         ],
         "data-classes": [
           "INTERNAL"
         ],
         "environment-variables": [
-          "*"
+          "GH_HOST",
+          "GH_REPO"
         ],
         "filesystem": {
           "read": [
@@ -852,30 +1142,17 @@
         },
         "network": [
           "api.github.com",
-          "github.com",
-          "www.first.org"
+          "github.com"
         ],
-        "secret-names": []
+        "secret-names": [
+          "GH_TOKEN",
+          "GITHUB_TOKEN"
+        ]
       },
       "checks": {
-        "advisories": 1,
-        "content-digest": "sha256:8c21d38f24540b2331c6b9ad87aad12f2935e548e257125621637d74e90e1913",
-        "findings": [
-          {
-            "category": "package",
-            "code": "wildcard-capability",
-            "disposition": "advisory",
-            "field": "capabilities",
-            "file": "bcgov-extension.yaml",
-            "line": 1,
-            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "path": ".",
-            "policy-version": 2,
-            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
-            "rule-id": "wildcard-capability",
-            "severity": "advisory"
-          }
-        ],
+        "advisories": 0,
+        "content-digest": "sha256:689539957665cfc9fde18e46d4b40561c75e5d8a633f81c51cbcd116af184bd8",
+        "findings": [],
         "method": "automated-policy-scan",
         "outcome": "passed",
         "policy-version": 2,
@@ -885,23 +1162,23 @@
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:8c21d38f24540b2331c6b9ad87aad12f2935e548e257125621637d74e90e1913",
+      "content-digest": "sha256:689539957665cfc9fde18e46d4b40561c75e5d8a633f81c51cbcd116af184bd8",
       "display-name": "GitHub Repository Setup",
       "files": [
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "3663f53f05c642b200b47e51eee8d5c09ff7b95125bfcfd87dd8576e1405f7c8",
-          "size": 617
+          "sha256": "cf142e6c419c0bc1e697ea18f122afebaa1d32f37d440638126661e69125ae68",
+          "size": 630
         },
         {
           "path": "references/REFERENCE.md",
-          "sha256": "2574212bffc18a5c97516a47198505d112e40cf57fa81a9b90737f22d4f8b91a",
-          "size": 22545
+          "sha256": "2ad99af18137ddeba8566d1c30e87a6932a964ac1ccf58ebcbfe48fd4f956d7b",
+          "size": 1927
         },
         {
           "path": "SKILL.md",
-          "sha256": "a1797814f8767977644b57638de213b9ba99ad6b4812abe50c6fa2d32c5c46a2",
-          "size": 8323
+          "sha256": "24c81905c7ef74e6e66d2c16945b3dced7a97a49daea8ac04c5883046e8a71a8",
+          "size": 2360
         }
       ],
       "id": "bcgov-public/skill/github-repo-setup",
@@ -927,12 +1204,12 @@
           "placements": [
             {
               "destination": ".github/skills/github-repo-setup/SKILL.md",
-              "sha256": "a1797814f8767977644b57638de213b9ba99ad6b4812abe50c6fa2d32c5c46a2",
+              "sha256": "24c81905c7ef74e6e66d2c16945b3dced7a97a49daea8ac04c5883046e8a71a8",
               "source": "SKILL.md"
             },
             {
               "destination": ".github/skills/github-repo-setup/references/REFERENCE.md",
-              "sha256": "2574212bffc18a5c97516a47198505d112e40cf57fa81a9b90737f22d4f8b91a",
+              "sha256": "2ad99af18137ddeba8566d1c30e87a6932a964ac1ccf58ebcbfe48fd4f956d7b",
               "source": "references/REFERENCE.md"
             }
           ],
@@ -968,12 +1245,12 @@
           "placements": [
             {
               "destination": ".copilot/skills/github-repo-setup/SKILL.md",
-              "sha256": "a1797814f8767977644b57638de213b9ba99ad6b4812abe50c6fa2d32c5c46a2",
+              "sha256": "24c81905c7ef74e6e66d2c16945b3dced7a97a49daea8ac04c5883046e8a71a8",
               "source": "SKILL.md"
             },
             {
               "destination": ".copilot/skills/github-repo-setup/references/REFERENCE.md",
-              "sha256": "2574212bffc18a5c97516a47198505d112e40cf57fa81a9b90737f22d4f8b91a",
+              "sha256": "2ad99af18137ddeba8566d1c30e87a6932a964ac1ccf58ebcbfe48fd4f956d7b",
               "source": "references/REFERENCE.md"
             }
           ],
@@ -1003,7 +1280,7 @@
         "type": "community"
       },
       "prerequisites": [
-        "GitHub CLI authenticated for the repository being assessed"
+        "Supplied repository evidence; authorized GitHub metadata access is optional"
       ],
       "publisher": "Province of British Columbia",
       "risk": "high",
@@ -1014,13 +1291,17 @@
         "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
-      "summary": "Assess a GitHub repository against BC Gov DevOps and security standards and produce an evidence-based maturity report.",
+      "summary": "Assess repository practices using an explicit local rubric, evidence gaps and scoring coverage.",
       "support": "https://github.com/bcgov/agent-marketplace/issues",
       "type": "skill"
     },
     {
       "capabilities": {
         "commands": [
+          "python",
+          "shellcheck",
+          "jq",
+          "bash",
           "doc_links.py",
           "parser.py",
           "rb_commands.py",
@@ -1035,7 +1316,17 @@
           "INTERNAL"
         ],
         "environment-variables": [
-          "*"
+          "RUNBOOK_PARSER_CACHE",
+          "CHECK",
+          "FOO",
+          "GROUP",
+          "HERE",
+          "NAMESPACE",
+          "PARAM",
+          "PRIMARY_POD",
+          "PRODUCT_VERSION",
+          "SEP",
+          "VAR"
         ],
         "filesystem": {
           "read": [
@@ -1046,15 +1337,13 @@
           ]
         },
         "network": [
-          "github.com",
-          "raw.githubusercontent.com",
-          "img.shields.io"
+          "*"
         ],
         "secret-names": []
       },
       "checks": {
         "advisories": 1,
-        "content-digest": "sha256:16029be080594e56425200abeac3015d9e39ca970bf6e773d96d1398154a4484",
+        "content-digest": "sha256:e284ef710cbbf7764f7fc63dac36c2194b198cb1229a5aa3b92565e5956fcc64",
         "findings": [
           {
             "category": "package",
@@ -1063,10 +1352,10 @@
             "field": "capabilities",
             "file": "bcgov-extension.yaml",
             "line": 1,
-            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "message": "capability 'network' uses a wildcard '*' that grants unenumerated access",
             "path": ".",
             "policy-version": 2,
-            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "remediation": "capability 'network' uses a wildcard '*' that grants unenumerated access",
             "rule-id": "wildcard-capability",
             "severity": "advisory"
           }
@@ -1080,7 +1369,7 @@
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:16029be080594e56425200abeac3015d9e39ca970bf6e773d96d1398154a4484",
+      "content-digest": "sha256:e284ef710cbbf7764f7fc63dac36c2194b198cb1229a5aa3b92565e5956fcc64",
       "display-name": "n8n Runbook Parser",
       "files": [
         {
@@ -1100,18 +1389,18 @@
         },
         {
           "path": "assets/snippet-template.sh",
-          "sha256": "e2293974a4666c1a1a4e584ea48c6e4931dd21d4aba85f2c7d5b286c1105e87d",
-          "size": 655
+          "sha256": "dee83773650d9a12bdfd744107c5fb5fd78b2e9fbb6dff7a110ce275a435e8b3",
+          "size": 689
         },
         {
           "path": "assets/validator-template.sh",
-          "sha256": "11060681874b6099afe7d145999296cdeb349cb80b23d3ad845e5a47fb3fc456",
-          "size": 3378
+          "sha256": "8210992901e493867fd9d9e894f028591ac9d7184a1c71a2f31b73e03e689f6f",
+          "size": 3397
         },
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "aa269004128f4a3b042be3d99a124d18bbf1c42bde1130a708cbe3addda235ed",
-          "size": 841
+          "sha256": "bf8667881bc1db41a4b446bbdb45f788b6862a12764d492cd29e71689f3c864b",
+          "size": 1066
         },
         {
           "path": "references/BACKPORT.md",
@@ -1120,13 +1409,13 @@
         },
         {
           "path": "references/CLEANING.md",
-          "sha256": "8851ce2ae702fe98f2c139e7fe68797fe1024ffd35517bffb0f35021733aef4a",
-          "size": 13421
+          "sha256": "47b144d989ac29cb446748044835330fc8090835f85cd5a5f72d00d0712b00a4",
+          "size": 13545
         },
         {
           "path": "references/CONFIG.md",
-          "sha256": "8b745e92b010f38dfc45c9ee14b1a55b75aeb0ac071e1a32ccb02a6733adfd1f",
-          "size": 5326
+          "sha256": "c5adaef797f8da674344fee8fbbf6b8709a4b068fcce9d862567788e99a226e2",
+          "size": 5475
         },
         {
           "path": "references/PARSER_USAGE.md",
@@ -1150,8 +1439,8 @@
         },
         {
           "path": "scripts/rb_commands.py",
-          "sha256": "f721baf0eaf4d57bd19d1475d8e6dafdff819c1c32bb02216358d7f79ebe00a6",
-          "size": 18974
+          "sha256": "d895fa164e10e6991375d58aebb8cda74033d42dcfaddf5a1b60d45cacd3f565",
+          "size": 18975
         },
         {
           "path": "scripts/rb_config.py",
@@ -1185,8 +1474,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "da9de9df68f2621e6f64b9b6ef0e45d6b4ca4d5178479e302ad6fefe83b09eaf",
-          "size": 12213
+          "sha256": "8216ec7cd0409d61beaeefeb4c33a7d9f819a7c41ff4c90b682ff58da90ec16d",
+          "size": 3861
         }
       ],
       "id": "bcgov-public/skill/n8n-runbook-parser",
@@ -1212,7 +1501,7 @@
           "placements": [
             {
               "destination": ".github/skills/n8n-runbook-parser/SKILL.md",
-              "sha256": "da9de9df68f2621e6f64b9b6ef0e45d6b4ca4d5178479e302ad6fefe83b09eaf",
+              "sha256": "8216ec7cd0409d61beaeefeb4c33a7d9f819a7c41ff4c90b682ff58da90ec16d",
               "source": "SKILL.md"
             },
             {
@@ -1232,12 +1521,12 @@
             },
             {
               "destination": ".github/skills/n8n-runbook-parser/assets/snippet-template.sh",
-              "sha256": "e2293974a4666c1a1a4e584ea48c6e4931dd21d4aba85f2c7d5b286c1105e87d",
+              "sha256": "dee83773650d9a12bdfd744107c5fb5fd78b2e9fbb6dff7a110ce275a435e8b3",
               "source": "assets/snippet-template.sh"
             },
             {
               "destination": ".github/skills/n8n-runbook-parser/assets/validator-template.sh",
-              "sha256": "11060681874b6099afe7d145999296cdeb349cb80b23d3ad845e5a47fb3fc456",
+              "sha256": "8210992901e493867fd9d9e894f028591ac9d7184a1c71a2f31b73e03e689f6f",
               "source": "assets/validator-template.sh"
             },
             {
@@ -1247,12 +1536,12 @@
             },
             {
               "destination": ".github/skills/n8n-runbook-parser/references/CLEANING.md",
-              "sha256": "8851ce2ae702fe98f2c139e7fe68797fe1024ffd35517bffb0f35021733aef4a",
+              "sha256": "47b144d989ac29cb446748044835330fc8090835f85cd5a5f72d00d0712b00a4",
               "source": "references/CLEANING.md"
             },
             {
               "destination": ".github/skills/n8n-runbook-parser/references/CONFIG.md",
-              "sha256": "8b745e92b010f38dfc45c9ee14b1a55b75aeb0ac071e1a32ccb02a6733adfd1f",
+              "sha256": "c5adaef797f8da674344fee8fbbf6b8709a4b068fcce9d862567788e99a226e2",
               "source": "references/CONFIG.md"
             },
             {
@@ -1277,7 +1566,7 @@
             },
             {
               "destination": ".github/skills/n8n-runbook-parser/scripts/rb_commands.py",
-              "sha256": "f721baf0eaf4d57bd19d1475d8e6dafdff819c1c32bb02216358d7f79ebe00a6",
+              "sha256": "d895fa164e10e6991375d58aebb8cda74033d42dcfaddf5a1b60d45cacd3f565",
               "source": "scripts/rb_commands.py"
             },
             {
@@ -1343,7 +1632,7 @@
           "placements": [
             {
               "destination": ".copilot/skills/n8n-runbook-parser/SKILL.md",
-              "sha256": "da9de9df68f2621e6f64b9b6ef0e45d6b4ca4d5178479e302ad6fefe83b09eaf",
+              "sha256": "8216ec7cd0409d61beaeefeb4c33a7d9f819a7c41ff4c90b682ff58da90ec16d",
               "source": "SKILL.md"
             },
             {
@@ -1363,12 +1652,12 @@
             },
             {
               "destination": ".copilot/skills/n8n-runbook-parser/assets/snippet-template.sh",
-              "sha256": "e2293974a4666c1a1a4e584ea48c6e4931dd21d4aba85f2c7d5b286c1105e87d",
+              "sha256": "dee83773650d9a12bdfd744107c5fb5fd78b2e9fbb6dff7a110ce275a435e8b3",
               "source": "assets/snippet-template.sh"
             },
             {
               "destination": ".copilot/skills/n8n-runbook-parser/assets/validator-template.sh",
-              "sha256": "11060681874b6099afe7d145999296cdeb349cb80b23d3ad845e5a47fb3fc456",
+              "sha256": "8210992901e493867fd9d9e894f028591ac9d7184a1c71a2f31b73e03e689f6f",
               "source": "assets/validator-template.sh"
             },
             {
@@ -1378,12 +1667,12 @@
             },
             {
               "destination": ".copilot/skills/n8n-runbook-parser/references/CLEANING.md",
-              "sha256": "8851ce2ae702fe98f2c139e7fe68797fe1024ffd35517bffb0f35021733aef4a",
+              "sha256": "47b144d989ac29cb446748044835330fc8090835f85cd5a5f72d00d0712b00a4",
               "source": "references/CLEANING.md"
             },
             {
               "destination": ".copilot/skills/n8n-runbook-parser/references/CONFIG.md",
-              "sha256": "8b745e92b010f38dfc45c9ee14b1a55b75aeb0ac071e1a32ccb02a6733adfd1f",
+              "sha256": "c5adaef797f8da674344fee8fbbf6b8709a4b068fcce9d862567788e99a226e2",
               "source": "references/CONFIG.md"
             },
             {
@@ -1408,7 +1697,7 @@
             },
             {
               "destination": ".copilot/skills/n8n-runbook-parser/scripts/rb_commands.py",
-              "sha256": "f721baf0eaf4d57bd19d1475d8e6dafdff819c1c32bb02216358d7f79ebe00a6",
+              "sha256": "d895fa164e10e6991375d58aebb8cda74033d42dcfaddf5a1b60d45cacd3f565",
               "source": "scripts/rb_commands.py"
             },
             {
@@ -1487,6 +1776,10 @@
     {
       "capabilities": {
         "commands": [
+          "bash",
+          "jq",
+          "curl",
+          "shellcheck",
           "merge.sh",
           "n8n-entrypoint.sh",
           "pull.sh",
@@ -1502,20 +1795,48 @@
           "CONFIDENTIAL"
         ],
         "environment-variables": [
-          "*"
+          "BASH_REMATCH",
+          "BASH_SOURCE",
+          "CONFIG",
+          "DATA",
+          "DEST_DIR",
+          "DRY_RUN",
+          "FOO",
+          "GROUP",
+          "HELPERS",
+          "HERE",
+          "JSON",
+          "N8N",
+          "N8N_CONFIG",
+          "N8N_LOG_TAG",
+          "N8N_URL",
+          "N8N_WORKFLOWS_DIR",
+          "NAME",
+          "OUT",
+          "OUTDIR",
+          "PATH",
+          "PRUNE",
+          "ROOT",
+          "SCRIPT_DIR",
+          "SNIPPETS",
+          "TEMPLATE",
+          "VALS",
+          "VAR",
+          "WORKFLOWS_DIR",
+          "NAMESPACE",
+          "MERGE_ONE",
+          "MERGE_TWO"
         ],
         "filesystem": {
           "read": [
             "tools/n8n and selected cleaned snippets"
           ],
           "write": [
-            "tools/n8n generated workflows after confirmation"
+            "selected config directory and generated workflows after confirmation"
           ]
         },
         "network": [
-          "localhost",
-          "cdn.jsdelivr.net",
-          "img.shields.io"
+          "*"
         ],
         "secret-names": [
           "N8N_API_KEY"
@@ -1523,7 +1844,7 @@
       },
       "checks": {
         "advisories": 1,
-        "content-digest": "sha256:bae3f05e05510390e595d773fb696ca0040e6723138e8ac5879a8e650957622e",
+        "content-digest": "sha256:7a2abbeaacb995741c0489c6d8d71941720e99d4fc83befc3af83e18b831f6f5",
         "findings": [
           {
             "category": "package",
@@ -1532,10 +1853,10 @@
             "field": "capabilities",
             "file": "bcgov-extension.yaml",
             "line": 1,
-            "message": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "message": "capability 'network' uses a wildcard '*' that grants unenumerated access",
             "path": ".",
             "policy-version": 2,
-            "remediation": "capability 'environment-variables' uses a wildcard '*' that grants unenumerated access",
+            "remediation": "capability 'network' uses a wildcard '*' that grants unenumerated access",
             "rule-id": "wildcard-capability",
             "severity": "advisory"
           }
@@ -1549,28 +1870,28 @@
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:bae3f05e05510390e595d773fb696ca0040e6723138e8ac5879a8e650957622e",
+      "content-digest": "sha256:7a2abbeaacb995741c0489c6d8d71941720e99d4fc83befc3af83e18b831f6f5",
       "display-name": "n8n Workflow Builder",
       "files": [
         {
           "path": "assets/local-workflow.sh",
-          "sha256": "2e6d0dba30dd6ba11f6b49878e8a4dc7ba3cedb7e5c88bd210552ade95c5b8fb",
-          "size": 3803
+          "sha256": "70bc3e40e3ef01853e79cbdb886a974eda3bcb59b4e433a6335cceb7cdd07b23",
+          "size": 3820
         },
         {
           "path": "assets/skeleton.json",
-          "sha256": "158fb190a40cc003a207ba4ec6fbe5f0abc04d5512e1590b7651d574230d855b",
-          "size": 4473
+          "sha256": "74fb2a0853e884c82c69c9a2914c2ad19a95d9d68fe5fd937bf9669e5e541647",
+          "size": 3807
         },
         {
           "path": "assets/sticky-note.md",
-          "sha256": "99b5a001f0a3ffe30643c704c2b7682fe71dff55295aceba51accb1a648dcbe1",
-          "size": 776
+          "sha256": "dab25f94ebe5cde03cc75a0238b456ee27880df115a8b43ce850c967c2a0dde7",
+          "size": 498
         },
         {
           "path": "bcgov-extension.yaml",
-          "sha256": "2e0cf09c0d0ac16a4343aa4d978d12d94102cf42bc1e38fb02b399f974a356e9",
-          "size": 803
+          "sha256": "d2cd2f635a6ead71e0054ee91f099257a0ea1343a92a3d5e66a5440a9db779b3",
+          "size": 1360
         },
         {
           "path": "references/API_SCHEMA.md",
@@ -1579,13 +1900,13 @@
         },
         {
           "path": "references/LOCAL_WORKFLOW.md",
-          "sha256": "002382aca8bafe3557647a0fe8244b69c1c8f132467d037883fb474bbbb2fb7b",
-          "size": 3298
+          "sha256": "9f18d4810bc09eff4c01dd51931e6f83ad0cb4dbd90cb1331154c7175b5c489e",
+          "size": 3386
         },
         {
           "path": "references/N8N_NODES.md",
-          "sha256": "955c1d87fb44a396e6ce54e7cd6f44f0e96f52d3c35b0acbbfdea5e6a4d4dfa6",
-          "size": 7030
+          "sha256": "3116be079ed81b688f248127ebc8c9e42fcfbdcab0d304d4cb61fab2e4f105b4",
+          "size": 1701
         },
         {
           "path": "scripts/merge.sh",
@@ -1634,8 +1955,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "a32a1e725f6d90cafd99171ed23e8c40a7c9a3a4b6988c935c241a91773ca942",
-          "size": 13729
+          "sha256": "629a07b17551c9eb50a6778cde37203222106d44af5b78a138eec4b3707a5a0a",
+          "size": 4191
         }
       ],
       "id": "bcgov-public/skill/n8n-workflow-builder",
@@ -1661,22 +1982,22 @@
           "placements": [
             {
               "destination": ".github/skills/n8n-workflow-builder/SKILL.md",
-              "sha256": "a32a1e725f6d90cafd99171ed23e8c40a7c9a3a4b6988c935c241a91773ca942",
+              "sha256": "629a07b17551c9eb50a6778cde37203222106d44af5b78a138eec4b3707a5a0a",
               "source": "SKILL.md"
             },
             {
               "destination": ".github/skills/n8n-workflow-builder/assets/local-workflow.sh",
-              "sha256": "2e6d0dba30dd6ba11f6b49878e8a4dc7ba3cedb7e5c88bd210552ade95c5b8fb",
+              "sha256": "70bc3e40e3ef01853e79cbdb886a974eda3bcb59b4e433a6335cceb7cdd07b23",
               "source": "assets/local-workflow.sh"
             },
             {
               "destination": ".github/skills/n8n-workflow-builder/assets/skeleton.json",
-              "sha256": "158fb190a40cc003a207ba4ec6fbe5f0abc04d5512e1590b7651d574230d855b",
+              "sha256": "74fb2a0853e884c82c69c9a2914c2ad19a95d9d68fe5fd937bf9669e5e541647",
               "source": "assets/skeleton.json"
             },
             {
               "destination": ".github/skills/n8n-workflow-builder/assets/sticky-note.md",
-              "sha256": "99b5a001f0a3ffe30643c704c2b7682fe71dff55295aceba51accb1a648dcbe1",
+              "sha256": "dab25f94ebe5cde03cc75a0238b456ee27880df115a8b43ce850c967c2a0dde7",
               "source": "assets/sticky-note.md"
             },
             {
@@ -1686,12 +2007,12 @@
             },
             {
               "destination": ".github/skills/n8n-workflow-builder/references/LOCAL_WORKFLOW.md",
-              "sha256": "002382aca8bafe3557647a0fe8244b69c1c8f132467d037883fb474bbbb2fb7b",
+              "sha256": "9f18d4810bc09eff4c01dd51931e6f83ad0cb4dbd90cb1331154c7175b5c489e",
               "source": "references/LOCAL_WORKFLOW.md"
             },
             {
               "destination": ".github/skills/n8n-workflow-builder/references/N8N_NODES.md",
-              "sha256": "955c1d87fb44a396e6ce54e7cd6f44f0e96f52d3c35b0acbbfdea5e6a4d4dfa6",
+              "sha256": "3116be079ed81b688f248127ebc8c9e42fcfbdcab0d304d4cb61fab2e4f105b4",
               "source": "references/N8N_NODES.md"
             },
             {
@@ -1772,22 +2093,22 @@
           "placements": [
             {
               "destination": ".copilot/skills/n8n-workflow-builder/SKILL.md",
-              "sha256": "a32a1e725f6d90cafd99171ed23e8c40a7c9a3a4b6988c935c241a91773ca942",
+              "sha256": "629a07b17551c9eb50a6778cde37203222106d44af5b78a138eec4b3707a5a0a",
               "source": "SKILL.md"
             },
             {
               "destination": ".copilot/skills/n8n-workflow-builder/assets/local-workflow.sh",
-              "sha256": "2e6d0dba30dd6ba11f6b49878e8a4dc7ba3cedb7e5c88bd210552ade95c5b8fb",
+              "sha256": "70bc3e40e3ef01853e79cbdb886a974eda3bcb59b4e433a6335cceb7cdd07b23",
               "source": "assets/local-workflow.sh"
             },
             {
               "destination": ".copilot/skills/n8n-workflow-builder/assets/skeleton.json",
-              "sha256": "158fb190a40cc003a207ba4ec6fbe5f0abc04d5512e1590b7651d574230d855b",
+              "sha256": "74fb2a0853e884c82c69c9a2914c2ad19a95d9d68fe5fd937bf9669e5e541647",
               "source": "assets/skeleton.json"
             },
             {
               "destination": ".copilot/skills/n8n-workflow-builder/assets/sticky-note.md",
-              "sha256": "99b5a001f0a3ffe30643c704c2b7682fe71dff55295aceba51accb1a648dcbe1",
+              "sha256": "dab25f94ebe5cde03cc75a0238b456ee27880df115a8b43ce850c967c2a0dde7",
               "source": "assets/sticky-note.md"
             },
             {
@@ -1797,12 +2118,12 @@
             },
             {
               "destination": ".copilot/skills/n8n-workflow-builder/references/LOCAL_WORKFLOW.md",
-              "sha256": "002382aca8bafe3557647a0fe8244b69c1c8f132467d037883fb474bbbb2fb7b",
+              "sha256": "9f18d4810bc09eff4c01dd51931e6f83ad0cb4dbd90cb1331154c7175b5c489e",
               "source": "references/LOCAL_WORKFLOW.md"
             },
             {
               "destination": ".copilot/skills/n8n-workflow-builder/references/N8N_NODES.md",
-              "sha256": "955c1d87fb44a396e6ce54e7cd6f44f0e96f52d3c35b0acbbfdea5e6a4d4dfa6",
+              "sha256": "3116be079ed81b688f248127ebc8c9e42fcfbdcab0d304d4cb61fab2e4f105b4",
               "source": "references/N8N_NODES.md"
             },
             {
@@ -1889,7 +2210,7 @@
         "revision": "2046da7b0de0f673bf39208b35385c1516be4c75"
       },
       "specialty": "community",
-      "summary": "Compose reviewed runbook snippets into local and n8n operational triage workflows with explicit API publication steps.",
+      "summary": "Compose reviewed runbook snippets into local and n8n operational triage workflows as reviewable fixed-input scaffolds; API publication is separate.",
       "support": "https://github.com/bcgov/agent-marketplace/issues",
       "type": "skill"
     },
@@ -1924,7 +2245,7 @@
       },
       "checks": {
         "advisories": 0,
-        "content-digest": "sha256:da1d7ed5518eb8f00a45a8fd59a18f88cb57fcaaeaa763847bdfa61064acd2ac",
+        "content-digest": "sha256:0b9867cabe4c87c7a65df04726e1fcfd383de3e33536d4b0a55bc2c3ebef2902",
         "findings": [],
         "method": "automated-policy-scan",
         "outcome": "passed",
@@ -1935,7 +2256,7 @@
       "compatibility": {
         "not-ready-on": []
       },
-      "content-digest": "sha256:da1d7ed5518eb8f00a45a8fd59a18f88cb57fcaaeaa763847bdfa61064acd2ac",
+      "content-digest": "sha256:0b9867cabe4c87c7a65df04726e1fcfd383de3e33536d4b0a55bc2c3ebef2902",
       "display-name": "OpenShift Deployment",
       "files": [
         {
@@ -1945,13 +2266,13 @@
         },
         {
           "path": "references/REFERENCE.md",
-          "sha256": "331430ddc0819ba7bce912be98674f2d86db5a2e633921e31a69f49f4da6fd00",
-          "size": 24276
+          "sha256": "5fa2272df1a404cf64b32e33a6dc89756ed32715259f1be64453db87b2525aab",
+          "size": 1447
         },
         {
           "path": "SKILL.md",
-          "sha256": "3f23ff8fb6ce97442080318a3f05678040d407ed3f899b26c281de1720efc5e4",
-          "size": 32927
+          "sha256": "cc3e18bd62aa90662f580ac968541fa1bd5a1532ad3a89566f81a190c5b6906f",
+          "size": 2712
         }
       ],
       "id": "bcgov-public/skill/openshift-deployment",
@@ -1977,12 +2298,12 @@
           "placements": [
             {
               "destination": ".github/skills/openshift-deployment/SKILL.md",
-              "sha256": "3f23ff8fb6ce97442080318a3f05678040d407ed3f899b26c281de1720efc5e4",
+              "sha256": "cc3e18bd62aa90662f580ac968541fa1bd5a1532ad3a89566f81a190c5b6906f",
               "source": "SKILL.md"
             },
             {
               "destination": ".github/skills/openshift-deployment/references/REFERENCE.md",
-              "sha256": "331430ddc0819ba7bce912be98674f2d86db5a2e633921e31a69f49f4da6fd00",
+              "sha256": "5fa2272df1a404cf64b32e33a6dc89756ed32715259f1be64453db87b2525aab",
               "source": "references/REFERENCE.md"
             }
           ],
@@ -2018,12 +2339,12 @@
           "placements": [
             {
               "destination": ".copilot/skills/openshift-deployment/SKILL.md",
-              "sha256": "3f23ff8fb6ce97442080318a3f05678040d407ed3f899b26c281de1720efc5e4",
+              "sha256": "cc3e18bd62aa90662f580ac968541fa1bd5a1532ad3a89566f81a190c5b6906f",
               "source": "SKILL.md"
             },
             {
               "destination": ".copilot/skills/openshift-deployment/references/REFERENCE.md",
-              "sha256": "331430ddc0819ba7bce912be98674f2d86db5a2e633921e31a69f49f4da6fd00",
+              "sha256": "5fa2272df1a404cf64b32e33a6dc89756ed32715259f1be64453db87b2525aab",
               "source": "references/REFERENCE.md"
             }
           ],

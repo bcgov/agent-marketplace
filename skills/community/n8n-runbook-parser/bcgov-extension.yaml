@@ -13,10 +13,12 @@ capabilities:
     write:
       - generated snippets and parser state after confirmation
   network:
-    - github.com
-    - raw.githubusercontent.com
-    - img.shields.io
+    - "*"
   commands:
+    - python
+    - shellcheck
+    - jq
+    - bash
     - doc_links.py
     - parser.py
     - rb_commands.py
@@ -26,8 +28,19 @@ capabilities:
     - rb_model.py
     - rb_reconstruct.py
     - rb_seal.py
+  # Includes shell-local/template variable references recognized by the static scan.
   environment-variables:
-    - "*"
+    - RUNBOOK_PARSER_CACHE
+    - CHECK
+    - FOO
+    - GROUP
+    - HERE
+    - NAMESPACE
+    - PARAM
+    - PRIMARY_POD
+    - PRODUCT_VERSION
+    - SEP
+    - VAR
   secret-names: []
   data-classes:
     - INTERNAL

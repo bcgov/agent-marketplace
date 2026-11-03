@@ -1,0 +1,14 @@
+maintainers:
+  - "@Krocodial"
+capabilities:
+  filesystem:
+    read:
+      - docs/runbooks/**/*.md
+    write:
+      - docs/runbooks/**/*.md
+  network: []
+  commands: []
+  environment-variables: []
+  secret-names: []
+  data-classes:
+    - INTERNAL

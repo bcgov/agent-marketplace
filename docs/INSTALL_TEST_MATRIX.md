@@ -69,3 +69,14 @@ Checked 2026-11-03: [skills and personal/project directories](https://code.visua
 and [GitHub agent-specific requirements](https://docs.github.com/en/copilot/reference/custom-agents-configuration).
 Other clients, global non-skill paths, APM/npx commands and native deep links
 are withheld until their exact layout/scope contracts are tested.
+
+## Community non-skill seed placement, 2026-11-03
+
+The runbook-review-evidence instructions, change-summary prompt and
+acceptance-reviewer agent use the project paths in the table above. Each was
+actually copied into an isolated project through the shared manual placement
+interface, compared by SHA-256, refused on a second colliding placement, removed
+and reinstalled. The comparison uses source working-tree bytes, not a newly
+published release. No package scripts or model/client behavior were executed.
+[Quality decisions and concrete tasks](EXTENSION_QUALITY.md) separate the manual
+content exercises from this native file placement evidence.

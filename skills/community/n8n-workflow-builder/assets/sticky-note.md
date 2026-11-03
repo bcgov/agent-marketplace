@@ -1,15 +1,11 @@
-<!-- Sticky-note content for a built workflow's "Production URL" node. The builder fills the
-     placeholders and uses the result as the stickyNote `content` (newlines escaped as \n in
-     the JSON). This comment is scaffolding — drop it; keep the body below as the note content.
-       <TITLE>     workflow title, e.g. My triage
-       <BASE_URL>  spec.n8n.base_url from tools/n8n/config.yaml (the production n8n host)
-       <PATH>      the Webhook node's path (= the workflow name)
-       <QUERY>     query params, e.g. id=123 (drop the "?<QUERY>" if none)
--->
-## <TITLE> — production URL
+# INCOMPLETE SCAFFOLD - author review required
 
-Click to run this triage — read-only and idempotent, safe to fire any time:
+Fill the reviewed title, base URL and webhook path. Replace every REVIEWED_
+placeholder in the workflow before target-version validation. This template is
+not import-ready or runtime-tested.
 
-**<BASE_URL>/webhook/<PATH>?<QUERY>**
+Trigger URL: **<BASE_URL>/webhook/<PATH>**
 
-Built from cleaned snippets by the workflow-builder skill.
+This URL triggers fixed reviewed commands. Request data does not select a
+namespace, command, script, group or report. Review access, side effects,
+concurrency and report exposure before any authorized activation.

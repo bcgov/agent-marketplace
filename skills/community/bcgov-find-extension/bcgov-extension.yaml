@@ -4,12 +4,15 @@ maintainers:
   - "@mishraomp"
   - "@DerekRoberts"
 prerequisites:
-  - GitHub Copilot with Agent Skills support
+  - A client that can read the native guidance
 capabilities:
   filesystem:
-    read: []
-    write: []
+    read:
+      - selected package and native placement destinations
+    write:
+      - explicitly selected native project or personal skill destinations
   network:
+    - bcgov.github.io
     - raw.githubusercontent.com
     - github.com
   commands: []
