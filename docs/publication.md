@@ -10,19 +10,27 @@ site code. Dispatch offers no old tag, asset, or historical source input.
 `publication.enabled` is an Admin-owned, default-off control independent of
 Community and dependency merge routes. Disabled runs validate and build but
 perform no release, tag or Pages mutations, including the first workflow merge.
-The release adapter fetches the switch from current main immediately before
+The environment uses `deployment: false`, so merely starting a disabled job
+creates no environment deployment record. The guarded Pages action supplies
+actual Pages event evidence. The release adapter fetches the switch from current main immediately before
 each mutation; upload and deploy steps recheck it again. Historical config cannot
 enable recovery. Activation and the live control/credential/actor proofs belong
 to #43; this implementation does not perform them.
 
 Meaningful comparison includes effective metadata, package inventory/digests,
 lifecycle/notices/replacements, findings, policy and actual engine input identity,
-Specialty registry ownership/flair, approved discovery sources and install
+Specialty registry ownership/flair, declared Community submission limits/risk
+ceiling, authorization implementation inputs, approved discovery sources and install
 client/layout/placements. Only generated snapshot source pins and per-choice
 source URLs are normalized. Authored SHA-bearing values, installed file hashes,
 adapter behavior and policy are retained. Engine identity hashes the executed
 validators/install adapter and trusted schema/policy inputs; it is independent
-of repository HEAD and publication controls.
+of repository HEAD and publication controls. `submission-policy` retains the
+non-enable Community policy fields; toggling `auto-publish` does not change it.
+`authorization-inputs` separately identifies actual intake decision code and its
+workflow. The trusted merge-gate implementation replaces these legacy entries
+with its actual decision module/workflow when introduced; neither identity
+claims that any Extension received automatic merge authorization.
 
 The explicit baseline in `config/publication-baseline.json` authenticates the
 legacy `catalog-2026.10.01` asset by its schema, nine identities, digest, tag

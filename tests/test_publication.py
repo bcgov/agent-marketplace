@@ -134,6 +134,9 @@ class Remote:
   def upload(self, release, content):
     """Persist exact bytes, optionally failing after the server accepted them."""
     self.effects.append("upload")
+    if self.fault == "upload-before":
+      self.fault = None
+      raise OSError("upload failed before persistence")
     self.items[self.items.index(release)] = replace(release, content=content)
     if self.disable_at == "uploaded":
       self.on = False
@@ -144,6 +147,9 @@ class Remote:
   def publish(self, release):
     """Publish without ever replacing uploaded bytes."""
     self.effects.append("publish")
+    if self.fault == "publish-before":
+      self.fault = None
+      raise OSError("publish failed before persistence")
     self.items[self.items.index(release)] = replace(
       release, draft=False, published_at="2026-11-03T01:02:03Z"
     )
@@ -189,7 +195,9 @@ def test_first_v1_migration_then_docs_only_reuses_exact_asset():
   assert remote.effects == ["create", "upload", "publish", "deploy", "deploy"]
 
 
-@pytest.mark.parametrize("fault", ["upload", "publish", "deploy"])
+@pytest.mark.parametrize(
+  "fault", ["upload", "publish", "deploy", "upload-before", "publish-before"]
+)
 def test_retry_resumes_persisted_state_without_duplicate_snapshot(fault):
   """Timeouts after accepted effects and Pages failures reuse immutable bytes."""
   remote = Remote()
@@ -200,7 +208,7 @@ def test_retry_resumes_persisted_state_without_duplicate_snapshot(fault):
   assert len(remote.items) == 2
   assert remote.live == result.content
   assert remote.effects.count("create") == 1
-  assert remote.effects.count("upload") == 1
+  assert remote.effects.count("upload") == (2 if fault == "upload-before" else 1)
 
 
 @pytest.mark.parametrize("disable_at", ["initial", "prepared", "uploaded"])
@@ -287,7 +295,7 @@ def test_withdrawal_supersedes_old_live_retry_and_site_rollback_keeps_newest():
   remote = Remote()
   first = publish(remote)
   withdrawn = candidate("b" * 40)
-  withdrawn["extensions"][0]["lifecycle"] = "withdrawn"
+  withdrawn["extensions"][0]["lifecycle"] = "removed"
   withdrawn["extensions"][0]["install-options"] = []
   remote.fault = "deploy"
   with pytest.raises(OSError):
@@ -297,7 +305,7 @@ def test_withdrawal_supersedes_old_live_retry_and_site_rollback_keeps_newest():
     p.guard_deploy(remote, first.release, remote.baseline)
   recovered = publish(remote, recover=True)
   assert recovered.content == newest_release.content == remote.live
-  assert json.loads(recovered.content)["extensions"][0]["lifecycle"] == "withdrawn"
+  assert json.loads(recovered.content)["extensions"][0]["lifecycle"] == "removed"
   assert first.content == remote.items[1].content
   assert len(remote.items) == 3
 
@@ -316,6 +324,29 @@ def test_old_failed_deploy_retry_cannot_publish_a_fresh_active_replay():
     publish(remote, candidate())
   assert len(remote.items) == 3
   assert remote.live == latest.content
+
+
+def test_accepted_history_rejects_a_backward_source_disguised_as_a_new_release():
+  """An apparent new lineage tag cannot authorize replaying pre-withdrawal source."""
+  remote = Remote()
+  first = publish(remote)
+  withdrawal = candidate("b" * 40)
+  withdrawal["extensions"][0]["lifecycle"] = "removed"
+  withdrawal["extensions"][0]["install-options"] = []
+  latest = publish(remote, withdrawal)
+  replay = json.loads(first.content)
+  replay["version"] = "catalog-2026.11.03.3"
+  replay["publication"]["parent"] = {
+    "tag": latest.release.tag,
+    "digest": p.digest(latest.content),
+  }
+  remote.items.append(
+    p.Release(
+      replay["version"], "a" * 40, p.canonical(replay), False, "2026-11-03T03:00:00Z"
+    )
+  )
+  with pytest.raises(p.PublicationError, match="ancestry"):
+    p.newest(remote, remote.baseline)
 
 
 def test_asset_collision_is_an_error_and_missing_history_never_resets():

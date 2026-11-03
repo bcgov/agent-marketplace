@@ -31,9 +31,11 @@ for a package to be a valid skill.
 ## Type-specific content
 
 Every content file is UTF-8 Markdown with non-empty content. All four types
-can supply `description` in YAML frontmatter. Skills without it must supply
-a Manifest `summary`. Non-skill types require YAML frontmatter and a non-empty
-`description`, independently of marketplace overrides.
+can supply `description` in YAML frontmatter. A missing native description
+needs a Manifest `summary` for Catalogue metadata. VS Code Local accepts optional
+headers for non-skill types. Native client constraints gate advertised choices
+independently: skills require native name/description; GitHub agents require
+a native description, so a VS Code choice must not imply GitHub compatibility.
 
 - **Skill**: `SKILL.md`; validated by [SKILL.md Spec](./SKILL_SPEC.md).
 - **Prompt**: `<name>.prompt.md`; a focused, reusable request. The `name` and
@@ -43,8 +45,8 @@ a Manifest `summary`. Non-skill types require YAML frontmatter and a non-empty
   `applyTo` is optional; when omitted, the host decides where the guidance
   applies. The `name` field is optional.
 - **Agent**: `<name>.agent.md`; a focused assistant role with explicit
-  responsibility and boundaries. Its required frontmatter `name` is a
-  display name.
+  responsibility and boundaries. Its optional frontmatter `name` is a
+  display name in VS Code Local.
 
 ## Marketplace manifest
 

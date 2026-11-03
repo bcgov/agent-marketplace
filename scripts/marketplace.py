@@ -8,15 +8,18 @@ import hashlib
 import html
 import json
 import os
+import platform
 import re
 import stat
 import subprocess
 import sys
 import unicodedata
+from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as distribution_version
 from pathlib import Path
 
 import yaml
+from install_choices import build_install_choices
 from jsonschema import Draft202012Validator, FormatChecker
 from publication import PublicationError, canonical, git, source_dates
 
@@ -397,7 +400,7 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
     lifecycle = manifest.get("lifecycle", "active")
     frontmatter = {}
     if lifecycle != "removed":
-      frontmatter, artifact_errors = _read_artifact(
+      frontmatter, artifact_errors = read_native_content(
         artifact_path, TYPE_DIRECTORIES[parts[0]]
       )
       errors.extend(artifact_errors)
@@ -460,7 +463,7 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
   return manifest, errors
 
 
-def _read_artifact(path: Path, extension_type: str) -> tuple[dict, list[str]]:
+def read_native_content(path: Path, extension_type: str) -> tuple[dict, list[str]]:
   """Read native content once for validation and effective metadata derivation."""
   errors = []
   if not path.is_file():
@@ -469,7 +472,7 @@ def _read_artifact(path: Path, extension_type: str) -> tuple[dict, list[str]]:
     text = path.read_text(encoding="utf-8")
   except (OSError, UnicodeError):
     return {}, [_diagnostic(path, "<root>", "Save a readable UTF-8 text file.")]
-  if extension_type == "skill" and not text.startswith("---"):
+  if not text.startswith("---"):
     return {}, (
       [] if text.strip() else [_diagnostic(path, "<root>", "Add non-empty content.")]
     )
@@ -487,12 +490,9 @@ def _read_artifact(path: Path, extension_type: str) -> tuple[dict, list[str]]:
   except PublicMarketplaceError as exc:
     return {}, [PublicDiagnostic(str(exc))]
 
-  required = {
-    "prompt": {"description"},
-    "instructions": {"description"},
-    "agent": {"name", "description"},
-    "skill": set(),
-  }[extension_type]
+  # VS Code Local accepts optional headers for prompts, instructions and agents.
+  # Independent client requirements (for example skill routing) gate choices.
+  required = set()
   for field in sorted(required | (frontmatter.keys() & {"name", "description"})):
     if not isinstance(frontmatter.get(field), str) or not frontmatter[field].strip():
       errors.append(
@@ -1521,10 +1521,40 @@ def engine_identity(root: Path) -> str:
   for path in sorted((root / "schemas").glob("*.json")):
     inputs[f"schemas/{path.name}"] = json.loads(path.read_text(encoding="utf-8"))
   inputs["security-policy"] = load_security_policy(root)
-  inputs["dependencies"] = {
-    name: distribution_version(name) for name in ("jsonschema", "PyYAML")
-  }
+  inputs["python"] = platform.python_version()
+  inputs["dependencies"] = {}
+  # Runtime schema dependencies also affect interpretation; dev-only tooling does not.
+  for name in (
+    "jsonschema",
+    "PyYAML",
+    "attrs",
+    "jsonschema-specifications",
+    "referencing",
+    "rpds-py",
+    "typing_extensions",
+  ):
+    try:
+      inputs["dependencies"][name] = distribution_version(name)
+    except PackageNotFoundError:
+      continue  # Some runtimes do not need typing_extensions.
   return "sha256:" + hashlib.sha256(canonical(inputs)).hexdigest()
+
+
+def authorization_inputs(root: Path) -> dict:
+  """Identify actual intake code separately from package scan/install evidence.
+
+  The trusted merge gate must replace the legacy workflow entry and add its
+  decision module here when it becomes the authorization implementation.
+  These are input identities, not a claim that an Extension was auto-merged.
+  """
+  sources = {"scripts/marketplace.py": Path(__file__)}
+  workflow = root / ".github/workflows/community-intake.yml"
+  if workflow.exists():
+    sources[".github/workflows/community-intake.yml"] = workflow
+  return {
+    name: "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    for name, path in sources.items()
+  }
 
 
 def build_catalog(
@@ -1539,6 +1569,8 @@ def build_catalog(
       revision = git(root, "rev-parse", "HEAD").strip()
     except PublicationError:
       revision = "0" * 40  # Unpublished preview with no source history.
+  if not re.fullmatch(r"[0-9a-f]{40}", revision):
+    raise MarketplaceError("Catalogue source revision must be a full lowercase SHA")
   dates = {}
   if config.get("history-start"):
     try:
@@ -1614,8 +1646,7 @@ def build_catalog(
     )
     evidence.pop("risk", None)
     record["checks"].update(evidence)
-    if record["lifecycle"] != "active":
-      record["install-options"] = []
+    record["install-options"] = build_install_choices(record, package_dir)
     records.append(record)
   by_id = {record["id"]: record for record in records}
   legacy_ids = load_legacy_ids(root)
@@ -1665,6 +1696,14 @@ def build_catalog(
     "revision": revision,
     "version": version,
     "engine": engine_identity(root),
+    "authorization-inputs": authorization_inputs(root),
+    "submission-policy": {
+      "community-intake": {
+        key: value
+        for key, value in (config.get("community-intake") or {}).items()
+        if key != "auto-publish"
+      }
+    },
     "specialties": load_specialties(root),
     "policy-version": policy["policy-version"],
     "approved-discovery-sources": config.get("approved-discovery-sources", []),
@@ -1672,7 +1711,12 @@ def build_catalog(
     "extensions": records,
     "legacy-ids": legacy_ids,
   }
-  cards = [_catalog_row(record) for record in records]
+  return catalog, render_catalog_cards(catalog)
+
+
+def render_catalog_cards(catalog: dict) -> str:
+  """Render the selected Catalogue records, including their complete type vocabulary."""
+  cards = [_catalog_row(record) for record in catalog["extensions"]]
   # The page builds its facets from the rendered rows, so the canonical type
   # vocabulary travels with them. Types absent from the catalog still appear,
   # disabled, which shows the reader what this marketplace intends to carry.
@@ -1688,7 +1732,7 @@ def build_catalog(
   header = (
     f'<script type="application/json" id="catalog-vocabulary">{vocabulary}</script>'
   )
-  return catalog, "\n\n".join([header, *cards]) + "\n"
+  return "\n\n".join([header, *cards]) + "\n"
 
 
 TRUST_LABELS = {

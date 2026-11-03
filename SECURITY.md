@@ -10,8 +10,8 @@ Marketplace maintainers acknowledge critical reports within one business day. Th
 
 ## Scope
 
-Reports may cover the marketplace generator and scanner, companion skills, generated catalog, installation and receipt behavior, CI controls, or hosted and federated Agent Skill packages. Hooks, MCP servers, custom agents, and organization-wide distribution are outside the marketplace MVP.
+Reports may cover the marketplace generator and scanner, companion skills, generated catalog, native file placement and integrity comparisons, CI controls, or hosted and federated Agent Skill packages. Hooks, MCP servers, custom agents, and organization-wide distribution are outside the marketplace MVP.
 
 ## Public follow-up
 
-After remediation, maintainers publish non-sensitive removal or update guidance and link it from the affected catalog record or issue. Installation receipts remain local and are not centrally collected as analytics.
+After remediation, maintainers publish non-sensitive removal or update guidance and link it from the affected catalog record or issue. Installed native files and optional local comparison reports are not centrally collected as analytics.

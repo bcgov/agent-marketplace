@@ -59,7 +59,7 @@ def build_site(
   generated = output / "_generated"
   generated.mkdir(exist_ok=True)
   (generated / "catalog-cards.html").write_text(
-    "\n\n".join(marketplace._catalog_row(r) for r in catalog["extensions"]) + "\n",
+    marketplace.render_catalog_cards(catalog),
     encoding="utf-8",
   )
   browser = root / "scripts/browser_contribution.py"

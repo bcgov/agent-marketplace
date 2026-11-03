@@ -46,13 +46,13 @@ The candidate issue identifies an approved discovery source, full commit SHA, pa
 
 1. Change the package manifest lifecycle to `quarantined` and regenerate the catalog. Default finder search excludes it immediately after publication.
 2. Open a private security report when sensitive evidence is involved; otherwise link a public tracking issue.
-3. Search repository declarations for the package ID. Ask affected teams to run finder receipt verification locally; receipts are not centrally collected.
+3. Search repository declarations for the package ID. Ask affected teams to compare installed native bytes with the selected Catalogue inventory locally; installation files are not centrally collected.
 4. Publish removal or update guidance with the affected source revision and digest.
 5. Do not transfer prior review evidence to replacement bytes.
 
 ## Removal
 
-Set lifecycle to `removed`, regenerate, and publish. Keep enough catalog and issue history to identify the old source and digest. Guidance must name the finder removal action or exact installed destination and preserve receipts until incident response is complete.
+Set lifecycle to `removed`, regenerate, and publish. Keep enough catalog and issue history to identify the old source and digest. Guidance must name the finder removal action or exact installed destination and retain the selected Catalogue source coordinates and byte-comparison evidence until incident response is complete.
 
 ## Site rollback and publication recovery
 

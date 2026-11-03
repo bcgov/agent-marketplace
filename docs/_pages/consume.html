@@ -3,44 +3,32 @@
 
 <h1>Install an Extension</h1>
 
-<p>The supported path starts with the two marketplace companions. They make reviewed discovery, capability presentation, immutable source inspection, installation locks, and third-party registration available inside ordinary GitHub Copilot requests.</p>
+<p>Open the <a href="catalog.html">Catalogue</a>, select an active Extension and inspect its tested install choice. Skills, instructions, prompts and agents have project-scoped manual choices for VS Code Local when their actual native files meet that client's requirements. Prompts run in Local sessions. Skills also support personal/global <code>~/.copilot/skills/&lt;name&gt;/</code> placement. No other global destination or third-party installer is advertised without a tested contract.</p>
 
-<p><a href="getting-started.html" class="hero-action primary">Install the marketplace companions</a></p>
-
-<h2>Reviewed BC Gov skill</h2>
+<h2>Select the source and destination</h2>
 
 <ol>
-    <li>Ask Copilot to find a skill for the task.</li>
-    <li>Compare at most three deterministic matches. Each includes why it matched, owner, capabilities, review evidence, full source revision, and digest.</li>
-    <li>Select project scope and inspect the exact destination, source revision, digest, and material capabilities.</li>
-    <li>Confirm the install. The finder prefers APM and reports <code>apm.lock.yaml</code>; when APM is unavailable it uses the catalog-pinned <code>npx skills</code> fallback and reports <code>skills-lock.json</code> when created.</li>
+  <li>Use the latest published Catalogue's full source SHA. Inspect the canonical <code>bcgov-public/&lt;type&gt;/&lt;name&gt;</code>, repository, path, revision, lifecycle, capabilities and checks.</li>
+  <li>Download the directory at that SHA and compare its listed files with the Catalogue. A <code>main</code> link is <strong>latest source</strong>, may be ahead of publication, and is never a pinned or latest-published install.</li>
+  <li>Inspect every mapped destination, including existing files, directories and symbolic links. Stop on a collision; another Extension or local guidance must not be overwritten.</li>
+  <li>Explicitly copy the mapped native files. Preserve the skill directory/resources. Flatten the other types into the listed native file; packages needing an untested relative-resource adaptation have no choice. Do not copy the marketplace Manifest.</li>
+  <li>Compare SHA-256 of each downloaded and installed file with the choice's file hashes. A URL containing a SHA or digest does not perform this comparison.</li>
 </ol>
 
-<pre><code>Find me a reviewed BC Gov skill for hardening GitHub Actions.</code></pre>
+<p>The <a href="asset-formats.html">format guide</a> lists native paths and client evidence limits. Manual placement itself does not verify integrity; report byte verification only after the comparisons pass. A tested layout does not mean every asset was evaluated at runtime.</p>
 
-<h2>Third-party candidate</h2>
+<h2>Update, migrate or remove</h2>
 
-<p>When no BC Gov result fits, the finder searches every approved discovery source. A selected result is resolved to a canonical GitHub repository, full commit SHA, and package path before it enters isolated staging.</p>
+<p>For an update, select a new published SHA, compare changes with the previously selected Catalogue and installed bytes, and explicitly replace only the mapped files. Preserve local edits for review. A legacy alias resolves to a canonical identity for lookup; use that canonical identity explicitly before placement. A Specialty transfer keeps the identity but changes the source path: inspect and explicitly approve source migration. Never follow a moved-to pointer automatically.</p>
 
-<div class="alert alert-info"><div class="alert-icon" aria-hidden="true">i</div><div>Candidate files are treated as untrusted data during inspection. The scanner does not load their instructions into Copilot and does not execute contributed scripts.</div></div>
+<p>For removal, inspect the selected revision's exact native paths and explicitly delete only those files; preserve unrelated guidance. Non-active records have no install action. Older affected pins stay affected after quarantine/removal: review the current notice and the Operations update/removal guidance before using an old snapshot. Use its file map to remove an existing copy, without treating the old snapshot as new-install authorization.</p>
 
-<ol>
-    <li>Review the candidate's source, package contents, and structured capability evidence.</li>
-    <li>Confirm public marketplace registration. The finder creates or links one deduplicated issue labeled <strong>Unreviewed candidate</strong>.</li>
-    <li>Trusted CI fetches the immutable source, computes its digest, and scans it without executing package scripts.</li>
-    <li>Install only after reviewers publish the exact revision and digest in the BC Gov catalog.</li>
-</ol>
+<h2>Repository helper</h2>
 
-<h2>Locks, receipts, and recovery</h2>
+<p>Maintainers with a checkout can use the same shared choices as the site/finder. The helper downloads an immutable archive, compares the complete Catalogue inventory/digest, validates native choices, and compares copied bytes. It never executes contributed files.</p>
 
-<p>APM records installs in <code>apm.yml</code> and <code>apm.lock.yaml</code>; the fallback installer may write <code>skills-lock.json</code>. Registration evidence includes source, full revision, path, CI-computed digest, policy findings, capabilities, and issue result.</p>
+<pre><code>uv run python scripts/find_extension.py --catalog /path/to/published-catalog.json install bcgov-public/skill/repo-hardening --project /path/to/project
+uv run python scripts/find_extension.py --catalog /path/to/published-catalog.json verify bcgov-public/skill/repo-hardening --project /path/to/project
+uv run python scripts/find_extension.py --catalog /path/to/published-catalog.json remove bcgov-public/skill/repo-hardening --project /path/to/project</code></pre>
 
-<p>Ask Copilot to verify installed marketplace skills against the installer lock and selected catalog evidence. A registration failure does not remove or relabel a local installation; retry registration independently.</p>
-
-<h2>Direct install</h2>
-
-<p>Every catalogue record has its exact, pinned install command with a one-click copy button. <a href="catalog.html">Open the catalogue</a>, select a record, and copy the command from the evidence panel. For example:</p>
-
-<pre><code>apm install bcgov/agent-marketplace/skills/security/repo-hardening#{{PUBLISHED_REVISION}} --target copilot</code></pre>
-
-<p>If APM is unavailable, the panel offers a <code>npx skills</code> command against the immutable GitHub tree. Direct installation does not submit a third-party candidate for marketplace review.</p>
+<p>An update uses <code>install --previous-catalog /path/to/previous-catalog.json</code>. A source-path/repository change also needs <code>--allow-migration</code>. Alias lookup needs <code>--allow-alias</code> or the explicit canonical identity. Every write/removal asks for confirmation; <code>--yes</code> records an already explicit choice. Verification needs the selected Catalogue revision and writes no local tracking files. Review locally edited files manually if comparison fails.</p>

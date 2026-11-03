@@ -61,14 +61,16 @@ jobs:
           MODE: ${{ inputs.mode || 'reconcile' }}
         run: |
           set -euo pipefail
-          uv run python scripts/publish.py --output "$RUNNER_TEMP/publication" --mode "$MODE"
+          git diff --exit-code HEAD --
+          test -z "$(git ls-files --others --exclude-standard)"
+          uv run --frozen python scripts/publish.py --output "$RUNNER_TEMP/publication" --mode "$MODE"
 
       - name: Guard Pages artifact upload against disable or supersession
         id: artifact-guard
         if: steps.release.outputs.allowed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: uv run python scripts/publish.py --output "$RUNNER_TEMP/publication" --mode check-live
+        run: uv run --frozen python scripts/publish.py --output "$RUNNER_TEMP/publication" --mode check-live
 
       - uses: actions/upload-pages-artifact@v5
         if: steps.artifact-guard.outputs.allowed == 'true'
@@ -80,7 +82,7 @@ jobs:
         if: steps.artifact-guard.outputs.allowed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: uv run python scripts/publish.py --output "$RUNNER_TEMP/publication" --mode check-live
+        run: uv run --frozen python scripts/publish.py --output "$RUNNER_TEMP/publication" --mode check-live
 
       - name: Deploy the exact guarded artifact
         id: deployment

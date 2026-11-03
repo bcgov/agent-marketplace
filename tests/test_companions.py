@@ -99,15 +99,16 @@ def test_companion_relative_links_stay_inside_installed_package():
         assert referenced.is_file(), f"missing package link: {target}"
 
 
-def test_finder_uses_catalog_sources_and_prefers_apm():
-  """Discovery policy stays remote while installation prefers a lockfile."""
+def test_finder_uses_shared_native_choices_and_remote_source_policy():
+  """Finder instructions consume client-tested choices without inventing installers."""
   references = ROOT / "skills" / "community" / "bcgov-find-extension" / "references"
   discovery = (references / "THIRD_PARTY.md").read_text(encoding="utf-8")
   installation = (references / "INSTALLATION.md").read_text(encoding="utf-8")
   assert "approved-discovery-sources" in discovery
   assert "Agent Skills Directory" not in discovery
-  assert installation.index("apm install") < installation.index("npx skills@")
-  assert "Recommend\nAPM" in installation
+  assert "install-options" in installation
+  assert "SHA-256" in installation
+  assert "~/.copilot/skills/<name>/" in installation
 
 
 def test_search_is_deterministic_and_bounded():
@@ -358,7 +359,7 @@ def test_reviewed_install_blocks_reserved_extension_types(tmp_path):
       }
     ]
   }
-  with pytest.raises(finder.FinderError, match="installation is not active"):
+  with pytest.raises(finder.FinderError, match="no tested install choice"):
     finder._reviewed_install(args, catalog)
 
 
@@ -457,36 +458,6 @@ def test_immutable_source_validation_and_archive_paths(monkeypatch, tmp_path):
     finder.stage_package(
       "https://github.com/example/repository", "a" * 40, "skills/demo", tmp_path
     )
-
-
-def test_install_copy_verifies_bytes_and_refuses_overwrite(tmp_path):
-  """Installer verifies copied bytes and refuses a changed destination."""
-  staged = tmp_path / "staged"
-  target = tmp_path / "target"
-  staged.mkdir()
-  (staged / "SKILL.md").write_text("content", encoding="utf-8")
-  digest = finder.tree_digest(finder.inventory(staged))
-  finder._install_copy(staged, target, digest)
-  assert finder.tree_digest(finder.inventory(target)) == digest
-  (target / "SKILL.md").write_text("changed", encoding="utf-8")
-  with pytest.raises(finder.FinderError, match="different bytes"):
-    finder._install_copy(staged, target, digest)
-
-
-def test_receipt_verification_detects_tampering(tmp_path):
-  """Receipt verification detects changes to installed package bytes."""
-  target = tmp_path / ".github" / "skills" / "demo"
-  target.mkdir(parents=True)
-  (target / "SKILL.md").write_text("content", encoding="utf-8")
-  digest = finder.tree_digest(finder.inventory(target))
-  receipt = {
-    "install-target": str(target),
-    "package-tree-digest": digest,
-  }
-  finder._write_receipt(tmp_path, "demo", receipt)
-  assert finder._verify(tmp_path)[0]["valid"] is True
-  (target / "SKILL.md").write_text("tampered", encoding="utf-8")
-  assert finder._verify(tmp_path)[0]["valid"] is False
 
 
 def test_candidate_registration_body_is_rescan_compatible(monkeypatch):
@@ -672,8 +643,8 @@ def test_getting_started_describes_portable_marketplace_workflows():
   assert "--global" not in page
 
 
-def test_install_docs_pin_the_catalog_release_tag():
-  """Consumer install guides use the published tag and lock-verified revision."""
+def test_install_docs_distinguish_published_sha_from_latest_source():
+  """Consumer guides state the same immutable native placement boundary."""
   paths = (
     ROOT / "docs" / "getting-started.md",
     ROOT / "docs" / "how-to-use-the-marketplace.md",
@@ -686,8 +657,9 @@ def test_install_docs_pin_the_catalog_release_tag():
   )
   for path in paths:
     content = " ".join(path.read_text(encoding="utf-8").lower().split())
-    assert "catalog release tag" in content
-    assert "release_tag" in content
+    assert "latest published" in content
+    assert "latest source" in content
+    assert "sha-256" in content
 
 
 def test_catalog_ids_match_hosted_manifests():

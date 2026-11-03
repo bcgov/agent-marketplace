@@ -161,7 +161,23 @@ def newest(adapter, baseline: dict) -> Release:
         children.append(release)
     if len(children) != 1:
       raise PublicationError("Publication lineage is missing or forked")
-    current = children[0]
+    child = children[0]
+    if not adapter.is_descendant(current.sha, child.sha):
+      raise PublicationError("Accepted publication source ancestry moved backward")
+    if current.tag == baseline["tag"]:
+      transition = json.loads(child.content)
+      aliases = transition.get("legacy-ids", {})
+      migration = transition.get("publication", {}).get("migration", {})
+      identities = {r["id"] for r in transition.get("extensions", [])}
+      if (
+        migration.get("tag") != current.tag
+        or migration.get("digest") != digest(current.content)
+        or migration.get("aliases") != aliases
+        or not set(baseline["ids"]).issubset(aliases)
+        or not set(aliases.values()).issubset(identities)
+      ):
+        raise PublicationError("Accepted first-v1 migration evidence is invalid")
+    current = child
     remaining.remove(current)
   return current
 

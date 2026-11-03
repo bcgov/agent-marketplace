@@ -89,7 +89,7 @@ for (const filename of fs.readdirSync(pagesDir).sort()) {
 
   const meta = JSON.parse(fs.readFileSync(path.join(docsDir, "assets", "site-build.json"), "utf8"));
   const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));
-  const coordinates = `<p class="build-coordinates">Catalogue ${escape(release.version)} ? source ${escape(release.revision)} ? asset ${escape(meta.catalogue["asset-digest"])}<br>Site source ${escape(meta.site.source)} ? run ${escape(meta.site.run)}${meta.catalogue.release?.published_at ? ` ? release published ${escape(meta.catalogue.release.published_at)}` : ""}</p>`;
+  const coordinates = `<p class="build-coordinates" style="overflow-wrap:anywhere">Catalogue ${escape(release.version)} ? source ${escape(release.revision)} ? asset ${escape(meta.catalogue["asset-digest"])}<br>Site source ${escape(meta.site.source)} ? run ${escape(meta.site.run)}${meta.catalogue.release?.published_at ? ` ? release published ${escape(meta.catalogue.release.published_at)}` : ""}</p>`;
   footer = footer.replace("{{BUILD_COORDINATES}}", coordinates);
   const output = `${header.trimEnd()}\n${content}\n${footer.trimStart()}`;
   fs.writeFileSync(path.join(docsDir, filename), output, "utf8");
