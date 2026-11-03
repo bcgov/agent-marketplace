@@ -470,9 +470,10 @@ def changed_modules(base: str) -> list:
 
   Returns:
     A sorted list of ``<root>/<name>/SKILL.md`` paths for every skill touched
-    by the diff whose manifest still exists on disk. Returns an empty list when
-    ``git`` is not installed or otherwise unavailable, so the validator can run
-    on hosts without git rather than crashing with a stack trace.
+    by the diff whose manifest still exists on disk. Registry changes select all
+    current skills because registration can bring unchanged bytes into scope.
+    Returns an empty list when ``git`` is not installed or otherwise unavailable,
+    so the validator can run on hosts without git rather than crashing.
   """
   try:
     res = subprocess.run(
@@ -498,10 +499,13 @@ def changed_modules(base: str) -> list:
   except FileNotFoundError:
     print("git not found on PATH; cannot compute changed skills.", file=sys.stderr)
     return []
+  changed_paths = {line.strip() for line in res.stdout.splitlines()}
+  if "config/specialties.yaml" in changed_paths:
+    return discover_all()
   modules = set()
   buckets = _skill_buckets()
-  for line in res.stdout.splitlines():
-    manifest = _manifest_for(line.strip(), buckets)
+  for path in changed_paths:
+    manifest = _manifest_for(path, buckets)
     if manifest:
       modules.add(manifest)
   return sorted(m for m in modules if os.path.isfile(m))

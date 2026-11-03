@@ -475,19 +475,22 @@ def test_main_invalid_path_returns_one():
     assert v.main([path]) == 1
 
 
-@pytest.mark.parametrize("mode", ["all", "base-skill", "base-resource"])
+@pytest.mark.parametrize(
+  "mode", ["all", "base-skill", "base-resource", "base-registry"]
+)
 @pytest.mark.parametrize("specialty_id", ["accessibility", "scripts"])
 @pytest.mark.parametrize("valid", [True, False], ids=["valid", "invalid"])
 def test_native_cli_validates_registry_only_specialty(
   tmp_path, mode, specialty_id, valid
 ):
-  """A registry-only Specialty gets native validation in full and base scans."""
+  """Native validation covers package edits and registration of existing bytes."""
   _write_registry(tmp_path)
   registry_path = tmp_path / "config/specialties.yaml"
   registry = yaml.safe_load(registry_path.read_text(encoding="utf-8"))
   specialty = {**registry["specialties"][0], "id": specialty_id}
   registry["specialties"].append(specialty)
-  registry_path.write_text(yaml.safe_dump(registry), encoding="utf-8")
+  if mode != "base-registry":
+    registry_path.write_text(yaml.safe_dump(registry), encoding="utf-8")
   path = f"skills/{specialty_id}/demo/SKILL.md"
   package = tmp_path / Path(path).parent
   package.mkdir(parents=True)
@@ -534,7 +537,9 @@ def test_native_cli_validates_registry_only_specialty(
       text=True,
       check=True,
     ).stdout.strip()
-    if mode == "base-skill":
+    if mode == "base-registry":
+      registry_path.write_text(yaml.safe_dump(registry), encoding="utf-8")
+    elif mode == "base-skill":
       (package / "SKILL.md").write_text(
         content + "\nUpdated guidance.\n", encoding="utf-8"
       )
@@ -542,6 +547,15 @@ def test_native_cli_validates_registry_only_specialty(
       reference.write_text("Updated reference.\n", encoding="utf-8")
     subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
     subprocess.run([*commit, "Synthetic head"], cwd=tmp_path, check=True)
+    if mode == "base-registry":
+      changed = subprocess.run(
+        ["git", "diff", "--name-only", f"{base}...HEAD"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=True,
+      )
+      assert changed.stdout.splitlines() == ["config/specialties.yaml"]
     args = ["--base", base]
   result = subprocess.run(
     [sys.executable, str(ROOT / "scripts/validate_skill.py"), *args],
