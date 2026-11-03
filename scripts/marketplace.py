@@ -10,6 +10,7 @@ import json
 import os
 import re
 import stat
+import subprocess
 import sys
 import unicodedata
 from pathlib import Path
@@ -18,21 +19,26 @@ import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
 SCHEMA_VERSION = "bcgov-extension/v1alpha1"
-POLICY_VERSION = "bcgov-marketplace-policy/1.0"
 MANIFEST_NAME = "bcgov-extension.yaml"
 TYPE_DIRECTORIES = {
   "skills": "skill",
   "prompts": "prompt",
   "instructions": "instructions",
   "agents": "agent",
-  "hooks": "hook",
-  "mcp": "mcp",
 }
 ARTIFACT_FILES = {
   "skills": "SKILL.md",
   "prompts": "prompt.prompt.md",
   "instructions": "instructions.instructions.md",
   "agents": "agent.agent.md",
+}
+EMPTY_CAPABILITIES = {
+  "filesystem": {"read": [], "write": []},
+  "network": [],
+  "commands": [],
+  "environment-variables": [],
+  "secret-names": [],
+  "data-classes": [],
 }
 ROOT_FILES = {MANIFEST_NAME, *ARTIFACT_FILES.values()}
 RESOURCE_DIRECTORIES = {"agents", "assets", "references", "scripts"}
@@ -145,6 +151,9 @@ def _diagnostic(path: Path, location: str, correction: str) -> PublicDiagnostic:
     },
   }
   label = files.get(path.name, "extension file")
+  for extension_type in ("prompt", "instructions", "agent"):
+    if path.name not in files and path.name.endswith(f".{extension_type}.md"):
+      label = f"<name>.{extension_type}.md"
   return PublicDiagnostic(f"{label}: {location}: {correction}")
 
 
@@ -343,13 +352,6 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
   errors = sorted(
     {_schema_diagnostic(path, error) for error in validator.iter_errors(manifest)}
   )
-  expected_id = f"bcgov-public/{path.parent.name}"
-  if manifest.get("id") != expected_id:
-    errors.append(
-      _diagnostic(
-        path, "id", "Use bcgov-public/<package-name> matching the package directory."
-      )
-    )
   parts = path.parts[-4:-1]
   root = path.parents[3]
   registry = (
@@ -368,29 +370,101 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
       )
     )
   else:
-    artifact_path = path.parent / ARTIFACT_FILES[parts[0]]
-    errors.extend(_validate_artifact(artifact_path, TYPE_DIRECTORIES[parts[0]], path))
+    name = parts[2]
+    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name):
+      errors.append(
+        _diagnostic(
+          path,
+          "id",
+          "Use bcgov-public/<type>/<name> with a kebab-case package directory name.",
+        )
+      )
+    filename = (
+      "SKILL.md" if parts[0] == "skills" else f"{name}.{TYPE_DIRECTORIES[parts[0]]}.md"
+    )
+    artifact_path = path.parent / filename
+    lifecycle = manifest.get("lifecycle", "active")
+    frontmatter = {}
+    if lifecycle != "removed":
+      frontmatter, artifact_errors = _read_artifact(
+        artifact_path, TYPE_DIRECTORIES[parts[0]]
+      )
+      errors.extend(artifact_errors)
+    elif any(item.name != MANIFEST_NAME for item in path.parent.iterdir()):
+      errors.append(
+        _diagnostic(path, "removed", "delete content files; keep only the Manifest")
+      )
+    if lifecycle != "active" and not manifest.get("notice"):
+      errors.append(
+        _diagnostic(path, "notice", "add a notice for non-active lifecycle")
+      )
+    if lifecycle == "active" and manifest.get("moved-to"):
+      errors.append(
+        _diagnostic(path, "moved-to", "use a non-active lifecycle for the old id")
+      )
+    identity = f"bcgov-public/{TYPE_DIRECTORIES[parts[0]]}/{name}"
+    if manifest.get("moved-to") and manifest["moved-to"] == identity:
+      errors.append(
+        _diagnostic(path, "moved-to", "replacement must have a different id")
+      )
+    if not manifest.get("summary") and not frontmatter.get("description"):
+      if lifecycle == "removed":
+        errors.append(_diagnostic(path, "summary", "add `summary:` to the Manifest"))
+      else:
+        errors.append(
+          _diagnostic(
+            artifact_path,
+            "summary",
+            "add `description:` to the frontmatter or `summary:` to the Manifest",
+          )
+        )
+    manifest = {
+      "schema-version": SCHEMA_VERSION,
+      "id": identity,
+      "name": name,
+      "display-name": frontmatter.get("name") or name,
+      "summary": frontmatter.get("description", ""),
+      "publisher": "Province of British Columbia",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "prerequisites": [],
+      "compatibility": {"not-ready-on": []},
+      **manifest,
+    }
+    for field in ("display-name", "summary"):
+      value = manifest[field]
+      effective_schema = {"properties": {field: schema["properties"][field]}}
+      errors.extend(
+        _schema_diagnostic(path, error)
+        for error in Draft202012Validator(effective_schema).iter_errors({field: value})
+      )
+      if isinstance(value, str) and not value.strip():
+        errors.append(_diagnostic(path, field, "Add a non-empty string."))
+    if manifest.get("capabilities") == "none":
+      manifest["capabilities"] = {
+        **EMPTY_CAPABILITIES,
+        "filesystem": {"read": [], "write": []},
+      }
   return manifest, errors
 
 
-def _validate_artifact(
-  path: Path, extension_type: str, manifest_path: Path
-) -> list[str]:
-  """Validate the portable frontmatter required by one declarative asset type."""
+def _read_artifact(path: Path, extension_type: str) -> tuple[dict, list[str]]:
+  """Read native content once for validation and effective metadata derivation."""
   errors = []
   if not path.is_file():
-    return [_diagnostic(path, "<root>", "Add the required content file.")]
+    return {}, [_diagnostic(path, "<root>", "Add the required content file.")]
   try:
     text = path.read_text(encoding="utf-8")
   except (OSError, UnicodeError):
-    return [_diagnostic(path, "<root>", "Save a readable UTF-8 text file.")]
-  if extension_type == "skill":
-    return (
+    return {}, [_diagnostic(path, "<root>", "Save a readable UTF-8 text file.")]
+  if extension_type == "skill" and not text.startswith("---"):
+    return {}, (
       [] if text.strip() else [_diagnostic(path, "<root>", "Add non-empty content.")]
     )
   match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)", text, re.DOTALL)
   if not match:
-    return [
+    return {}, [
       _diagnostic(
         path, "frontmatter", "Add a YAML frontmatter block between --- delimiters."
       )
@@ -400,14 +474,15 @@ def _validate_artifact(
       match.group(1), path, context="YAML frontmatter", line_offset=1
     )
   except PublicMarketplaceError as exc:
-    return [PublicDiagnostic(str(exc))]
+    return {}, [PublicDiagnostic(str(exc))]
 
   required = {
     "prompt": {"description"},
     "instructions": {"description"},
     "agent": {"name", "description"},
+    "skill": set(),
   }[extension_type]
-  for field in sorted(required):
+  for field in sorted(required | (frontmatter.keys() & {"name", "description"})):
     if not isinstance(frontmatter.get(field), str) or not frontmatter[field].strip():
       errors.append(
         _diagnostic(path, f"frontmatter.{field}", "Add a non-empty string.")
@@ -416,7 +491,7 @@ def _validate_artifact(
     errors.append(
       _diagnostic(path, "<root>", "Add non-empty content after frontmatter.")
     )
-  return errors
+  return frontmatter, errors
 
 
 def _finding(
@@ -675,7 +750,9 @@ def scan_package(package_dir: Path, manifest: dict) -> dict:
   type_directory = package_dir.parent.parent.name
   expected_root_files = {
     MANIFEST_NAME,
-    ARTIFACT_FILES.get(type_directory, "SKILL.md"),
+    "SKILL.md"
+    if type_directory not in ARTIFACT_FILES or type_directory == "skills"
+    else f"{package_dir.name}.{TYPE_DIRECTORIES.get(type_directory, 'skill')}.md",
   }
   for field in capability_wildcards(manifest.get("capabilities", {}) or {}):
     findings.append(
@@ -876,7 +953,7 @@ def package_digest(inventory: list[dict]) -> str:
   return f"sha256:{digest.hexdigest()}"
 
 
-def analyze_submission(root: Path, package_dir: Path) -> dict:
+def analyze_submission(root: Path, package_dir: Path, base: str | None = None) -> dict:
   """Analyze one submitted package without executing any of its content."""
   package_dir = package_dir.resolve()
   try:
@@ -927,6 +1004,7 @@ def analyze_submission(root: Path, package_dir: Path) -> dict:
     "files": inventory,
     "inventory-complete": not structural_findings,
     "scan": scan,
+    **({"transitions": analyze_transitions(root, base)} if base else {}),
   }
 
 
@@ -1180,9 +1258,7 @@ def _validate_community_intake(path: Path, intake: object) -> None:
 
 
 # Ordered by how likely a reader is to meet the type, not alphabetically.
-# The first four types are declarative assets; hooks and MCP servers stay
-# deferred until their runtime security models exist.
-EXTENSION_TYPE_ORDER = ["skill", "prompt", "instructions", "agent", "hook", "mcp"]
+EXTENSION_TYPE_ORDER = ["skill", "prompt", "instructions", "agent"]
 
 
 def _review_status(
@@ -1190,6 +1266,7 @@ def _review_status(
   content_digest: str,
   risk: str,
   advisory_count: int,
+  policy_version: int,
 ) -> dict:
   """Resolve trust without claiming a pinned human review for changed bytes."""
   if specialty == "community":
@@ -1197,7 +1274,7 @@ def _review_status(
       "status": "auto-scanned",
       "reviewers": [],
       "method": "automated-policy-scan",
-      "policy-version": POLICY_VERSION,
+      "policy-version": policy_version,
       "content-digest": content_digest,
       "risk": risk,
       "advisories": advisory_count,
@@ -1225,11 +1302,198 @@ def namespace_of(relative_path: str) -> str:
   return "community"
 
 
+def _git_bytes(root: Path, *arguments: str) -> bytes:
+  """Read Git objects and changes without executing package content."""
+  result = subprocess.run(
+    ["git", "-C", str(root), *arguments], capture_output=True, check=False
+  )
+  if result.returncode:
+    raise PublicMarketplaceError(
+      _diagnostic(
+        Path(MANIFEST_NAME),
+        "base",
+        "Use a reachable trusted base commit in a Git checkout.",
+      )
+    )
+  return result.stdout
+
+
+def load_legacy_ids(root: Path) -> dict[str, str]:
+  """Read the finite Admin-owned inventory of published pre-v1 identities."""
+  path = root / "config/legacy-ids.json"
+  if not path.exists():
+    return {}
+  try:
+    aliases = json.loads(path.read_text(encoding="utf-8"))
+  except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+    raise PublicMarketplaceError(
+      _diagnostic(
+        path, "<root>", "Restore the explicit legacy identity mapping as UTF-8 JSON."
+      )
+    ) from exc
+  if not isinstance(aliases, dict) or any(
+    not re.fullmatch(r"bcgov-public/[a-z0-9]+(?:-[a-z0-9]+)*", alias)
+    or not isinstance(target, str)
+    or not re.fullmatch(
+      r"bcgov-public/(?:skill|instructions|prompt|agent)/[a-z0-9]+(?:-[a-z0-9]+)*",
+      target,
+    )
+    for alias, target in aliases.items()
+  ):
+    raise PublicMarketplaceError(
+      _diagnostic(
+        path, "<root>", "Map only inventoried name-only IDs to canonical type/name IDs."
+      )
+    )
+  return aliases
+
+
+def analyze_transitions(root: Path, base: str) -> list[dict]:
+  """Compare every trusted-base identity and changed file with the proposed tree.
+
+  Valid sensitive changes are review facts, not format failures. This function
+  makes no authorization decision and never restores files into a contributor's
+  checkout. Both sides of moves are included by disabling rename inference.
+  """
+  revision = (
+    _git_bytes(root, "rev-parse", "--verify", "--end-of-options", f"{base}^{{commit}}")
+    .decode()
+    .strip()
+  )
+  base_paths = (
+    _git_bytes(
+      root, "ls-tree", "-r", "--name-only", "-z", revision, "--", *TYPE_DIRECTORIES
+    )
+    .decode("utf-8")
+    .split("\0")
+  )
+  previous = {}
+  for path in base_paths:
+    parts = path.split("/")
+    if len(parts) != 4 or parts[-1] != MANIFEST_NAME:
+      continue
+    metadata = load_yaml_text(
+      _git_bytes(root, "show", f"{revision}:{path}").decode("utf-8"),
+      Path(MANIFEST_NAME),
+    )
+    if metadata.get("lifecycle") == "draft":
+      continue
+    identity = f"bcgov-public/{TYPE_DIRECTORIES[parts[0]]}/{parts[2]}"
+    previous[identity] = {
+      **metadata,
+      "lifecycle": metadata.get("lifecycle", "active"),
+      "path": "/".join(parts[:3]),
+      "specialty": parts[1],
+    }
+  proposed = {item["id"]: item for item in build_catalog(root)[0]["extensions"]}
+  errors = []
+  for _identity in previous.keys() - proposed.keys():
+    errors.append(
+      _diagnostic(
+        Path(MANIFEST_NAME),
+        "lifecycle",
+        "Keep a retained non-active Manifest for every retired trusted-base identity.",
+      )
+    )
+  changed = set(
+    _git_bytes(
+      root,
+      "diff",
+      "--no-renames",
+      "--name-only",
+      "-z",
+      revision,
+      "--",
+      *TYPE_DIRECTORIES,
+    )
+    .decode("utf-8")
+    .split("\0")
+  )
+  changed.update(
+    _git_bytes(
+      root, "ls-files", "--others", "--exclude-standard", "-z", "--", *TYPE_DIRECTORIES
+    )
+    .decode("utf-8")
+    .split("\0")
+  )
+  changed.discard("")
+  paths = {item["source"]["path"] for item in proposed.values()} | {
+    item["path"] for item in previous.values()
+  }
+  for path in changed:
+    parts = path.split("/")
+    if len(parts) >= 4 and "/".join(parts[:3]) not in paths:
+      errors.append(
+        _diagnostic(
+          Path(MANIFEST_NAME),
+          "<root>",
+          "Add a Manifest alongside every changed native package.",
+        )
+      )
+  if errors:
+    raise _validation_error(errors)
+  facts = []
+  for identity, record in sorted(proposed.items()):
+    old = previous.get(identity)
+    path = record["source"]["path"]
+    old_path = old["path"] if old else None
+    files = sorted(
+      file
+      for file in changed
+      if any(
+        file.startswith(candidate + "/") for candidate in (path, old_path) if candidate
+      )
+    )
+    if not files:
+      continue
+    reasons = []
+    if old:
+      reasons.extend(
+        field
+        for field in ("lifecycle", "notice", "moved-to")
+        if old.get(field) != record.get(field)
+      )
+      if old["lifecycle"] != "active" and record["lifecycle"] == "active":
+        reasons.append("restoration")
+      if old["lifecycle"] == "removed" and record["lifecycle"] != "removed":
+        reasons.append("recreation")
+      if old["specialty"] != record["specialty"]:
+        reasons.append("specialty-transfer")
+    elif record["lifecycle"] != "active":
+      reasons.append("lifecycle")
+    if (
+      record["lifecycle"] != "active" or (old and old["lifecycle"] != "active")
+    ) and any(not file.endswith("/" + MANIFEST_NAME) for file in files):
+      reasons.append("non-active-content")
+    if (
+      old and record.get("moved-to") and old.get("moved-to") != record["moved-to"]
+    ) or any(
+      item.get("moved-to") == identity and item["id"] in previous
+      for item in proposed.values()
+    ):
+      reasons.append("identity-replacement")
+    facts.append(
+      {
+        "id": identity,
+        "base-path": old_path,
+        "path": path,
+        "base-specialty": old["specialty"] if old else None,
+        "specialty": record["specialty"],
+        "base-maintainers": old.get("maintainers", []) if old else [],
+        "new-identity": old is None,
+        "changed-files": files,
+        "reasons": sorted(set(reasons)),
+        "requires-human-review": bool(reasons),
+      }
+    )
+  return facts
+
+
 def build_catalog(root: Path) -> tuple[dict, str]:
   """Build machine-readable and escaped HTML catalog projections."""
   schema = load_schema(root)
   config = load_marketplace_config(root)
-  load_security_policy(root)
+  policy = load_security_policy(root)
   specialty_ids = {item["id"] for item in load_specialties(root)}
   records = []
   errors = []
@@ -1262,8 +1526,18 @@ def build_catalog(root: Path) -> tuple[dict, str]:
       },
       "content-digest": "",
       "files": [],
-      "policy": {},
-      "review": {},
+      "policy-route": (
+        {"type": "community"}
+        if specialty == "community"
+        else {
+          "type": "specialty-review",
+          "owner-team": next(
+            item["owner-team"]
+            for item in load_specialties(root)
+            if item["id"] == specialty
+          ),
+        }
+      ),
     }
     scan = scan_package(package_dir, manifest)
     blocking = [item for item in scan["findings"] if item["severity"] == "blocking"]
@@ -1276,30 +1550,73 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     inventory = package_inventory(package_dir)
     record["content-digest"] = package_digest(inventory)
     record["files"] = inventory
-    record["policy"] = scan
+    record["checks"] = {"content-digest": record["content-digest"], **scan}
+    record["risk"] = capability_risk(manifest)
     advisories = [item for item in scan["findings"] if item["severity"] == "advisory"]
-    record["review"] = _review_status(
+    evidence = _review_status(
       specialty,
       record["content-digest"],
       capability_risk(manifest),
       len(advisories),
+      scan["policy-version"],
     )
+    evidence.pop("risk", None)
+    record["checks"].update(evidence)
+    if record["lifecycle"] != "active":
+      record["install-options"] = []
     records.append(record)
+  by_id = {record["id"]: record for record in records}
+  legacy_ids = load_legacy_ids(root)
+  for identity in legacy_ids.values():
+    if identity not in by_id:
+      errors.append(
+        _diagnostic(
+          Path("legacy-ids.json"),
+          "target",
+          "Retain the canonical Manifest for every published legacy identity.",
+        )
+      )
+  for record in records:
+    record["legacy-ids"] = sorted(
+      alias for alias, identity in legacy_ids.items() if identity == record["id"]
+    )
+  for record in records:
+    current = record
+    visited = {current["id"]}
+    while target := current.get("moved-to"):
+      if target not in by_id:
+        errors.append(
+          _diagnostic(
+            Path(MANIFEST_NAME), "moved-to", "Use an existing canonical identity."
+          )
+        )
+        break
+      if target in visited:
+        errors.append(
+          _diagnostic(Path(MANIFEST_NAME), "moved-to", "Remove the replacement cycle.")
+        )
+        break
+      visited.add(target)
+      current = by_id[target]
+    else:
+      if current is not record:
+        record["replacement"] = {"id": current["id"], "lifecycle": current["lifecycle"]}
   if not records:
     errors.append("no hosted marketplace manifests found")
   if errors:
     raise MarketplaceError("\n".join(errors))
   records.sort(key=lambda item: item["id"])
   catalog = {
-    "schema-version": "bcgov-marketplace-catalog/v1alpha1",
+    "schema-version": "bcgov-marketplace/v1",
     "release-state": config["release-state"],
     "repository": config["repository"],
     "revision": config["revision"],
     "version": config["version"],
-    "policy-version": POLICY_VERSION,
+    "policy-version": policy["policy-version"],
     "approved-discovery-sources": config.get("approved-discovery-sources", []),
     "count": len(records),
     "extensions": records,
+    "legacy-ids": legacy_ids,
   }
   cards = [_catalog_row(record) for record in records]
   # The page builds its facets from the rendered rows, so the canonical type
@@ -1356,9 +1673,9 @@ def _catalog_row(record: dict) -> str:
   capabilities = record["capabilities"]
   signals = _access_signals(capabilities)
   active = [key for key, _label, _phrase in ACCESS_SIGNALS if signals[key]]
-  status = (record.get("review") or {}).get("status") or "unreviewed"
+  status = (record.get("checks") or {}).get("status") or "unreviewed"
   trust = TRUST_LABELS.get(status, "Unreviewed")
-  risk = (record.get("review") or {}).get("risk") or ""
+  risk = record.get("risk") or ""
   risk_label = RISK_LABELS.get(risk, "")
   specialty = record.get("specialty") or "community"
 
@@ -1376,6 +1693,10 @@ def _catalog_row(record: dict) -> str:
     [
       record["display-name"],
       record["summary"],
+      record["id"],
+      " ".join(record.get("legacy-ids", [])),
+      record.get("notice", ""),
+      record.get("moved-to", ""),
       specialty,
       record.get("type") or "",
       " ".join(record.get("maintainers") or []),
@@ -1408,6 +1729,15 @@ def _catalog_row(record: dict) -> str:
       f'    <h3><button type="button" class="cat-row-open">'
       f"{html.escape(record['display-name'])}</button></h3>",
       f'    <p class="cat-row-summary">{html.escape(record["summary"])}</p>',
+      *(
+        [
+          '    <p class="cat-row-summary">Unavailable: '
+          f"{html.escape(record['lifecycle'])}. "
+          "Installation is blocked.</p>"
+        ]
+        if record["lifecycle"] != "active"
+        else []
+      ),
       "  </div>",
       f'  <p class="cat-row-domain">{html.escape(specialty)}</p>',
       f'  <ul class="cat-slots" aria-label="{html.escape(sentence, quote=True)}">',
@@ -1604,6 +1934,7 @@ def public_analysis(analysis: dict) -> dict:
       else "low"
     ),
     "scan": public_scan(analysis["scan"]),
+    **({"transitions": analysis["transitions"]} if "transitions" in analysis else {}),
   }
 
 
@@ -1612,7 +1943,12 @@ def _parser() -> argparse.ArgumentParser:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
   subparsers = parser.add_subparsers(dest="command", required=True)
-  subparsers.add_parser("validate", help="validate packages and generated output")
+  validate_parser = subparsers.add_parser(
+    "validate", help="validate packages and generated output"
+  )
+  validate_parser.add_argument(
+    "--base", help="trusted base commit for identity/lifecycle transition validation"
+  )
   subparsers.add_parser("check", help="report policy findings for the PR check")
   generate_parser = subparsers.add_parser("generate", help="write generated output")
   generate_parser.add_argument("--check", action="store_true")
@@ -1622,6 +1958,10 @@ def _parser() -> argparse.ArgumentParser:
     "analyze", help="analyze one submitted package and route it for review"
   )
   analyze_parser.add_argument("package", type=Path)
+  analyze_parser.add_argument(
+    "--base",
+    help="trusted base commit for routing facts across all affected identities",
+  )
   intake_parser = subparsers.add_parser(
     "intake", help="decide whether a community submission can auto-publish"
   )
@@ -1647,6 +1987,8 @@ def main(argv: list[str] | None = None) -> int:
   root = args.root.resolve()
   try:
     if args.command == "validate":
+      if args.base:
+        analyze_transitions(root, args.base)
       validate(root)
     elif args.command == "check":
       return 0 if check_policy(root) else 1
@@ -1679,7 +2021,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
       print(
         json.dumps(
-          public_analysis(analyze_submission(root, args.package)),
+          public_analysis(analyze_submission(root, args.package, args.base)),
           indent=2,
           sort_keys=True,
         )

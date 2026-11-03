@@ -144,7 +144,10 @@ def load_catalog(source: str) -> dict:
       else:
         content = Path(candidate).read_text(encoding="utf-8")
       catalog = json.loads(content)
-      if catalog.get("schema-version") != "bcgov-marketplace-catalog/v1alpha1":
+      if catalog.get("schema-version") not in {
+        "bcgov-marketplace/v1",
+        "bcgov-marketplace-catalog/v1alpha1",
+      }:
         raise FinderError(f"unsupported catalog schema in {candidate}")
       if (
         candidate == PINNED_CATALOG and catalog.get("revision") != MARKETPLACE_REVISION
@@ -166,18 +169,41 @@ def _tokens(value: str) -> set[str]:
   return {token for token in re.findall(r"[a-z0-9]+", value.lower()) if len(token) > 1}
 
 
+def lookup_extension(catalog: dict, identity: str) -> dict | None:
+  """Resolve exact IDs or explicit current aliases without guessing by name."""
+  canonical = catalog.get("legacy-ids", {}).get(identity, identity)
+  return next(
+    (record for record in catalog["extensions"] if record["id"] == canonical), None
+  )
+
+
 def search(catalog: dict, query: str, extension_type: str | None = None) -> list[dict]:
-  """Return at most three active records that clear the relevance floor."""
+  """Return active matches, or a requested non-active id with its warning."""
   if extension_type is not None and extension_type not in KNOWN_EXTENSION_TYPES:
     raise FinderError(f"unsupported extension type: {extension_type}")
   query_tokens = _tokens(query)
+  requested = (
+    lookup_extension(catalog, query.strip())
+    if query.strip().startswith("bcgov-public/")
+    else None
+  )
+  if query.strip().startswith("bcgov-public/") and requested is None:
+    return []
   ranked = []
   for record in catalog["extensions"]:
-    if record["lifecycle"] != "active":
+    if record["lifecycle"] != "active" and record is not requested:
       continue
     if extension_type is not None and record.get("type") != extension_type:
       continue
-    name_tokens = _tokens(record["id"] + " " + record["display-name"])
+    if requested is not None and record is not requested:
+      continue
+    name_tokens = _tokens(
+      record["id"]
+      + " "
+      + record["display-name"]
+      + " "
+      + " ".join(record.get("legacy-ids", []))
+    )
     summary_tokens = _tokens(record["summary"])
     prerequisite_tokens = _tokens(" ".join(record["prerequisites"]))
     exact_name = (
@@ -297,7 +323,9 @@ def stage_package(
         raise FinderError(f"archive file exceeds size limit: {relative}")
       destination.write_bytes(content)
       destination.chmod(0o644)
-  artifact_file = ARTIFACT_FILES[extension_type]
+  artifact_file = (
+    "SKILL.md" if extension_type == "skill" else f"{package.name}.{extension_type}.md"
+  )
   if not (target / artifact_file).is_file():
     raise FinderError(f"resolved package does not contain {artifact_file}")
 
@@ -335,14 +363,21 @@ def tree_digest(file_inventory: list[dict]) -> str:
 
 
 def scan_staged(
-  package: Path, capabilities: dict | None = None, extension_type: str = "skill"
+  package: Path,
+  capabilities: dict | None = None,
+  extension_type: str = "skill",
+  package_name: str | None = None,
 ) -> dict:
   """Apply deterministic local policy without executing staged content."""
   findings = []
   total = 0
   if extension_type not in PUBLISHABLE_EXTENSION_TYPES:
     raise FinderError(f"unsupported extension type: {extension_type}")
-  artifact_file = ARTIFACT_FILES[extension_type]
+  artifact_file = (
+    "SKILL.md"
+    if extension_type == "skill"
+    else f"{package_name or package.name}.{extension_type}.md"
+  )
   expected_root_files = {artifact_file, "bcgov-extension.yaml"}
   files = inventory(package)
   if len(files) > MAX_FILES:
@@ -653,7 +688,7 @@ def _retry_registration(args) -> dict:
 
 def _reviewed_install(args, catalog: dict) -> dict:
   """Install one marketplace-reviewed package from its catalog record."""
-  record = next((item for item in catalog["extensions"] if item["id"] == args.id), None)
+  record = lookup_extension(catalog, args.id)
   if record is None:
     raise FinderError(f"catalog has no extension {args.id!r}")
   if record["lifecycle"] != "active":
@@ -666,7 +701,17 @@ def _reviewed_install(args, catalog: dict) -> dict:
       f"extension type is {extension_type!r}; installation is not active for this type"
     )
   project = args.project.resolve()
-  name = record["id"].split("/", 1)[1]
+  checks = (
+    record["checks"]
+    if catalog.get("schema-version") == "bcgov-marketplace/v1"
+    else record.get("policy", {})
+  )
+  review = (
+    checks
+    if catalog.get("schema-version") == "bcgov-marketplace/v1"
+    else record.get("review", {})
+  )
+  name = record["id"].rsplit("/", 1)[-1]
   target = project / ".github" / "skills" / name
   print(
     json.dumps(
@@ -677,7 +722,7 @@ def _reviewed_install(args, catalog: dict) -> dict:
         "source": record["source"],
         "digest": record["content-digest"],
         "capabilities": record["capabilities"],
-        "review": record["review"],
+        "checks": checks,
         "target": str(target),
       },
       indent=2,
@@ -702,14 +747,14 @@ def _reviewed_install(args, catalog: dict) -> dict:
     "extension-type": extension_type,
     "source": record["source"],
     "package-tree-digest": record["content-digest"],
-    "scan": record["policy"],
+    "scan": checks,
     "declared-capabilities": record["capabilities"],
     "granted-capabilities": record["capabilities"],
     "install-target": str(target),
     "scope": "project",
     "installed-at": _now(),
     "trust": "Marketplace reviewed",
-    "review": record["review"],
+    "review": review,
     "registration": None,
   }
   receipt_path = _write_receipt(project, name, receipt)
@@ -738,7 +783,7 @@ def _third_party_install(args) -> dict:
     stage_package(
       args.repository, args.revision, args.path, staged, args.extension_type
     )
-    scan = scan_staged(staged, capabilities)
+    scan = scan_staged(staged, capabilities, args.extension_type, name)
     digest = tree_digest(inventory(staged))
     preview = {
       "discovery-catalog": args.discovery_catalog,

@@ -25,7 +25,6 @@ def _manifest(name="demo"):
   """Return a complete hosted extension manifest."""
   return {
     "schema-version": m.SCHEMA_VERSION,
-    "id": f"bcgov-public/{name}",
     "display-name": "Demo skill",
     "summary": "Demonstrates the marketplace contract.",
     "publisher": "Province of British Columbia",
@@ -84,6 +83,210 @@ def _package(root: Path, name="demo", manifest=None) -> Path:
     yaml.safe_dump(manifest or _manifest(name), sort_keys=False), encoding="utf-8"
   )
   return package
+
+
+@pytest.mark.parametrize(
+  ("directory", "filename"),
+  [
+    ("skills", "SKILL.md"),
+    ("prompts", "demo.prompt.md"),
+    ("instructions", "demo.instructions.md"),
+    ("agents", "demo.agent.md"),
+  ],
+)
+def test_minimal_manifest_derives_four_types(tmp_path, directory, filename):
+  """The public catalog derives every type from its content and directory."""
+  root = _root(tmp_path)
+  package = root / directory / "community" / "demo"
+  package.mkdir(parents=True)
+  (package / filename).write_text(
+    "---\nname: Frontmatter name\ndescription: Frontmatter summary\n---\n\nContent\n"
+  )
+  (package / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump({"maintainers": ["@bcgov/platform"], "capabilities": "none"})
+  )
+  catalog, _ = m.build_catalog(root)
+  record = catalog["extensions"][0]
+  assert (
+    catalog["schema-version"],
+    record["id"],
+    record["type"],
+    record["display-name"],
+    record["summary"],
+  ) == (
+    "bcgov-marketplace/v1",
+    f"bcgov-public/{m.TYPE_DIRECTORIES[directory]}/demo",
+    m.TYPE_DIRECTORIES[directory],
+    "Frontmatter name",
+    "Frontmatter summary",
+  )
+
+
+def test_catalog_checks_bind_policy_findings_and_declared_risk_to_digest(tmp_path):
+  """Records publish #35's policy-versioned findings for the exact package."""
+  root = _root(tmp_path)
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text(encoding="utf-8"))
+  policy["policy-version"] = 17
+  policy_path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  package = _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "A package with an advisory",
+    },
+  )
+  (package / "SKILL.md").write_text("The example says to skip approval.\n")
+
+  catalog, _ = m.build_catalog(root)
+  record = catalog["extensions"][0]
+  assert catalog["policy-version"] == 17
+  assert record["risk"] == "low"
+  assert record["checks"]["content-digest"] == record["content-digest"]
+  assert record["checks"]["policy-version"] == 17
+  assert record["checks"]["outcome"] == "passed"
+  assert record["checks"]["findings"][0]["rule-id"] == "approval-bypass"
+  assert record["checks"]["findings"][0]["policy-version"] == 17
+  assert record["checks"]["findings"][0]["disposition"] == "advisory"
+
+
+@pytest.mark.parametrize(
+  ("directory", "filename"),
+  [
+    ("skills", "SKILL.md"),
+    ("prompts", "demo.prompt.md"),
+    ("instructions", "demo.instructions.md"),
+    ("agents", "demo.agent.md"),
+  ],
+)
+def test_missing_summary_names_content_file_and_fix(tmp_path, directory, filename):
+  """Every type gives an actionable diagnostic instead of a body summary."""
+  root = _root(tmp_path)
+  package = root / directory / "community" / "demo"
+  package.mkdir(parents=True)
+  (package / filename).write_text("---\nname: Demo\n---\n\nContent\n")
+  (package / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump({"maintainers": ["@bcgov/platform"], "capabilities": "none"})
+  )
+  label = (
+    filename if directory == "skills" else f"<name>.{m.TYPE_DIRECTORIES[directory]}.md"
+  )
+  with pytest.raises(m.MarketplaceError, match=rf"{label}.*summary.*description:"):
+    m.build_catalog(root)
+
+
+def test_removed_tombstone_and_rename_keep_records_without_install_files(tmp_path):
+  """A rename publishes a tombstone and a replacement without old content."""
+  root = _root(tmp_path)
+  old = root / "skills" / "community" / "old-name"
+  old.mkdir(parents=True)
+  (old / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump(
+      {
+        "maintainers": ["@bcgov/platform"],
+        "capabilities": "none",
+        "lifecycle": "removed",
+        "notice": "Moved to new-name",
+        "moved-to": "bcgov-public/skill/new-name",
+        "summary": "Old summary",
+      }
+    )
+  )
+  _package(
+    root,
+    name="new-name",
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "New summary",
+    },
+  )
+  records = {record["id"]: record for record in m.build_catalog(root)[0]["extensions"]}
+  assert (
+    records["bcgov-public/skill/old-name"]["moved-to"] == "bcgov-public/skill/new-name"
+  )
+  assert records["bcgov-public/skill/old-name"]["display-name"] == "old-name"
+  assert records["bcgov-public/skill/old-name"]["files"] == [
+    record
+    for record in records["bcgov-public/skill/old-name"]["files"]
+    if record["path"] == m.MANIFEST_NAME
+  ]
+  assert records["bcgov-public/skill/new-name"]["lifecycle"] == "active"
+
+
+def test_quarantine_keeps_content_without_install_action(tmp_path):
+  """Quarantine publishes the content and notice but blocks installation."""
+  root = _root(tmp_path)
+  package = _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "A quarantined asset",
+      "lifecycle": "quarantined",
+      "notice": "Under investigation",
+    },
+  )
+  record = m.build_catalog(root)[0]["extensions"][0]
+  assert (package / "SKILL.md").is_file()
+  assert record["notice"] == "Under investigation"
+  assert record["install-options"] == []
+  assert any(item["path"] == "SKILL.md" for item in record["files"])
+
+
+def test_non_active_record_requires_notice(tmp_path):
+  """A reviewer cannot publish a tombstone without an explanation."""
+  root = _root(tmp_path)
+  _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "Previous asset",
+      "lifecycle": "quarantined",
+    },
+  )
+  with pytest.raises(m.MarketplaceError, match=r"notice: add a notice"):
+    m.build_catalog(root)
+
+
+def test_active_record_cannot_redirect_to_replacement(tmp_path):
+  """An old id must stop offering installs before it points to a new id."""
+  root = _root(tmp_path)
+  package = _package(root)
+  manifest = {
+    "maintainers": ["@bcgov/platform"],
+    "capabilities": "none",
+    "summary": "Old summary",
+    "moved-to": "bcgov-public/skill/new-name",
+  }
+  (package / m.MANIFEST_NAME).write_text(yaml.safe_dump(manifest))
+  with pytest.raises(m.MarketplaceError, match=r"moved-to.*non-active"):
+    m.build_catalog(root)
+
+
+def test_manifest_overrides_frontmatter_and_path_fallback(tmp_path):
+  """Metadata override order is Manifest, frontmatter, then path for names."""
+  root = _root(tmp_path)
+  package = _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "display-name": "Explicit title",
+      "summary": "Explicit summary",
+    },
+  )
+  (package / "SKILL.md").write_text(
+    "---\nname: Frontmatter title\ndescription: Frontmatter summary\n---\nBody"
+  )
+  record = m.build_catalog(root)[0]["extensions"][0]
+  assert (record["display-name"], record["summary"], record["name"]) == (
+    "Explicit title",
+    "Explicit summary",
+    "demo",
+  )
 
 
 def test_marketplace_config_validates_typed_sources(tmp_path):
@@ -656,7 +859,7 @@ def test_catalog_exposes_policy_version_and_advisory_finding(tmp_path):
   policy["policy-version"] = 4
   policy_path.write_text(yaml.safe_dump(policy))
   catalog, _ = m.build_catalog(root)
-  finding = catalog["extensions"][0]["policy"]["findings"][0]
+  finding = catalog["extensions"][0]["checks"]["findings"][0]
   assert finding["rule-id"] == "hidden-unicode"
   assert finding["policy-version"] == 4
   assert finding["disposition"] == "advisory"
@@ -745,14 +948,14 @@ def test_shared_yaml_diagnostics_cover_policy_and_native_frontmatter(
     (package / m.MANIFEST_NAME).write_text(
       yaml.safe_dump(_manifest()), encoding="utf-8"
     )
-    path = package / "prompt.prompt.md"
+    path = package / "demo.prompt.md"
     content = "---\n[SYNTHETIC_KEY_62]: value\n---\nSample prompt.\n"
     line = 2
   path.write_text(content, encoding="utf-8")
   assert m.main(["--root", str(root), "check"]) == 1
   output = capsys.readouterr()
   report = output.out + output.err
-  assert path.name in report
+  assert (path.name if target == "policy" else "&lt;name&gt;.prompt.md") in report
   assert f"line {line}, column 1" in report
   assert "mapping keys must be strings" in report
   assert "replace the key with a field name" in report
@@ -776,15 +979,9 @@ def test_manifest_id_matches_directory(tmp_path):
   """The stable public ID must derive from the package directory."""
   root = _root(tmp_path)
   package = _package(root, name="folder", manifest=_manifest("other"))
-  _, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
-  assert any("id: Use bcgov-public/<package-name>" in error for error in errors)
-  (package / m.MANIFEST_NAME).write_text(
-    yaml.safe_dump(_manifest("folder")), encoding="utf-8"
-  )
-  _, corrected_errors = m.validate_manifest(
-    package / m.MANIFEST_NAME, m.load_schema(root)
-  )
-  assert corrected_errors == []
+  manifest, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
+  assert manifest["id"] == "bcgov-public/skill/folder"
+  assert not errors
 
 
 def test_manifest_paths_include_canonical_layouts(tmp_path):
@@ -833,19 +1030,19 @@ def test_manifest_paths_reject_flat_legacy_layout(tmp_path):
     (
       "prompts",
       "prompt",
-      "prompt.prompt.md",
+      "demo.prompt.md",
       "name: demo\ndescription: A focused task.\nagent: agent",
     ),
     (
       "instructions",
       "instructions",
-      "instructions.instructions.md",
+      "demo.instructions.md",
       "description: Persistent project guidance.",
     ),
     (
       "agents",
       "agent",
-      "agent.agent.md",
+      "demo.agent.md",
       "name: demo\ndescription: A focused assistant role.",
     ),
   ],
@@ -1187,11 +1384,11 @@ def test_community_package_is_auto_scanned(tmp_path):
   root = _root(tmp_path)
   _package(root)
   catalog, _ = m.build_catalog(root)
-  review = catalog["extensions"][0]["review"]
+  review = catalog["extensions"][0]["checks"]
   assert review["status"] == "auto-scanned"
   assert review["reviewers"] == []
   assert review["method"] == "automated-policy-scan"
-  assert review["risk"] == "low"
+  assert catalog["extensions"][0]["risk"] == "low"
 
 
 def test_specialty_does_not_claim_human_review_from_config(tmp_path):
@@ -1205,10 +1402,10 @@ def test_specialty_does_not_claim_human_review_from_config(tmp_path):
     yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
   )
   catalog, _ = m.build_catalog(root)
-  assert catalog["extensions"][0]["review"]["status"] == "unreviewed"
+  assert catalog["extensions"][0]["checks"]["status"] == "unreviewed"
   (package / "SKILL.md").write_text("# Hardening changed\n", encoding="utf-8")
   catalog, _ = m.build_catalog(root)
-  assert catalog["extensions"][0]["review"]["status"] == "unreviewed"
+  assert catalog["extensions"][0]["checks"]["status"] == "unreviewed"
 
 
 def test_intake_decision_matrix():
@@ -1326,5 +1523,5 @@ def test_namespace_of_detects_specialty_for_every_type(tmp_path):
   assert m.namespace_of("prompts/community/demo") == "community"
   assert m.namespace_of("skills/security/hardening") == "security"
   assert m.namespace_of("agents/security/triage") == "security"
-  assert m.namespace_of("mcp/security/broker") == "security"
+  assert m.namespace_of("prompts/security/broker") == "security"
   assert m.namespace_of("instructions/privacy/redact") == "privacy"

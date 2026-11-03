@@ -90,13 +90,14 @@ ceiling does not override the disabled flag.
 ## Honest limitations
 
 - **Membership checks need an org-readable token.** The workflow uses
-  `ORG_READ_TOKEN`, with `github.token` as a fallback. GitHub returns `404` both
-  when the author is not a member and when the token lacks permission to read
-  membership, so a `404` cannot distinguish those cases by itself. For the
-  workflow to confirm membership, configure the repository or organization
-  Actions secret `ORG_READ_TOKEN` with a token owned by `bcgov`, organization
-  `Members: read` permission (or a classic token with `read:org` scope), and
-  organization approval. See GitHub's
+  `ORG_READ_TOKEN`, with `github.token` as a fallback, only for the read-only
+  membership lookup. The default token remains in use for PR labels. GitHub
+  returns `404` both when the author is not a member and when the token lacks
+  permission to read membership, so a `404` cannot distinguish those cases by
+  itself. For the workflow to confirm membership, configure the repository or
+  organization Actions secret `ORG_READ_TOKEN` with a token owned by `bcgov`,
+  organization `Members: read` permission (or a classic token with `read:org`
+  scope), and organization approval. See GitHub's
   [membership endpoint](https://docs.github.com/en/rest/orgs/members#check-organization-membership-for-a-user)
   and
   [fine-grained token permissions](https://docs.github.com/en/rest/authentication/permissions-required-for-fine-grained-personal-access-tokens).
