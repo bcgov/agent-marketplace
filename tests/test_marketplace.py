@@ -148,25 +148,40 @@ def test_specialty_and_security_policy_reject_invalid_data(tmp_path):
     m.load_security_policy(root)
 
 
-def test_unapproved_security_rule_is_advisory(tmp_path):
+@pytest.mark.parametrize(
+  ("rule", "content", "script"),
+  [
+    ("SECRET_PATTERNS", "password=abcdefghijklmnop\n", False),
+    ("hidden-unicode", "# Hidden\u202e\n", False),
+    ("undeclared-network", "curl https://unlisted.example\n", False),
+    ("undeclared-environment-variable", "echo $UNLISTED_VALUE\n", False),
+    ("undeclared-script", "# Sample\n", True),
+  ],
+)
+def test_unapproved_security_rule_is_advisory(tmp_path, rule, content, script):
   """Removing a Security approval changes a rule's disposition, not its detection."""
   root = _root(tmp_path)
   policy_path = root / "config" / "security-policy.yaml"
   policy = yaml.safe_load(policy_path.read_text())
-  policy["blocking"].remove("hidden-unicode")
+  policy["blocking"].remove(rule)
   policy_path.write_text(yaml.safe_dump(policy))
   package = _package(root)
-  (package / "SKILL.md").write_text("# Hidden\u202e\n")
+  (package / "SKILL.md").write_text(content, encoding="utf-8")
+  if script:
+    (package / "scripts").mkdir()
+    (package / "scripts" / "run.sh").write_text("echo hello\n", encoding="utf-8")
   scan = m.scan_package(package, _manifest())
   assert scan["outcome"] == "passed"
   assert any(
-    item["code"] == "hidden-unicode" and item["severity"] == "advisory"
+    item["rule-id"] == rule
+    and item["severity"] == "advisory"
+    and item["disposition"] == "advisory"
     for item in scan["findings"]
   )
 
 
 def test_empty_security_blocking_set_keeps_findings_advisory(tmp_path):
-  """An empty Security-approved set never produces a blocking finding."""
+  """An empty Security-approved set keeps security findings advisory."""
   root = _root(tmp_path)
   policy_path = root / "config" / "security-policy.yaml"
   policy = yaml.safe_load(policy_path.read_text())
@@ -186,6 +201,39 @@ def test_empty_security_blocking_set_keeps_findings_advisory(tmp_path):
     and finding["remediation"]
     for finding in scan["findings"]
   )
+
+
+@pytest.mark.parametrize("violation", ["structure", "metadata"])
+def test_package_validation_fails_without_approved_security_rules(
+  tmp_path, capsys, violation
+):
+  """Package and metadata hard failures remain independent of Security approval."""
+  root = _root(tmp_path)
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text(encoding="utf-8"))
+  policy["blocking"] = []
+  policy_path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  manifest = _manifest()
+  if violation == "metadata":
+    manifest["maintainers"] = []
+  package = _package(root, manifest=manifest)
+  if violation == "structure":
+    (package / "package.json").write_text("{}\n", encoding="utf-8")
+    (package / "SKILL.md").write_text("password=abcdefghijklmnop\n", encoding="utf-8")
+    scan = m.scan_package(package, manifest)
+    assert scan["outcome"] == "blocked"
+    assert any(
+      item["category"] == "package" and item["disposition"] == "blocking"
+      for item in scan["findings"]
+    )
+    assert any(
+      item["rule-id"] == "SECRET_PATTERNS" and item["disposition"] == "advisory"
+      for item in scan["findings"]
+    )
+  assert m.main(["--root", str(root), "check"]) == 1
+  report = capsys.readouterr().out
+  expected = "blocked-extension-type" if violation == "structure" else "maintainers"
+  assert expected in report
 
 
 def test_read_only_check_reports_blocking_file_rule_location_and_fix(
@@ -211,6 +259,38 @@ def test_read_only_check_reports_blocking_file_rule_location_and_fix(
   policy_path.write_text(yaml.safe_dump(policy))
   assert m.main(["--root", str(root), "check"]) == 0
   assert "Advisory" in summary.read_text()
+
+
+@pytest.mark.parametrize("command", ["curl", "wget", "Invoke-WebRequest"])
+@pytest.mark.parametrize(
+  ("hosts", "blocked_hosts"),
+  [
+    (("unlisted.example", "listed.example"), 1),
+    (("listed.example", "unlisted.example"), 1),
+    (("unlisted.example", "other.example"), 2),
+    (("listed.example", "listed.example"), 0),
+  ],
+)
+def test_network_commands_check_every_recognized_url(
+  tmp_path, capsys, command, hosts, blocked_hosts
+):
+  """Scan and check inspect each supported URL without executing commands."""
+  root = _root(tmp_path)
+  manifest = _manifest()
+  manifest["capabilities"]["network"] = ["listed.example"]
+  package = _package(root, manifest=manifest)
+  (package / "SKILL.md").write_text(
+    f"{command} https://{hosts[0]} --next https://{hosts[1]}\n", encoding="utf-8"
+  )
+  assert m.main(["--root", str(root), "scan", str(package)]) == 0
+  result = json.loads(capsys.readouterr().out)
+  findings = [
+    item for item in result["findings"] if item["rule-id"] == "undeclared-network"
+  ]
+  assert len(findings) == blocked_hosts
+  assert all(item["disposition"] == "blocking" for item in findings)
+  assert result["outcome"] == ("blocked" if blocked_hosts else "passed")
+  assert m.main(["--root", str(root), "check"]) == (1 if blocked_hosts else 0)
 
 
 def test_scanner_cli_outputs_never_echo_matched_credential(
@@ -301,6 +381,39 @@ def test_scanner_cli_reports_invalid_manifest_without_echoing_content(tmp_path, 
     assert "ERROR" in output.err
 
 
+@pytest.mark.parametrize("command", ["check", "scan", "analyze", "validate"])
+@pytest.mark.parametrize("invalid_field", ["maintainers", "support", "unknown"])
+def test_invalid_manifest_diagnostics_keep_field_and_fix_without_values(
+  tmp_path, monkeypatch, capsys, command, invalid_field
+):
+  """Public errors identify invalid metadata without exposing authored values."""
+  root = _root(tmp_path)
+  manifest = _manifest()
+  sentinel = "AKIA" + "Q" * 16
+  if invalid_field == "maintainers":
+    manifest["maintainers"] = [sentinel]
+  elif invalid_field == "support":
+    manifest["support"] = {sentinel: sentinel}
+  else:
+    manifest[sentinel] = sentinel
+  package = _package(root, manifest=manifest)
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  args = ["--root", str(root), command]
+  if command in {"scan", "analyze"}:
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  if summary.exists():
+    report += summary.read_text(encoding="utf-8")
+  assert sentinel not in report
+  assert m.MANIFEST_NAME in report
+  field = invalid_field if invalid_field != "unknown" else "root"
+  assert field in report
+  assert "Use" in report or "remove unknown fields" in report
+
+
 def test_demo_cli_reports_invalid_fixture_without_echoing_manifest(
   tmp_path, monkeypatch, capsys
 ):
@@ -336,6 +449,52 @@ def test_security_pattern_parameters_are_read_from_policy(tmp_path):
     finding["rule-id"] == "SECRET_PATTERNS" and finding["code"] == "test-credential"
     for finding in scan["findings"]
   )
+
+
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+def test_cli_rejects_missing_secret_patterns(tmp_path, capsys, command):
+  """Incomplete policy cannot silently disable credential checks or crash."""
+  root = _root(tmp_path)
+  package = _package(root)
+  path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(path.read_text(encoding="utf-8"))
+  del policy["secret-patterns"]
+  path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  assert "security-policy.yaml" in output.err
+  assert "secret-patterns" in output.err
+  assert "Add" in output.err
+  assert "Traceback" not in output.out + output.err
+
+
+@pytest.mark.parametrize(
+  ("patterns", "fix"),
+  [
+    (None, "required type"),
+    ({}, "Add content"),
+    ([], "required type"),
+    ({"synthetic": 62}, "required type"),
+    ({"synthetic": "["}, "regular expression"),
+  ],
+)
+def test_check_rejects_malformed_secret_patterns(tmp_path, capsys, patterns, fix):
+  """Malformed credential detectors fail closed with a policy field correction."""
+  root = _root(tmp_path)
+  _package(root)
+  path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(path.read_text(encoding="utf-8"))
+  policy["secret-patterns"] = patterns
+  path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  assert m.main(["--root", str(root), "check"]) == 1
+  output = capsys.readouterr()
+  assert "security-policy.yaml" in output.err
+  assert "secret-patterns" in output.err
+  assert fix in output.err
+  assert "Traceback" not in output.out + output.err
 
 
 def test_catalog_exposes_policy_version_and_advisory_finding(tmp_path):
@@ -383,6 +542,75 @@ def test_strict_yaml_rejects_duplicate_keys(tmp_path):
     m.load_yaml(path)
 
 
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+@pytest.mark.parametrize(
+  ("content", "diagnostic"),
+  [
+    (b"[SYNTHETIC_KEY_62]: value\n", "mapping keys"),
+    (b"? {SYNTHETIC_KEY_62: value}\n: value\n", "mapping keys"),
+    (b"1: SYNTHETIC_KEY_62\n", "mapping keys"),
+    (b"id: first\nid: SYNTHETIC_KEY_62\n", "duplicate key"),
+    (b"id: &value SYNTHETIC_KEY_62\nsummary: *value\n", "aliases"),
+    (b"id: [SYNTHETIC_KEY_62\n", "YAML syntax"),
+    (b"id: 2026-99-99\n", "YAML syntax"),
+    (b"id: !!map [SYNTHETIC_KEY_62]\n", "expected a mapping"),
+    (b"id: SYNTHETIC_KEY_62\xff\n", "UTF-8"),
+  ],
+)
+def test_cli_reports_malformed_yaml_without_echoing_values(
+  tmp_path, monkeypatch, capsys, command, content, diagnostic
+):
+  """Invalid keys, syntax, and encoding fail with safe corrective diagnostics."""
+  root = _root(tmp_path)
+  package = _package(root)
+  (package / m.MANIFEST_NAME).write_bytes(content)
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  if summary.exists():
+    report += summary.read_text(encoding="utf-8")
+  assert "SYNTHETIC_KEY_62" not in report
+  assert "Traceback" not in report
+  assert m.MANIFEST_NAME in report
+  assert diagnostic in report
+  assert any(fix in report for fix in ("replace", "remove", "correct", "save"))
+
+
+@pytest.mark.parametrize("target", ["policy", "frontmatter"])
+def test_shared_yaml_diagnostics_cover_policy_and_native_frontmatter(
+  tmp_path, capsys, target
+):
+  """Policy and native assets reject list keys through the shared CLI parser."""
+  root = _root(tmp_path)
+  if target == "policy":
+    path = root / "config" / "security-policy.yaml"
+    content = "[SYNTHETIC_KEY_62]: value\n"
+    line = 1
+  else:
+    package = root / "prompts" / "community" / "demo"
+    package.mkdir(parents=True)
+    (package / m.MANIFEST_NAME).write_text(
+      yaml.safe_dump(_manifest()), encoding="utf-8"
+    )
+    path = package / "prompt.prompt.md"
+    content = "---\n[SYNTHETIC_KEY_62]: value\n---\nSample prompt.\n"
+    line = 2
+  path.write_text(content, encoding="utf-8")
+  assert m.main(["--root", str(root), "check"]) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  assert path.name in report
+  assert f"line {line}, column 1" in report
+  assert "mapping keys must be strings" in report
+  assert "replace the key with a field name" in report
+  assert "SYNTHETIC_KEY_62" not in report
+
+
 def test_manifest_schema_is_closed(tmp_path):
   """Unknown author-controlled metadata is rejected by the closed schema."""
   root = _root(tmp_path)
@@ -390,7 +618,10 @@ def test_manifest_schema_is_closed(tmp_path):
   manifest["review"] = {"status": "self-approved"}
   package = _package(root, manifest=manifest)
   _, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
-  assert any("Additional properties" in error and "review" in error for error in errors)
+  assert any(
+    "Additional properties" in error and "remove unknown fields" in error
+    for error in errors
+  )
 
 
 def test_manifest_id_matches_directory(tmp_path):

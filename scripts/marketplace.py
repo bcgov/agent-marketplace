@@ -112,9 +112,8 @@ SECURITY_RULES = {
   "undeclared-environment-variable",
   "undeclared-script",
 }
-NETWORK_COMMAND_RE = re.compile(
-  r"(?i)\b(?:curl|wget|invoke-webrequest)\b[^\n]*https?://([A-Za-z0-9.-]+)"
-)
+NETWORK_COMMAND_RE = re.compile(r"(?i)\b(?:curl|wget|invoke-webrequest)\b([^\n]*)")
+NETWORK_HOST_RE = re.compile(r"(?i)https?://([A-Za-z0-9.-]+)")
 ENVIRONMENT_RE = re.compile(
   r"(?:\$\{?([A-Z][A-Z0-9_]{2,})\}?|\$env:([A-Z][A-Z0-9_]{2,})|%([A-Z][A-Z0-9_]{2,})%)"
 )
@@ -124,29 +123,46 @@ class MarketplaceError(Exception):
   """Represent one or more user-correctable marketplace validation failures."""
 
 
+class StrictYAMLError(yaml.constructor.ConstructorError):
+  """Carry a fixed public correction and a YAML source location."""
+
+  def __init__(self, correction: str, mark):
+    """Keep authored source text out of the public correction."""
+    super().__init__(None, None, correction, mark)
+    self.correction = correction
+
+
 class StrictSafeLoader(yaml.SafeLoader):
-  """Load safe YAML while rejecting aliases and duplicate mapping keys."""
+  """Load safe YAML with unique string mapping keys and no aliases."""
 
   def compose_node(self, parent, index):
     """Reject aliases before composing a YAML node."""
     if self.check_event(yaml.AliasEvent):
       event = self.peek_event()
-      raise yaml.constructor.ConstructorError(
-        None, None, f"YAML aliases are not allowed: *{event.anchor}", event.start_mark
+      raise StrictYAMLError(
+        "YAML aliases are not allowed; replace the alias with explicit values.",
+        event.start_mark,
       )
     return super().compose_node(parent, index)
 
 
 def _construct_mapping(loader, node, deep=False):
-  """Construct a mapping and reject duplicate keys."""
+  """Construct a mapping with unique string keys."""
+  if not isinstance(node, yaml.MappingNode):
+    raise StrictYAMLError(
+      "expected a mapping; replace the value with named fields.", node.start_mark
+    )
   mapping = {}
   for key_node, value_node in node.value:
     key = loader.construct_object(key_node, deep=deep)
+    if not isinstance(key, str):
+      raise StrictYAMLError(
+        "mapping keys must be strings; replace the key with a field name.",
+        key_node.start_mark,
+      )
     if key in mapping:
-      raise yaml.constructor.ConstructorError(
-        "while constructing a mapping",
-        node.start_mark,
-        f"duplicate key: {key}",
+      raise StrictYAMLError(
+        "duplicate key; remove or rename the repeated field.",
         key_node.start_mark,
       )
     mapping[key] = loader.construct_object(value_node, deep=deep)
@@ -158,15 +174,45 @@ StrictSafeLoader.add_constructor(
 )
 
 
-def load_yaml(path: Path) -> dict:
-  """Load a UTF-8 YAML mapping with the strict safe loader."""
+def load_yaml_text(
+  text: str, path: Path, *, context: str = "YAML", line_offset: int = 0
+) -> dict:
+  """Parse one strict mapping with safe corrections and numeric source locations."""
   try:
-    value = yaml.load(path.read_text(encoding="utf-8"), Loader=StrictSafeLoader)
-  except (OSError, UnicodeError, yaml.YAMLError) as exc:
-    raise MarketplaceError(f"{path}: invalid YAML: {exc}") from exc
+    value = yaml.load(text, Loader=StrictSafeLoader)
+  except (yaml.YAMLError, ValueError) as exc:
+    mark = getattr(exc, "problem_mark", None)
+    location = (
+      f"line {mark.line + 1 + line_offset}, column {mark.column + 1}"
+      if mark is not None
+      else "<root>"
+    )
+    correction = (
+      exc.correction
+      if isinstance(exc, StrictYAMLError)
+      else "invalid YAML syntax; correct the YAML formatting and scalar values."
+    )
+    raise MarketplaceError(f"{path}: {location}: {context}: {correction}") from exc
   if not isinstance(value, dict):
-    raise MarketplaceError(f"{path}: top-level YAML value must be a mapping")
+    raise MarketplaceError(
+      f"{path}: <root>: {context}: use a top-level mapping with named fields."
+    )
   return value
+
+
+def load_yaml(path: Path) -> dict:
+  """Read a UTF-8 YAML mapping using shared strict parsing and safe diagnostics."""
+  try:
+    text = path.read_text(encoding="utf-8")
+  except UnicodeError as exc:
+    raise MarketplaceError(
+      f"{path}: <root>: invalid UTF-8; save the YAML file as UTF-8 text."
+    ) from exc
+  except OSError as exc:
+    raise MarketplaceError(
+      f"{path}: <root>: cannot read YAML; check the file exists and is readable."
+    ) from exc
+  return load_yaml_text(text, path)
 
 
 def load_schema(root: Path) -> dict:
@@ -176,6 +222,40 @@ def load_schema(root: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
   except (OSError, UnicodeError, json.JSONDecodeError) as exc:
     raise MarketplaceError(f"{path}: invalid JSON Schema: {exc}") from exc
+
+
+def _schema_diagnostic(path: Path, error) -> str:
+  """Describe a schema failure using only schema-owned fields and constraints."""
+  schema_path = list(error.absolute_schema_path)
+  fields = {
+    schema_path[index + 1]
+    for index, keyword in enumerate(schema_path[:-1])
+    if keyword == "properties"
+  }
+  location = (
+    ".".join(
+      str(part) if isinstance(part, int) or part in fields else "<key>"
+      for part in error.absolute_path
+    )
+    or "<root>"
+  )
+  constraint = error.validator
+  if constraint == "required":
+    missing = [field for field in error.validator_value if field not in error.instance]
+    fix = "Add required fields: " + ", ".join(missing) + "."
+  elif constraint == "type":
+    fix = f"Use the required type: {error.validator_value}."
+  elif constraint == "additionalProperties":
+    fix = "Additional properties are not allowed; remove unknown fields."
+  elif constraint == "uniqueItems":
+    fix = "Remove duplicate items."
+  elif constraint in {"minLength", "minItems", "minProperties"}:
+    fix = f"Add content to meet {constraint}: {error.validator_value}."
+  elif constraint in {"maxLength", "maxItems", "maxProperties"}:
+    fix = f"Remove content to meet {constraint}: {error.validator_value}."
+  else:
+    fix = f"Use a value matching the documented {constraint} constraint."
+  return f"{path}: {location}: {fix}"
 
 
 def manifest_paths(root: Path) -> list[Path]:
@@ -205,12 +285,9 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
   except MarketplaceError as exc:
     return None, [str(exc)]
   validator = Draft202012Validator(schema, format_checker=FormatChecker())
-  errors = []
-  for error in sorted(
-    validator.iter_errors(manifest), key=lambda item: list(item.path)
-  ):
-    location = ".".join(str(part) for part in error.path) or "<root>"
-    errors.append(f"{path}: {location}: {error.message}")
+  errors = sorted(
+    {_schema_diagnostic(path, error) for error in validator.iter_errors(manifest)}
+  )
   expected_id = f"bcgov-public/{path.parent.name}"
   if manifest.get("id") != expected_id:
     errors.append(f"{path}: id must be {expected_id!r}")
@@ -244,19 +321,19 @@ def _validate_artifact(
     return [f"{manifest_path.parent}: missing {path.name}"]
   try:
     text = path.read_text(encoding="utf-8")
-  except (OSError, UnicodeError) as exc:
-    return [f"{path}: cannot read UTF-8 content: {exc}"]
+  except (OSError, UnicodeError):
+    return [f"{path}: cannot read UTF-8 content; save a readable UTF-8 text file."]
   if extension_type == "skill":
     return [] if text.strip() else [f"{path}: content must not be empty"]
   match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)", text, re.DOTALL)
   if not match:
     return [f"{path}: expected a YAML frontmatter block"]
   try:
-    frontmatter = yaml.load(match.group(1), Loader=StrictSafeLoader)
-  except yaml.YAMLError as exc:
-    return [f"{path}: invalid YAML frontmatter: {exc}"]
-  if not isinstance(frontmatter, dict):
-    return [f"{path}: frontmatter must be a mapping"]
+    frontmatter = load_yaml_text(
+      match.group(1), path, context="YAML frontmatter", line_offset=1
+    )
+  except MarketplaceError as exc:
+    return [str(exc)]
 
   required = {
     "prompt": {"description"},
@@ -373,7 +450,9 @@ def _scan_text(
             line_number,
           )
         )
-    for host in NETWORK_COMMAND_RE.findall(line):
+    command = NETWORK_COMMAND_RE.search(line)
+    hosts = NETWORK_HOST_RE.findall(command.group(1)) if command else []
+    for host in hosts:
       if host not in declared_network and "*" not in declared_network:
         findings.append(
           _finding(
@@ -426,6 +505,10 @@ def capability_wildcards(capabilities: dict) -> list[str]:
     values = capabilities.get(field) or []
     if isinstance(values, list) and "*" in values:
       found.append(field)
+  filesystem = capabilities.get("filesystem") or {}
+  for access in ("read", "write"):
+    if "*" in (filesystem.get(access) or []):
+      found.append(f"filesystem.{access}")
   return found
 
 
@@ -889,12 +972,16 @@ def load_marketplace_config(root: Path) -> dict:
 
 
 def _validated_config(root: Path, name: str, schema_name: str) -> dict:
+  """Load configuration and reject schema failures with safe field diagnostics."""
   path = root / "config" / name
   data = load_yaml(path)
   schema = json.loads((root / "schemas" / schema_name).read_text(encoding="utf-8"))
-  errors = sorted(Draft202012Validator(schema).iter_errors(data), key=str)
+  errors = sorted(
+    _schema_diagnostic(path, error)
+    for error in Draft202012Validator(schema).iter_errors(data)
+  )
   if errors:
-    raise MarketplaceError(f"{path}: {errors[0].message}")
+    raise MarketplaceError(errors[0])
   return data
 
 
@@ -942,11 +1029,14 @@ def load_security_policy(root: Path) -> dict:
     raise MarketplaceError(
       f"security policy contains unimplemented rules: {sorted(unknown)}"
     )
-  for code, expression in policy.get("secret-patterns", {}).items():
+  for expression in policy["secret-patterns"].values():
     try:
       re.compile(expression)
     except re.error as exc:
-      raise MarketplaceError(f"invalid secret pattern {code!r}: {exc}") from exc
+      raise MarketplaceError(
+        f"{root / 'config' / 'security-policy.yaml'}: secret-patterns: "
+        "invalid regular expression; correct the pattern syntax."
+      ) from exc
   return policy
 
 
@@ -1517,10 +1607,7 @@ def main(argv: list[str] | None = None) -> int:
         )
       )
   except MarketplaceError as exc:
-    if args.command in {"scan", "analyze"}:
-      print("ERROR: Extension validation failed", file=sys.stderr)
-    else:
-      print(f"ERROR: {exc}", file=sys.stderr)
+    print(f"ERROR: {exc}", file=sys.stderr)
     return 1
   return 0
 
