@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # <name>.local.sh — run this workflow on a developer's machine: the shell equivalent of the n8n
-# workflow JSON this skill builds. Same read-only / idempotent stages, running the SAME
+# workflow JSON this skill builds. Same reviewed stages, running the SAME
 # tools/n8n/merge.sh and report.sh as the n8n nodes, so local and n8n stay in lockstep. Writes an
 # HTML report to /tmp and prints a file:// URL.
 #
@@ -17,17 +17,17 @@
 # Copy to tools/n8n/workflows/<name>.local.sh, fill the <-- markers, and shellcheck it. Progress
 # goes to stderr (>&2) so it never mixes into stdout.
 #
-# Usage:  <ENV>=<value> ./<name>.local.sh
+# INCOMPLETE SCAFFOLD: replace reviewed literals; inspect before execution.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 N8N="$ROOT/tools/n8n"
-GROUP="<group>"                                # <-- snippets/<group>
+GROUP="REVIEWED_GROUP"                                # <-- snippets/<group>
 SNIPPETS="$N8N/snippets/$GROUP"
-NAME="<name>"                                  # <-- page name (/tmp/n8n-report/NAME.html)
+NAME="REVIEWED_NAME"                                  # <-- page name (/tmp/n8n-report/NAME.html)
 
-# Inputs: the snippets read whatever env they need (it is inherited by every child process).
-# Optionally require one up front, e.g.:   : "${NAMESPACE:?set NAMESPACE}"
+# Fixed author-reviewed namespace, matching the workflow JSON. Request/CLI input does not select it.
+export NAMESPACE=REVIEWED_NAMESPACE
 
 # The lib scripts (merge.sh/report.sh/render.sh/view.sh/utils.sh) are owned by the workflow-builder
 # skill and must ALREADY be deployed beside this tree. This script does NOT self-sync — the agent
@@ -47,8 +47,8 @@ snip() {
 # --- Collect: each snippet's JSON -> MERGE_* -> flat merge (fields stay top-level; the MERGE_
 #     names are just unique labels here). One export per collection snippet.
 echo "collecting..." >&2
-export MERGE_ONE="$(snip "<collection-snippet>")" # <-- one export per collection snippet
-export MERGE_TWO="$(snip "<collection-snippet>")"
+export MERGE_ONE="$(snip "REVIEWED_COLLECTION_SNIPPET")" # <-- one export per collection snippet
+export MERGE_TWO="$(snip "REVIEWED_COLLECTION_SNIPPET")"
 merged="$(bash "$N8N/merge.sh")"
 unset ${!MERGE_@}
 

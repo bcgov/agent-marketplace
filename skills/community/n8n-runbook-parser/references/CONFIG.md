@@ -2,7 +2,7 @@
 
 `config.yaml` is the single manifest for a `RunbookParser`. It is shaped like a Kubernetes
 CRD: **`spec:`** is what you write (and is never rewritten, so its comments survive), and
-**`status:`** is observed state the parser writes back on `ingest`.
+**`status:`** combines parser-written observations with the author-maintained cleaned/skipped/docs entries described below.
 
 ```
 kind: RunbookParser          # required, must be exactly this
@@ -14,7 +14,7 @@ spec:                        # human-authored; the parser only reads this
   destination: tools/n8n/snippets/   # where cleaned snippet-* live (in <group>/)
   working_dir: /tmp          # where raws + a verbatim doc copy materialize (+ url cache); commit to VC raws
   sources: [ ... ]           # see below
-status: { ... }              # machine-owned; written by the parser (do not hand-maintain)
+status: { ... }              # mixed ownership; see the status section
 ```
 
 ## spec.sources[]
@@ -24,7 +24,7 @@ status: { ... }              # machine-owned; written by the parser (do not hand
 | `name`        | string          | **Unique** id — targets the source (e.g. for cleaning) and prefixes its raw files. |
 | `group`       | string          | Merge bucket: sources sharing a `group` **merge** into one group (defaults to `name`). |
 | `description` | string          | What the snippets are — and the **prompt** that guides cleaning (what to produce / skip). |
-| `url`         | string \| null  | Wiki/doc/runbook to pull from. Set **exactly one** of `url`/`file`.     |
+| `url`         | string \| null  | Wiki/doc/runbook to pull from. Set exactly one for a real source; omit both only for a deliberate doc-less placeholder.     |
 | `file`        | string \| null  | Repo-relative file to pull from instead of a URL.                       |
 | `doc`         | string \| null  | Optional `root`-relative doc the snippets recombine into for drift.     |
 
@@ -88,5 +88,4 @@ they were last reconciled. See `CLEANING.md` and `BACKPORT.md`.
 ## Comment safety
 
 The parser rewrites only from a top-level `status:` marker to end-of-file; everything above
-(your commented `spec`) is left byte-for-byte — `spec` stays human-owned, `status` stays
-machine-owned. The `spec` is parsed with PyYAML, so any valid YAML is fine.
+(your commented `spec`) is left byte-for-byte — `spec` stays human-owned; preserve parser observations while maintaining the documented author-owned status entries. The `spec` is parsed with PyYAML, so any valid YAML is fine.

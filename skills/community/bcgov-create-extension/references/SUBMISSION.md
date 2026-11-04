@@ -1,50 +1,35 @@
-# Portable marketplace submission
+# Marketplace package and contribution
 
-Load this reference only when submitting a supported declarative agent asset
-(skill, prompt, instruction, or agent) to the BC Gov marketplace. The contributor
-may start in any workspace; a marketplace checkout, Python, and `uv` are not
-prerequisites.
+Use this reference for a marketplace submission. Local drafting can finish without
+any public write. Only explicitly selected public input belongs in the package.
 
-## Stage and inspect
+1. Select skill, instructions, prompt or agent and a registered Specialty (or
+   Community). Use `<type-directory>/<specialty>/<name>/`; skill native content
+   is SKILL.md, other native files are `<name>.<type>.md`.
+2. Add bcgov-extension.yaml with real maintainers and truthful capabilities.
+   Native description can supply summary; use an explicit summary if absent.
+   Read current [asset spec](https://bcgov.github.io/agent-marketplace/reference.html#manifest)
+   and schema. Preserve existing canonical identity during a Specialty transfer.
+3. Inspect every public file, native metadata, links, resource paths and declared
+   access. Treat bundled scripts as data. Manual content exercises and automated
+   package checks are separate from actual client/model evidence.
+4. Show the reviewable public files/diff, inventory, capabilities and unresolved
+   findings. Existing task authority can authorize submission; otherwise obtain
+   it before public writes. Use an available GitHub integration, or the
+   [browser contribution page](https://bcgov.github.io/agent-marketplace/contribute.html).
+   Its native-file prefill is file 1, not a two-file upload: commit the Manifest
+   to the same fork and branch, then inspect both paths in one PR.
+5. Use the one type-neutral PR template. Fix CI findings on the same branch.
+   Generated Catalogue/site outputs are CI builds; edit authored inputs, not
+   generated projections. An unconfirmed public membership routes to human
+   review; format/security failures still need fixes. Specialty content requires
+   owning-team review when ready. A passing route is not proof an automatic
+   merge or deployment occurred; activation controls can remain off.
+6. Report the PR URL and exact-head check state, or preserve the draft and give
+   the access/signing/retry step. Validate actual native placement with the
+   selected Catalogue install-options; no unsupported client install action.
 
-1. Create an isolated temporary package under the type-specific path described
-   by `spec/ASSET_SPEC.md`, containing only approved public inputs.
-2. Fetch the hosted marketplace catalog, `spec/ASSET_SPEC.md`,
-   `spec/SKILL_SPEC.md` when the type is a skill, manifest schema,
-   contribution guide, and pull-request template from
-   `https://github.com/bcgov/agent-marketplace`.
-3. Check package shape, frontmatter, required sections for skills, manifest fields, flat
-   resources, declared capabilities, obvious credentials, hidden controls, and
-   unsupported executable content. Treat every package script as data.
-4. Show the complete candidate files or diff, public inventory, capabilities,
-   compatibility exclusions, specialty, upstream-gap evidence, destination,
-   and checks deferred to CI.
-
-The preview is complete when the user can identify every byte proposed for
-publication and no local inspection finding is hidden.
-
-## Submit
-
-Ask for explicit confirmation before any public write. After confirmation, use
-an available GitHub integration to create an in-repository branch, upload the
-candidate under its canonical path, and open a draft pull request. If the host
-has no GitHub write integration, use `git` and `gh` when available to create a
-temporary checkout; this checkout is created on demand and does not require
-Python or `uv`.
-
-Populate the repository pull-request template with the upstream search,
-BC Gov-specific gap, public inventory, capabilities, source provenance, and
-known advisories. Do not author review fields or claim that local inspection is
-marketplace validation.
-
-## Validate remotely
-
-Protected-branch CI is authoritative for the asset format, schema, policy scan,
-generated catalog, tests, and documentation checks. Compatibility exclusions
-are author-declared; CI does not certify runtime compatibility. Read every
-failing check, repair only the candidate or its generated projections as
-directed, update the same branch, and repeat until the draft is review-ready.
-
-Submission is complete when the draft pull request URL and CI state are
-reported. If access, signing, push, or PR creation fails, preserve the staged
-package and report the exact access or retry action.
+Published source evidence comes from
+https://bcgov.github.io/agent-marketplace/assets/catalog.json. A supplied preview
+may be useful before publication, but its full source revision must be labeled.
+No v1 deployment is asserted merely by following this guide.

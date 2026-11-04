@@ -1,0 +1,188 @@
+{
+  "bcgov-public/azure-networking": {
+    "title": "Azure Networking — Subnets, NSGs, and Private Endpoints",
+    "intro": "",
+    "useWhen": [
+      "Creating a new subnet inside an existing Azure VNet with any IaC tool (Terraform, Bicep, ARM, az CLI).",
+      "Choosing the right service delegation for a VNet-injected workload (Container Apps, App Service / Functions VNet integration, etc.).",
+      "Designing a private-endpoint (PE) subnet and sizing it for the services that will land on it.",
+      "Debugging `SubnetMustNotHaveDelegation`, `SubnetDelegationCannotBeChanged`, `AnotherOperationInProgress`, `NetworkSecurityGroupNotAssociated`, or `PrivateEndpointCannotBeCreatedInSubnet`.",
+      "Laying out NSG inbound/outbound rules for APIM, App Gateway, Container Apps Environment, or PE subnets."
+    ],
+    "dontUseWhen": [
+      "Provisioning the VNet itself, or designing hub-spoke / landing-zone topology — use the upstream `azure-enterprise-infra-planner` skill.",
+      "Authoring APIM policies, AI gateway behavior, or backend routing — use upstream `azure-aigateway`.",
+      "Authoring App Gateway WAF custom rules or rewrite sets — out of scope.",
+      "Provisioning AKS networking (CNI Overlay, private API server) — use upstream `azure-kubernetes`.",
+      "General azd-style app prep that happens to need a subnet — use upstream `azure-prepare`."
+    ],
+    "workflow": [
+      "**Anchor to the BC Gov Azure Landing Zone networking rules first; these rules take precedence.** Reference: [BC Gov Azure Landing Zone — Networking](https://raw.githubusercontent.com/bcgov/public-cloud-techdocs/refs/heads/main/docs/azure/design-build-deploy/networking.md). These platform constraints **override anything below if they conflict**: - **Platform-protected, do not create or modify** — VNets, VNet address space, VNet DNS settings, VNet peerings, ExpressRoute / VPN / NAT / Local Gateways, **Route Tables**, and the `setbypolicy` diagnostic setting. Request changes via the [Public Cloud Service Request](https://citz-do.atlassian.net/servicedesk/customer/portal/3). - **IP budget** — each Project Set gets ~251 usable IPs (a single `/24`); Microsoft reserves 5 IPs per subnet; raise a Service Request for more. - **NSG-at-creation is mandatory** — every subnet must carry an NSG from the moment it is created, and every subnet must be a [Private Subnet](https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/default-outbound-access#utilize-the-private-subnet-parameter-public-preview) (`defaultOutboundAccess = false`, Zero Trust). - **Egress** — all outbound traffic is forced through the central vWAN hub and firewall; teams do not add their own Internet-egress UDRs. - **Spoke-to-spoke is off by default** — open a Public Cloud Service Request if you need it. - **Prefer Private Endpoints over VNet integration / Service Endpoints** — PE DNS records are auto-registered in the centralized Private DNS Zone; teams must not create their own Private DNS Zones.",
+      "**Confirm the parent VNet exists** and reference it as an existing resource (Terraform `data.azurerm_virtual_network`, Bicep `resource ... existing`, az CLI `az network vnet show`) so you can pin to its ID.",
+      "**Pick CIDR and size** — confirm Azure's minimum subnet size for the target service, that the CIDR fits inside one of the VNet's address spaces, and that it does not overlap any existing subnet."
+    ],
+    "digest": "c7d1309d4e405063b1c2464227965ac450d65739c63d12c5c8ea70b5672ba604"
+  },
+  "bcgov-public/bcgov-create-extension": {
+    "title": "BC Gov Create Extension",
+    "intro": "This installed skill works from any workspace. It does not require a local marketplace checkout, Python, or `uv`. Route pure discovery or installation requests to `bcgov-find-extension`.",
+    "useWhen": [
+      "The user wants an extension authored, previewed, or submitted."
+    ],
+    "dontUseWhen": [
+      "The user needs an existing extension found or installed; route to `bcgov-find-extension`."
+    ],
+    "workflow": [
+      "Identify the task, extension type, intended host, and whether the user wants a local draft or marketplace submission. Search the hosted BC Gov catalog at `https://raw.githubusercontent.com/bcgov/agent-marketplace/main/catalog/catalog.json` and its `approved-discovery-sources` for an equivalent. The step is complete when an existing match is chosen or the unmet gap is explicit.",
+      "Load exactly one authoring branch: [skills](references/writing-skills.md), [instructions](references/writing-instructions.md), [prompts](references/writing-prompts.md), or [custom agents](references/writing-agents.md). For hooks or MCP servers, stop at a design because their marketplace types are deferred. The step is complete when one type and its supported action are named.",
+      "Confirm the target scope and exact local inputs. For publication, confirm which files may become public and inventory their capabilities. The step is complete when the destination and public input set are explicit."
+    ],
+    "digest": "0ad2d9120a52c3305a96cee70ce619578857d366df11395dfc8b9997d1615671"
+  },
+  "bcgov-public/bcgov-find-extension": {
+    "title": "BC Gov Find Extension",
+    "intro": "This installed skill works from any workspace. Discovery does not require a local marketplace checkout, Python, or `uv`. Route authoring requests to `bcgov-create-extension`.",
+    "useWhen": [
+      "The user needs an existing extension found, compared, or installed."
+    ],
+    "dontUseWhen": [
+      "The user wants to author or submit an extension; route to `bcgov-create-extension`."
+    ],
+    "workflow": [
+      "Extract the domain, concrete task, requested type, and important platform terms. If type is unclear, search active types and label every result. The step is complete when the first query contains two to four high-signal terms rather than the user's whole sentence.",
+      "Load `https://raw.githubusercontent.com/bcgov/agent-marketplace/main/catalog/catalog.json`. Search active records by task, name, summary, prerequisites, and type. The step is complete when matching BC Gov records and the catalog revision are recorded.",
+      "If results are weak, refine the query once with a narrower task or platform term and once with an alternative term. Keep the best result set across attempts. The step is complete when a strong match exists or both refinements add no relevant result."
+    ],
+    "digest": "9379ff913e86b54cb11de4cce76c8ee88d48a0b79dce32442c4764dbf691af78"
+  },
+  "bcgov-public/github-actions": {
+    "title": "GitHub Actions — BC Gov Hardening Patterns",
+    "intro": "",
+    "useWhen": [
+      "Authoring or reviewing any file under `.github/workflows/` in a BC Gov repo.",
+      "Wiring branch protection / a repository ruleset and need to pick the required status check(s).",
+      "Hardening a public repo's pipeline against fork-PR token exfiltration, action tag hijacks, or script injection from PR titles / branch names / issue bodies.",
+      "Debugging `Resource not accessible by integration`, `Refusing to allow a Personal Access Token to create workflow`, or other `GITHUB_TOKEN` permission errors.",
+      "Adding or auditing Dependabot — both `.github/dependabot.yml` and an auto-merge workflow for low-risk bumps."
+    ],
+    "dontUseWhen": [
+      "Authoring generic GitHub Actions workflows with no BC Gov / security angle — prefer the upstream [GitHub Actions docs](https://docs.github.com/actions) or a general CI catalogue.",
+      "Authoring **reusable / callable workflows that deploy or validate into the BC Gov Azure Landing Zone** (e.g., platform-team-owned deploy templates, OpenShift or AKS deploy callers) — defer to the BC Gov `gha-workflows` skill (when installed in your agent environment); this skill covers only the workflow *chassis* (permissions, pinning, fork-gate, aggregator, ruleset) around such callers, not their deploy logic.",
+      "Designing the workflow's domain logic (Bicep what-if, Terraform plan, npm publish mechanics, Pages build) — those belong to the domain skill: sibling [`azure-networking`](../azure-networking/SKILL.md) in this catalogue, or upstream Microsoft `azure-prepare` / `azure-deploy` skills (if installed). This skill covers only the *workflow chassis* around them.",
+      "Provisioning the Azure infrastructure the workflow deploys to — use the matching domain skill (upstream Microsoft `azure-*` skills, if installed).",
+      "Defining branch-protection rules in code via a Terraform provider — out of scope; this skill describes the *settings* a ruleset should carry, not the IaC to apply them."
+    ],
+    "workflow": [
+      "**Set repository defaults before writing any workflow.** In the repo's *Settings → Actions → General*: set **Workflow permissions** to *Read repository contents and packages permissions* (default-deny write); leave *Allow GitHub Actions to create and approve pull requests* **off** unless a workflow truly needs it; under *Fork pull request workflows from outside collaborators* pick *Require approval for first-time contributors who are new to GitHub* at minimum. These defaults make every later `permissions:` block additive instead of subtractive.",
+      "**Pin the runner OS to a specific version label, never the `*-latest` aliases.** Use `runs-on: ubuntu-24.04` for Linux jobs, `runs-on: windows-2025` (or `windows-2022`) for Windows jobs, and `runs-on: macos-26` (or `macos-15`) for macOS jobs — or whichever specific label the repo standardises on. A pinned runner makes the OS upgrade a deliberate PR you review, not a silent rollover during an incident; `ubuntu-latest`, `windows-latest`, and `macos-latest` each roll forward on GitHub's own cadence and the breaking-change blast radius differs by platform (Xcode majors and SDK churn on macOS, Visual Studio component updates on Windows, glibc / Python / Node default bumps on Ubuntu).",
+      "**Pin actions by class:** first-party actions owned by GitHub (`actions/*`) pin to a **major tag** (`actions/checkout@v6`) — GitHub guarantees those tags are forward-only and Dependabot still bumps majors. Third-party actions pin to an **immutable commit SHA** with the human-readable version in a trailing comment (`uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0`) so a tag hijack cannot swap the action's code under you."
+    ],
+    "digest": "db4c7c33bcca1413b8cc1fdbd49612ef706c2eb67acf007b1daa79239353a4b3"
+  },
+  "bcgov-public/github-repo-setup": {
+    "title": "GitHub Repository Setup Validation",
+    "intro": "Evaluate repository compliance against BC Gov DevOps and security standards by inspecting config files, querying GitHub APIs, and generating a structured maturity report.",
+    "useWhen": [
+      "Onboarding a new repository to a BC Gov GitHub organization.",
+      "Preparing for a security audit, compliance review, or sprint planning.",
+      "Evaluating a repository before transitioning it to maintenance mode.",
+      "Validating vendor compliance with BC Gov digital standards."
+    ],
+    "dontUseWhen": [
+      "Auditing personal, experimental, or toy repositories, or repository templates/scaffolding not containing production content. (BC Gov documentation-only or basic scripting repositories ARE in scope; assess them with inapplicable dimensions marked N/A).",
+      "Performing actual resource provisioning, template setup, or automated repository scaffolding (this skill is purely an assessment and compliance validation auditor)."
+    ],
+    "workflow": [
+      "**Analyze Project Structure** — Walk the repo root and identify: `package.json`, `tsconfig.json`, `renovate.json` or `dependabot.yml`, `.github/workflows/`, OpenShift/Kubernetes manifests, `SECURITY.md`, `.github/ISSUE_TEMPLATE/`.",
+      "**Inspect Server-side Config** (Dimensions 1–2) — Use `gh api graphql` to query repository settings and branch rulesets. If `gh` CLI is unavailable, mark findings as **Unverified** (distinct from Not Met). See [REFERENCE.md query example](./references/REFERENCE.md#dimension-2-branch-protection-rulesets).",
+      "**Inspect Code and File-based Config** (Dimensions 3–5, 8–9): - Read `tsconfig.json` for `strict: true`; grep for `@ts-ignore`, `@ts-nocheck`, `eslint-disable`. - Read `renovate.json` — trace preset inheritance through `extends` entries to determine effective automerge, schedule, and minimumReleaseAge settings. - Read `.github/workflows/` for test/coverage/scan gates. - Read deployment manifests for `runAsNonRoot`, `readOnlyRootFilesystem`, probes."
+    ],
+    "digest": "a1797814f8767977644b57638de213b9ba99ad6b4812abe50c6fa2d32c5c46a2"
+  },
+  "bcgov-public/n8n-runbook-parser": {
+    "title": "Runbook Parser",
+    "intro": "Turns operational runbook documents (wiki pages, markdown like `crunchy-notes.md`) into a version-controlled, composable library of building blocks for n8n workflows, and keeps the extracted code aligned with its source, surfacing drift so fixes can be ported back.",
+    "useWhen": [
+      "Authoring or extending a `RunbookParser` `config.yaml` (new sources, merging same-name groups). See `references/CONFIG.md`.",
+      "Pulling a wiki or markdown runbook into committed snippets under `snippets/`.",
+      "Turning raw snippets into safe, parameterized cleaned `snippet-*` blocks.",
+      "Checking drift between docs and extracted code (local or CI).",
+      "Backporting a cleaned fix: when the seal breaks, `diff` shows the change and the agent proposes the doc edit."
+    ],
+    "dontUseWhen": [
+      "Pushing or pulling the n8n workflow JSON itself, use `tools/n8n/pull.sh` / `push.sh`.",
+      "Hand-editing generated raw snippets, edit the source doc and re-run `ingest` instead (the parser prunes and overwrites them).",
+      "Plain markdown authoring with no extraction, drift, or composition need."
+    ],
+    "workflow": [
+      "Locate or create `config.yaml` (start a new one from `assets/config.template.yaml`); confirm `root`, `destination`, `working_dir`.",
+      "For each source set exactly one of `url:` / `file:`, a `description`, and an optional `doc:`; group related sources by a shared `name`.",
+      "`python scripts/parser.py ingest --dry-run` — review the planned files."
+    ],
+    "digest": "da9de9df68f2621e6f64b9b6ef0e45d6b4ca4d5178479e302ad6fefe83b09eaf"
+  },
+  "bcgov-public/n8n-workflow-builder": {
+    "title": "Workflow Builder",
+    "intro": "Takes **cleaned** snippets (produced by the `runbook-parser` skill) and chains them into an n8n **workflow JSON** that performs operational triage. The workflow is webhook-triggered and serves an HTML page of the results, so an operator can click a URL and read the triage report in a browser.",
+    "useWhen": [
+      "Building an n8n triage workflow by chaining cleaned `snippet-*` blocks from `snippets/<group>/`.",
+      "Iterating on an existing triage workflow (add/remove/re-order steps).",
+      "Producing n8n workflow JSON to hand to `push.sh` / the n8n API."
+    ],
+    "dontUseWhen": [
+      "Cleaning raw snippets into cleaned blocks → use the `runbook-parser` skill (`references/CLEANING.md`).",
+      "Posting or pulling workflow JSON to/from n8n → use this skill's `push.sh` / `pull.sh`. Set `N8N_API_KEY` and point them at the project's config (`--config <tree-root>/config.yaml` or `N8N_CONFIG=...`); they read `workflows/` beside it. The copy deployed at the tree root finds its sibling `config.yaml` automatically, so a synced/dev run needs no flag.",
+      "Any mutating or non-triage automation → this skill only emits read-only, idempotent triage."
+    ],
+    "workflow": [
+      "Choose the cleaned snippets to chain, in triage order, from `snippets/<group>/`. If none exist yet, run the `runbook-parser` cleaning step first.",
+      "Copy `assets/skeleton.json` as the starting point — it already has the Sticky Note (with the production URL placeholder), the Webhook (`responseMode: responseNode`), and the Report -> Respond tail.",
+      "Give every snippet and validator its OWN `n8n-nodes-base.executeCommand` node, one call each: a collection node runs `NAMESPACE={{ ($('Webhook').item.json.query||{}).namespace }} snippet-*.sh`; a validator node pipes the merged JSON in with `echo {{ $('Merge snippets').item.json.stdout.base64Encode() }} | base64 -d | validator-*.sh`. Set each node's `notes` to a brief, specific line on what it does (`references/N8N_NODES.md`)."
+    ],
+    "digest": "a32a1e725f6d90cafd99171ed23e8c40a7c9a3a4b6988c935c241a91773ca942"
+  },
+  "bcgov-public/openshift-deployment": {
+    "title": "OpenShift Deployment — BC Gov Private Cloud Workloads",
+    "intro": "",
+    "useWhen": [
+      "Authoring or reviewing a new workload manifest (`Deployment`, `StatefulSet`, `DaemonSet`, `Job`, or `CronJob` — raw, Helm chart, or Kustomize base) bound for a license-plate `-dev` / `-test` / `-prod` namespace on Silver, Gold, GoldDR, or Emerald.",
+      "Picking which controller type fits a given workload (stateless API → Deployment; ordered identity + per-pod PVC → StatefulSet; one pod per node → DaemonSet; one-shot / parallel work → Job; scheduled → CronJob).",
+      "Hardening an existing workload to meet the BC Gov platform's mandatory pod hygiene — resource requests / QoS class, the pod and container `securityContext` (`runAsNonRoot`, `allowPrivilegeEscalation: false`, drop `ALL` capabilities, `readOnlyRootFilesystem`, `seccompProfile`), probes, SIGTERM and `terminationGracePeriodSeconds`, PID-1 reaping, PDB, HPA (with explicit rampup / rampdown), and pod anti-affinity / `nodeAffinity` / `topologySpreadConstraints`.",
+      "Setting the `securityContext` so a pod is admitted by the namespace's default `restricted-v2` Security Context Constraint, and adding the writable `emptyDir` volumes (e.g. for `/tmp`) that a `readOnlyRootFilesystem: true` container needs.",
+      "Adding `VerticalPodAutoscaler` recommendations (`updateMode: \"Off\"`) on a workload with a drifting resource footprint."
+    ],
+    "dontUseWhen": [
+      "Writing or debugging `NetworkPolicy` objects (default-deny, allow-from-router, allow-from-same-namespace, SDN-vs-NSX-T egress) — `openshift-networking` (planned).",
+      "Sourcing secrets from Vault via External Secrets Operator, or rotating Vault data — `openshift-secrets` (planned).",
+      "Choosing or configuring an image registry pull path, creating an `ArtifactoryServiceAccount`, or rotating Artifactory credentials — `openshift-images` (planned).",
+      "Onboarding to Argo CD, authoring a `GitOpsTeam` CR, or designing a `bcgov-c/tenant-gitops-<licenseplate>` repo layout — `openshift-gitops` (planned).",
+      "Picking a storage class, requesting a quota tier, or designing PVC backups — `openshift-storage` (planned)."
+    ],
+    "workflow": [
+      "**Pick the controller from the workload's identity model, not personal habit.** Stateless, fungible replicas behind a Service → `Deployment`. Ordered identity, stable network ID, per-pod PVC, controlled rolling restarts (databases, brokers, leader-elected services) → `StatefulSet`. Exactly one pod per node (node-agent, log shipper, CSI side-car) → `DaemonSet`. Run-to-completion batch work → `Job` (`completions` / `parallelism` for fan-out). Scheduled batch → `CronJob` (subject to the cadence rules in step 8). Avoid `DeploymentConfig` for new work — it's an OpenShift-only legacy resource and the platform's automation treats it identically to `Deployment` anyway.",
+      "**Set `requests` on every container and pick a deliberate QoS class.** `Guaranteed` (requests == limits, both set for CPU and memory) is what ideal production workloads should run — the scheduler evicts these last under node pressure. `Burstable` (requests < limits, or only request is set) is reasonable for most workloads in BCGov. If you omit a value, the namespace `LimitRange` injects `cpu: 50m` / `memory: 256Mi` requests and a memory limit equal to the namespace memory quota (capped at 16 GiB). Those defaults are conservative cluster-wide guardrails, so override them with values that fit your workload.",
+      "**Right-size requests using observed data.** Build the manifest with a starting guess, deploy to `-dev`, let it run a representative load (or steady idle for a week), then read CPU/memory P95 and P99 from Sysdig and adjust. Add `VerticalPodAutoscaler` in `updateMode: \"Off\"` (recommend-only) for long-lived workloads that drift over time; never run VPA in `Auto` mode alongside HPA on the same metric."
+    ],
+    "digest": "3f23ff8fb6ce97442080318a3f05678040d407ed3f899b26c281de1720efc5e4"
+  },
+  "bcgov-public/repo-hardening": {
+    "title": "Repo Hardening",
+    "intro": "",
+    "useWhen": [
+      "A repository needs a baseline security review before it is shared more widely.",
+      "A team needs a quick checklist for branch protection, secret handling, and required review gates.",
+      "A project needs a repeatable security hygiene recipe for GitHub and CI."
+    ],
+    "dontUseWhen": [
+      "You need a full platform security architecture review.",
+      "You are authoring application-level threat models or production runtime controls.",
+      "You need to bypass repository or security policy for production approvals."
+    ],
+    "workflow": [
+      "Confirm the repository has protected default branches and required review checks.",
+      "Check that secret scanning and push protection are enabled for the default branch.",
+      "Review required actions, workflow permissions, and any external automation that can write to the repo."
+    ],
+    "digest": "c3c157b17673a8bd2bdd2fd53cf85d95103bbbc445a245f1e6adfe35020e8f4c"
+  }
+}

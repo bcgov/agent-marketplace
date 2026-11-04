@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema-version", "policy-version", "blocking"],
+  "required": ["schema-version", "policy-version", "blocking", "secret-patterns"],
   "properties": {
     "schema-version": {"const": "bcgov-marketplace-security-policy/v1alpha1"},
     "policy-version": {"type": "integer", "minimum": 1},

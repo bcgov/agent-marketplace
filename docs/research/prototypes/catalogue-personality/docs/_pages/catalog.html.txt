@@ -1,0 +1,733 @@
+<!-- TITLE: Agent Extension Catalog -->
+<!-- NAV: catalog -->
+<!-- PROTOTYPE ONLY: compare direct browsing, type-first and Specialty-first on the existing catalogue. -->
+
+<style>
+  .catalog-prototype-note {
+    background: #e5eef5;
+    border-left: 4px solid #003366;
+    padding: .8rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+  main:has(.catalog-app.is-direct) > .catalog-prototype-note,
+  main:has(.catalog-app.is-direct) > .catalog-prototype-intro,
+  .catalog-app.is-direct .catalog-detail,
+  .catalog-app.is-direct .catalog-legend {
+    display: none;
+  }
+  .catalog-app.is-direct {
+    grid-template-columns: 14rem minmax(0, 1fr);
+  }
+  @media (max-width: 1240px) {
+    .catalog-app.is-direct { grid-template-columns: minmax(0, 1fr); }
+  }
+  .catalog-type-chooser {
+    background: #fff;
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    margin: 1.5rem 0 2rem;
+  }
+  .catalog-type-chooser[hidden], .catalog-app[hidden],
+  .catalog-prototype-intro[hidden], .catalog-prototype-rest[hidden] {
+    display: none;
+  }
+  .catalog-type-chooser h2 { margin-top: 0; }
+  .catalog-type-chooser h2::before { display: none; }
+  .catalog-type-chooser > p { max-width: 62ch; }
+  .catalog-type-choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+  }
+  .catalog-type-choices li { margin: 0; }
+  .catalog-type-choice {
+    display: flex;
+    width: 100%;
+    min-height: 9rem;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 1.1rem;
+    border: 2px solid #cbd5e1;
+    border-radius: .4rem;
+    background: #f5f8fa;
+    color: #003366;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+  }
+  .catalog-type-choice:hover { border-color: #003366; background: #e5eef5; }
+  .catalog-type-choice:focus-visible, .catalog-prototype-switcher button:focus-visible,
+  .catalog-all-types:focus-visible, .catalog-back-to-types:focus-visible {
+    outline: 3px solid #a35400;
+    outline-offset: 3px;
+  }
+  .catalog-type-choice strong { font-size: 1.25rem; }
+  .catalog-type-choice span { font-size: .92rem; color: #313132; }
+  .catalog-type-choice:disabled { opacity: .65; cursor: not-allowed; }
+  .catalog-all-types, .catalog-back-to-types {
+    min-height: 44px;
+    padding: .55rem .85rem;
+    border: 2px solid #003366;
+    border-radius: .3rem;
+    background: #fff;
+    color: #003366;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .catalog-back-to-types { margin: 1rem 0 0; }
+  .catalog-prototype-switcher {
+    position: fixed;
+    z-index: 1100;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    max-width: calc(100vw - 1rem);
+    padding: .4rem .6rem;
+    background: #002244;
+    border-radius: 2rem;
+    color: #fff;
+    box-shadow: 0 5px 16px #0005;
+  }
+  .catalog-prototype-switcher button {
+    min-width: 44px;
+    min-height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: #fcba19;
+    color: #002244;
+    font: 700 1.3rem sans-serif;
+    cursor: pointer;
+  }
+  .catalog-prototype-switcher strong { min-width: 10rem; text-align: center; font-size: .85rem; }
+  @media (max-width: 480px) {
+    .catalog-prototype-switcher strong { min-width: 7rem; font-size: .75rem; }
+  }
+</style>
+
+<h1>Browse Extensions</h1>
+
+<p class="catalog-prototype-note"><strong>Prototype.</strong> Compare browsing directly, by type, or by Specialty using the bottom bar. The catalogue records and evidence are real.</p>
+
+<div class="catalog-prototype-intro" id="catalog-prototype-intro">
+<p>Every record here is generated from the exact package bytes at revision <code>{{PUBLISHED_REVISION}}</code>, and carries its source, digest, declared access, policy result, and how far it was checked.</p>
+
+<div class="alert alert-info">
+    <div class="alert-icon" aria-hidden="true">i</div>
+    <div><strong>Trust language is precise.</strong> <em>Auto-checked</em> means the exact bytes passed automated policy and content scanning. <em>Reviewed</em> means named reviewers assessed the published revision and digest. Neither is a claim that software is safe or verified secure. Third-party candidates do not appear here until review is published.</div>
+</div>
+</div>
+
+<section class="catalog-type-chooser" id="catalog-type-chooser" aria-labelledby="catalog-type-title" hidden>
+  <h2 id="catalog-type-title">What are you looking for?</h2>
+  <p id="catalog-chooser-description"></p>
+  <ul class="catalog-type-choices" id="catalog-type-choices"></ul>
+  <button type="button" class="catalog-all-types" id="catalog-all-types">Browse all Extensions</button>
+</section>
+
+<button type="button" class="catalog-back-to-types" id="catalog-back-to-types" hidden>Choose a different type</button>
+
+<div class="catalog-app" id="catalog-prototype-app">
+  <form class="catalog-rail" id="catalog-rail" role="search" aria-label="Filter the catalog">
+    <label class="visually-hidden" for="catalog-search">Search Extension names, descriptions and tools</label>
+    <input id="catalog-search" class="catalog-search" type="search" placeholder="Search Extensions" autocomplete="off" />
+    <div id="catalog-facets"></div>
+    <button type="button" id="catalog-reset" class="catalog-reset" hidden>Clear all filters</button>
+
+    <details class="catalog-key" id="catalog-key" open>
+      <summary>Symbol key</summary>
+      <h3>How far it was checked</h3>
+      <dl>
+        <div><dt><span class="trust-label" data-status="marketplace-reviewed">Reviewed</span></dt><dd>Named marketplace reviewers assessed the exact revision and digest.</dd></div>
+        <div><dt><span class="trust-label" data-status="domain-reviewed">Domain reviewed</span></dt><dd>A specialty owner, such as security, reviewed the exact revision and digest.</dd></div>
+        <div><dt><span class="trust-label" data-status="auto-scanned">Auto-checked</span></dt><dd>Passed automated policy and content scanning. No human review.</dd></div>
+        <div><dt><span class="trust-label" data-status="unreviewed">Unreviewed</span></dt><dd>No review evidence is published.</dd></div>
+      </dl>
+      <h3>Access level</h3>
+      <dl>
+        <div><dt><span class="cat-row-risk" data-risk="low">Low access</span></dt><dd>No commands, network, writes, or secrets. Not badged in the list.</dd></div>
+        <div><dt><span class="cat-row-risk" data-risk="elevated">Elevated access</span></dt><dd>Runs commands, reaches the network, or writes files.</dd></div>
+        <div><dt><span class="cat-row-risk" data-risk="high">High access</span></dt><dd>Combines secrets with commands or network, handles restricted data, or uses wildcards.</dd></div>
+      </dl>
+    </details>
+  </form>
+
+  <div class="catalog-results">
+    <p class="catalog-status"><span id="catalog-count" aria-live="polite">Showing every extension</span></p>
+    <ul class="catalog-legend">
+      <li>Access shown as declared by each extension. Crossed-out access is not declared.</li>
+    </ul>
+
+    <div id="published-skills" class="cat-list">
+{{CATALOG_CARDS}}
+      <p class="catalog-empty" id="catalog-empty" hidden>Nothing matches those filters. <a href="getting-started.html">Request an extension or contribute one</a> when no suitable match exists.</p>
+    </div>
+  </div>
+
+  <aside id="catalog-detail" class="catalog-detail" aria-live="polite" aria-label="Extension evidence">
+    <h3>Select an extension</h3>
+    <p>Choose any row to read its declared access, review evidence, immutable source, and install command.</p>
+  </aside>
+</div>
+
+<div class="catalog-prototype-rest" id="catalog-prototype-rest">
+<noscript><p>Filtering needs JavaScript. Every published extension is listed above, and <a href="assets/catalog.json"><code>catalog.json</code></a> holds the same records in machine-readable form.</p></noscript>
+
+<h2>Installing from this catalog</h2>
+
+<p>Select any row above to get its exact, pinned install command with a one-click copy button. APM is preferred because it records the dependency and resolved bytes in a lockfile. For example, to install Repo Hardening into the current project:</p>
+
+<pre><code>apm install bcgov/agent-marketplace/skills/security/repo-hardening#{{PUBLISHED_REVISION}} --target copilot</code></pre>
+
+<p>If APM is unavailable, the same panel offers a pinned <code>npx skills@{{INSTALLER_VERSION}}</code> command. The marketplace finder recommends installing APM for future dependency and lockfile management. Both paths require confirmation.</p>
+
+<p><a href="getting-started.html"><strong>Use the marketplace companions</strong></a> to search this catalog from an ordinary-language Copilot request. The machine-readable <a href="assets/catalog.json"><code>catalog.json</code></a> includes both published records and the approved third-party discovery-source registry.</p>
+</div>
+
+<script>
+(function () {
+  const list = document.getElementById('published-skills');
+  const searchInput = document.getElementById('catalog-search');
+  const facetHost = document.getElementById('catalog-facets');
+  const resetButton = document.getElementById('catalog-reset');
+  const countLabel = document.getElementById('catalog-count');
+  const emptyState = document.getElementById('catalog-empty');
+  const detail = document.getElementById('catalog-detail');
+  const rail = document.getElementById('catalog-rail');
+
+  // The key sits above the list on small screens, so start it collapsed there.
+  if (window.matchMedia('(max-width: 900px)').matches) {
+    document.getElementById('catalog-key').open = false;
+  }
+
+  const ACCESS_LABELS = {
+    commands: 'Runs commands',
+    network: 'Reaches network',
+    writes: 'Writes files'
+  };
+
+  // Read-only vocabulary emitted by the catalog generator, so the page never
+  // keeps a second list of extension types.
+  const vocabulary = (() => {
+    const node = document.getElementById('catalog-vocabulary');
+    try {
+      return node ? JSON.parse(node.textContent) : {};
+    } catch (error) {
+      return {};
+    }
+  })();
+  const TYPE_ORDER = vocabulary.types || [];
+  const INSTALLER_VERSION = vocabulary['installer-version'] || 'latest';
+
+  const TYPE_LABELS = {
+    skill: 'Skill',
+    prompt: 'Prompt',
+    instruction: 'Instruction',
+    agent: 'Agent',
+    hook: 'Hook',
+    mcp: 'MCP server'
+  };
+
+  const TRUST_LABELS = {
+    'marketplace-reviewed': 'Reviewed',
+    'domain-reviewed': 'Domain reviewed',
+    'auto-scanned': 'Auto-checked',
+    'locally-scanned-not-bc-gov-reviewed': 'Scanned only',
+    unreviewed: 'Unreviewed'
+  };
+
+  // Strongest evidence first. Alphabetical order would put "Domain reviewed"
+  // above "Reviewed", which misreads as a ranking of trust.
+  const TRUST_ORDER = [
+    'marketplace-reviewed',
+    'domain-reviewed',
+    'auto-scanned',
+    'locally-scanned-not-bc-gov-reviewed',
+    'unreviewed'
+  ];
+
+  const TRUST_EVIDENCE = {
+    'marketplace-reviewed': 'Named reviewers assessed this exact revision and digest.',
+    'domain-reviewed': 'A specialty owner reviewed this exact revision and digest. It is not marketplace reviewed.',
+    'auto-scanned': 'These exact bytes passed automated policy and content scanning. No human review is published for this record.',
+    'locally-scanned-not-bc-gov-reviewed': 'Scanned locally. No BC Gov review evidence exists for it.',
+    unreviewed: 'No review evidence is published for this record.'
+  };
+
+  const RISK_LABELS = {
+    low: 'Low',
+    elevated: 'Elevated',
+    high: 'High'
+  };
+
+  // Cache each row's filterable values once, so typing never re-reads the DOM.
+  const rows = Array.from(list.querySelectorAll('.cat-row')).map((node) => ({
+    node,
+    id: node.dataset.extensionId,
+    haystack: node.dataset.haystack || '',
+    specialty: node.dataset.specialty || '',
+    type: node.dataset.type || '',
+    status: node.dataset.status || 'unreviewed',
+    lifecycle: node.dataset.lifecycle || '',
+    access: (node.dataset.access || '').split(' ').filter(Boolean)
+  }));
+
+  const state = { query: '', specialty: '', type: '', status: '', lifecycle: '', access: '' };
+  let catalogData = null;
+  let selectedId = null;
+
+  function distinct(key) {
+    return Array.from(new Set(rows.map((row) => row[key]).filter(Boolean))).sort();
+  }
+
+  function matches(row, ignore) {
+    if (ignore !== 'query' && state.query && !row.haystack.includes(state.query)) return false;
+    if (ignore !== 'specialty' && state.specialty && row.specialty !== state.specialty) return false;
+    if (ignore !== 'type' && state.type && row.type !== state.type) return false;
+    if (ignore !== 'status' && state.status && row.status !== state.status) return false;
+    if (ignore !== 'lifecycle' && state.lifecycle && row.lifecycle !== state.lifecycle) return false;
+    if (ignore !== 'access' && state.access && !row.access.includes(state.access)) return false;
+    return true;
+  }
+
+  // Sort known values by a curated order and append anything unrecognised, so
+  // a new value from the generator still appears instead of vanishing.
+  function ordered(values, order) {
+    const known = order.filter((value) => values.includes(value));
+    const rest = values.filter((value) => !order.includes(value)).sort();
+    return known.concat(rest);
+  }
+
+  // A facet whose value never varies cannot narrow anything, so it is not
+  // rendered. Type is the exception: it always shows the full vocabulary,
+  // because which kinds of extension exist is itself worth knowing.
+  function facetGroups() {
+    const groups = [];
+
+    if (distinct('specialty').length > 1) {
+      groups.push({
+        key: 'specialty',
+        title: 'Specialty',
+        options: distinct('specialty').map((value) => ({ value, label: value }))
+      });
+    }
+
+    const typeValues = TYPE_ORDER.concat(
+      distinct('type').filter((value) => !TYPE_ORDER.includes(value))
+    );
+    if (typeValues.length) {
+      groups.push({
+        key: 'type',
+        title: 'Type',
+        options: typeValues.map((value) => ({
+          value,
+          label: TYPE_LABELS[value] || value
+        }))
+      });
+    }
+
+    const trustValues = distinct('status');
+    if (trustValues.length > 1) {
+      groups.push({
+        key: 'status',
+        title: 'Trust',
+        options: ordered(trustValues, TRUST_ORDER).map((value) => ({
+          value,
+          label: TRUST_LABELS[value] || value
+        }))
+      });
+    }
+
+    const lifecycleValues = distinct('lifecycle');
+    if (lifecycleValues.length > 1) {
+      groups.push({
+        key: 'lifecycle',
+        title: 'Lifecycle',
+        options: lifecycleValues.map((value) => ({ value, label: value }))
+      });
+    }
+
+    const accessValues = Object.keys(ACCESS_LABELS)
+      .filter((key) => rows.some((row) => row.access.includes(key)))
+      .filter((key) => !rows.every((row) => row.access.includes(key)));
+    if (accessValues.length) {
+      groups.push({
+        key: 'access',
+        title: 'Declared access',
+        options: accessValues.map((value) => ({ value, label: ACCESS_LABELS[value] }))
+      });
+    }
+    return groups;
+  }
+
+  const groups = facetGroups();
+
+  function renderFacets() {
+    facetHost.innerHTML = groups.map((group) => {
+      const options = group.options.map((option) => {
+        const count = rows.filter(
+          (row) => matches(row, group.key) && (
+            group.key === 'access'
+              ? row.access.includes(option.value)
+              : row[group.key] === option.value
+          )
+        ).length;
+        const pressed = state[group.key] === option.value;
+        const disabled = count === 0 && !pressed ? ' disabled' : '';
+        return `<li><button type="button" class="facet-option" data-facet="${group.key}" ` +
+          `data-value="${option.value}" aria-pressed="${pressed}"${disabled}>` +
+          (group.key === 'status'
+            ? `<span class="trust-label" data-status="${option.value}">${option.label}</span>`
+            : `<span>${option.label}</span>`) +
+          `<span class="facet-count">${count}</span></button></li>`;
+      }).join('');
+      return `<div class="catalog-facet"><h3>${group.title}</h3><ul>${options}</ul></div>`;
+    }).join('');
+  }
+
+  function apply() {
+    let visible = 0;
+    for (const row of rows) {
+      const show = matches(row, null);
+      row.node.hidden = !show;
+      if (show) visible += 1;
+    }
+
+    const filtered = Object.values(state).some(Boolean);
+    countLabel.textContent = filtered
+      ? `${visible} of ${rows.length} extensions`
+      : `Showing every extension`;
+    emptyState.hidden = visible !== 0;
+    resetButton.hidden = !filtered;
+    renderFacets();
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, (character) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]
+    ));
+  }
+
+  function accessDetail(record) {
+    const capabilities = record.capabilities || {};
+    const filesystem = capabilities.filesystem || {};
+    const entries = [
+      ['Commands', capabilities.commands],
+      ['Network', capabilities.network],
+      ['Writes', filesystem.write],
+      ['Reads', filesystem.read],
+      ['Data classes', capabilities['data-classes']],
+      ['Secrets', capabilities['secret-names']],
+      ['Environment', capabilities['environment-variables']]
+    ].filter(([, values]) => Array.isArray(values) && values.length);
+
+    if (!entries.length) return '<p>Declares no commands, network reach, or file writes.</p>';
+    return '<dl>' + entries.map(([label, values]) => (
+      `<div><dt>${label}</dt><dd>${escapeHtml(values.join(', '))}</dd></div>`
+    )).join('') + '</dl>';
+  }
+
+  function renderDetail(row) {
+    const record = catalogData
+      ? (catalogData.extensions || []).find((item) => item.id === row.id)
+      : null;
+
+    if (!record) {
+      const name = row.node.querySelector('.cat-row-open');
+      detail.innerHTML = `<h3>${escapeHtml(name ? name.textContent : 'Extension')}</h3>` +
+        `<p>${escapeHtml(row.node.querySelector('.cat-row-summary').textContent)}</p>` +
+        '<p class="install-note">Full evidence needs <code>catalog.json</code>, which did not load. ' +
+        'Reload the page to try again.</p>';
+      return;
+    }
+
+    const source = record.source || {};
+    const review = record.review || {};
+    const revision = source.revision || review.revision || 'not available';
+    const sourceUrl = source.repository && source.path
+      ? `${source.repository}/tree/${revision}/${source.path}`
+      : null;
+    const status = review.status || 'unreviewed';
+    const reviewers = (review.reviewers || []).join(', ');
+    const repoPath = (source.repository || '').replace(/^https?:\/\/github\.com\//, '');
+
+    // Installation is activated only for active skills, so anything else says
+    // so plainly instead of offering a command that will not be honoured.
+    const installable = record.type === 'skill' && record.lifecycle === 'active';
+    const commands = {
+      apm: source.path
+        ? `apm install ${repoPath}/${source.path}#${revision} --target copilot`
+        : 'apm install <owner>/<repository>/<package-path>#<commit-sha> --target copilot',
+      npx: sourceUrl
+        ? `npx skills@${INSTALLER_VERSION} add \\\n  ${sourceUrl} \\\n  --agent github-copilot -y`
+        : `npx skills@${INSTALLER_VERSION} add <immutable-tree-url> --agent github-copilot -y`
+    };
+
+    const installBlock = installable
+      ? `
+      <h4>Install</h4>
+      <div class="install-switch" role="group" aria-label="Choose installer">
+        <button type="button" class="shell-option active" aria-pressed="true" data-installer="apm">APM</button>
+        <button type="button" class="shell-option" aria-pressed="false" data-installer="npx">Skills CLI</button>
+      </div>
+      <pre aria-live="polite"><code id="install-command">${escapeHtml(commands.apm)}</code></pre>
+      <p class="install-note" id="install-rationale">APM records the dependency and resolved bytes in a lockfile. Pinned to the checked revision and digest, and installing still needs your confirmation.</p>`
+      : `
+      <h4>Install</h4>
+      <p class="install-note">Installation is activated for active skills only. This record is
+      ${escapeHtml(record.lifecycle === 'active' ? `a ${record.type || 'non-skill'} extension` : `${record.lifecycle || 'not active'}`)},
+      so no install command is offered.</p>`;
+
+    detail.innerHTML = `
+      <h3>${escapeHtml(record['display-name'] || 'Extension')}</h3>
+      <p>${escapeHtml(record.summary || '')}</p>
+
+      <h4>What it can access</h4>
+      ${accessDetail(record)}
+
+      <h4>Review</h4>
+      <p>${escapeHtml(TRUST_EVIDENCE[status] || TRUST_EVIDENCE.unreviewed)}</p>
+      <dl>
+        <div><dt>Trust</dt><dd><span class="trust-label" data-status="${escapeHtml(status)}">${escapeHtml(TRUST_LABELS[status] || status)}</span></dd></div>
+        ${review.risk ? `<div><dt>Access level</dt><dd><span class="cat-row-risk" data-risk="${escapeHtml(review.risk)}">${escapeHtml(RISK_LABELS[review.risk] || review.risk)}</span></dd></div>` : ''}
+        <div><dt>Type</dt><dd>${escapeHtml(TYPE_LABELS[record.type] || record.type || 'Unknown')}</dd></div>
+        <div><dt>Reviewers</dt><dd>${escapeHtml(reviewers || (status === 'auto-scanned' ? 'Automated scan only' : 'Not published'))}</dd></div>
+        <div><dt>Policy</dt><dd>${escapeHtml((record.policy || {}).outcome || 'not available')}</dd></div>
+        ${typeof review.advisories === 'number' ? `<div><dt>Advisories</dt><dd>${review.advisories}</dd></div>` : ''}
+        <div><dt>Maintainers</dt><dd>${escapeHtml((record.maintainers || []).join(', ') || 'Unknown')}</dd></div>
+        <div><dt>License</dt><dd>${escapeHtml(record.license || 'Not specified')}</dd></div>
+        <div><dt>Prerequisites</dt><dd>${escapeHtml((record.prerequisites || ['None declared']).join('; '))}</dd></div>
+        <div><dt>Digest</dt><dd><code>${escapeHtml(record['content-digest'] || 'not available')}</code></dd></div>
+      </dl>
+      ${sourceUrl ? `<p><a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener">Read the source at this revision</a></p>` : ''}
+      ${source.repository && source.path
+        ? `<p><a href="${escapeHtml(`${source.repository}/commits/main/${source.path}`)}" target="_blank" rel="noopener">View source history</a> (past commits do not imply past scans)</p>`
+        : ''}
+      ${installBlock}
+      ${record.support ? `<p><a href="${escapeHtml(record.support)}" target="_blank" rel="noopener">Get support</a></p>` : ''}
+    `;
+
+    if (installable) wireInstaller(commands);
+    if (window.enhanceCodeBlocks) window.enhanceCodeBlocks(detail);
+  }
+
+  // Tabs swap the command text in place; the shared copy button always reads
+  // the command that is currently shown.
+  function wireInstaller(commands) {
+    const code = detail.querySelector('#install-command');
+    const rationale = detail.querySelector('#install-rationale');
+    const tabs = Array.from(detail.querySelectorAll('[data-installer]'));
+    const NOTES = {
+      apm: 'APM records the dependency and resolved bytes in a lockfile. Pinned to the checked revision and digest, and installing still needs your confirmation.',
+      npx: 'Use this when APM is unavailable. It installs from the immutable tree at the checked revision; APM is still preferred because it adds a manifest and lockfile.'
+    };
+
+    for (const tab of tabs) {
+      tab.addEventListener('click', () => {
+        const installer = tab.dataset.installer;
+        code.textContent = commands[installer];
+        rationale.textContent = NOTES[installer];
+        for (const other of tabs) {
+          const isActive = other === tab;
+          other.classList.toggle('active', isActive);
+          other.setAttribute('aria-pressed', String(isActive));
+        }
+      });
+    }
+  }
+
+  function select(row) {
+    selectedId = row.id;
+    for (const other of rows) {
+      other.node.classList.toggle('is-selected', other.id === selectedId);
+    }
+    renderDetail(row);
+    if (window.matchMedia('(max-width: 900px)').matches) {
+      detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  list.addEventListener('click', (event) => {
+    const node = event.target.closest('.cat-row');
+    if (!node) return;
+    const row = rows.find((item) => item.node === node);
+    if (!row) return;
+    if (document.getElementById('catalog-prototype-app').classList.contains('is-direct')) {
+      location.assign(`catalog-detail-prototype.html?id=${encodeURIComponent(row.id)}`);
+      return;
+    }
+    select(row);
+  });
+
+  facetHost.addEventListener('click', (event) => {
+    const button = event.target.closest('.facet-option');
+    if (!button) return;
+    const { facet, value } = button.dataset;
+    state[facet] = state[facet] === value ? '' : value;
+    apply();
+  });
+
+  resetButton.addEventListener('click', () => {
+    for (const key of Object.keys(state)) state[key] = '';
+    searchInput.value = '';
+    apply();
+  });
+
+  rail.addEventListener('submit', (event) => event.preventDefault());
+
+  let searchTimer = null;
+  searchInput.addEventListener('input', () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(() => {
+      state.query = searchInput.value.trim().toLowerCase();
+      apply();
+    }, 120);
+  });
+
+  apply();
+
+  fetch('assets/catalog.json')
+    .then((response) => {
+      if (!response.ok) throw new Error('catalog unavailable');
+      return response.json();
+    })
+    .then((data) => {
+      catalogData = data;
+      if (selectedId) {
+        const row = rows.find((item) => item.id === selectedId);
+        if (row) renderDetail(row);
+      }
+    })
+    .catch(() => { /* Rows stay usable; the panel explains the gap on selection. */ });
+})();
+</script>
+
+<nav class="catalog-prototype-switcher" aria-label="Prototype variant selector">
+  <button type="button" id="catalog-prototype-prev" aria-label="Previous variant">←</button>
+  <strong id="catalog-prototype-label" aria-live="polite"></strong>
+  <button type="button" id="catalog-prototype-next" aria-label="Next variant">→</button>
+</nav>
+<script>
+(() => {
+  const chooser = document.getElementById('catalog-type-chooser');
+  const intro = document.getElementById('catalog-prototype-intro');
+  const app = document.getElementById('catalog-prototype-app');
+  const rest = document.getElementById('catalog-prototype-rest');
+  const back = document.getElementById('catalog-back-to-types');
+  const options = document.getElementById('catalog-type-choices');
+  const label = document.getElementById('catalog-prototype-label');
+  const all = document.getElementById('catalog-all-types');
+  const labels = { skill: 'Skills', instruction: 'Instructions', prompt: 'Prompts', agent: 'Agents' };
+  const descriptions = {
+    skill: 'Reusable procedures and supporting files.',
+    instruction: 'Rules that guide an agent in a workspace.',
+    prompt: 'Reusable requests for a specific task.',
+    agent: 'Specialized agent configurations.'
+  };
+  const vocabulary = JSON.parse(document.getElementById('catalog-vocabulary').textContent);
+  const counts = { type: Object.create(null), specialty: Object.create(null) };
+  document.querySelectorAll('.cat-row').forEach(row => {
+    for (const facet of ['type', 'specialty']) {
+      const value = row.dataset[facet];
+      counts[facet][value] = (counts[facet][value] || 0) + 1;
+    }
+  });
+  const types = (vocabulary.types || Object.keys(counts.type))
+    .filter(type => ['skill', 'instruction', 'prompt', 'agent'].includes(type));
+  const variants = ['direct', 'gateway', 'specialty'];
+  const requested = new URLSearchParams(location.search).get('variant');
+  let variant = variants.includes(requested) ? requested : 'direct';
+  let browsing = variant === 'direct';
+  function renderChoices() {
+    const facet = variant === 'gateway' ? 'type' : 'specialty';
+    const values = facet === 'type' ? types : Object.keys(counts.specialty).sort();
+    document.getElementById('catalog-type-title').textContent =
+      facet === 'type' ? 'Choose an Extension type' : 'Choose a Specialty';
+    document.getElementById('catalog-chooser-description').textContent =
+      facet === 'type'
+        ? 'Start with a type, then search or filter. Only published types can be opened.'
+        : 'Start with a domain team, then search or filter its Extensions.';
+    all.textContent = 'Browse all Extensions';
+    back.textContent = facet === 'type' ? 'Choose a different type' : 'Choose a different Specialty';
+    options.innerHTML = values.map(value => {
+      const count = counts[facet][value] || 0;
+      const name = facet === 'type' ? labels[value] || value : value[0].toUpperCase() + value.slice(1);
+      const description = facet === 'type' ? descriptions[value] || '' :
+        value === 'community' ? 'Shared Extensions with automated policy checks.' :
+        value === 'security' ? 'Extensions governed by Security.' : 'Extensions owned by this domain team.';
+      return `<li><button type="button" class="catalog-type-choice" data-facet="${facet}" ` +
+        `data-value="${value}" ${count ? '' : 'disabled'}>` +
+        `<strong>${name}</strong><span>${description}</span>` +
+        `<span>${count ? `${count} published` : 'None published yet'}</span></button></li>`;
+    }).join('');
+  }
+  function render() {
+    const choosing = variant !== 'direct' && !browsing;
+    if (choosing) renderChoices();
+    chooser.hidden = !choosing;
+    intro.hidden = choosing;
+    app.hidden = choosing;
+    app.classList.toggle('is-direct', variant === 'direct');
+    rest.hidden = choosing;
+    back.hidden = variant === 'direct' || choosing;
+    label.textContent = {
+      direct: 'Browse immediately',
+      gateway: 'Choose type first',
+      specialty: 'Choose Specialty first'
+    }[variant];
+  }
+  function setVariant(next) {
+    variant = next;
+    browsing = next === 'direct';
+    const url = new URL(location.href);
+    url.searchParams.set('variant', next);
+    history.replaceState(null, '', url);
+    render();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+  function browse(facet, value) {
+    document.getElementById('catalog-reset').click();
+    browsing = true;
+    render();
+    if (value) {
+      document.querySelector(`.facet-option[data-facet="${facet}"][data-value="${value}"]`)?.click();
+    }
+    document.getElementById('catalog-search').focus({ preventScroll: true });
+    document.getElementById('catalog-prototype-app').scrollIntoView({ block: 'start' });
+  }
+  options.addEventListener('click', event => {
+    const choice = event.target.closest('[data-facet]');
+    if (choice && !choice.disabled) browse(choice.dataset.facet, choice.dataset.value);
+  });
+  all.addEventListener('click', () => browse('', ''));
+  back.addEventListener('click', () => {
+    browsing = false;
+    render();
+    chooser.scrollIntoView({ block: 'start' });
+    chooser.querySelector('button:not(:disabled)')?.focus();
+  });
+  function cycle(step) {
+    setVariant(variants[(variants.indexOf(variant) + step + variants.length) % variants.length]);
+  }
+  document.getElementById('catalog-prototype-prev').addEventListener('click', () => cycle(-1));
+  document.getElementById('catalog-prototype-next').addEventListener('click', () => cycle(1));
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    cycle(event.key === 'ArrowRight' ? 1 : -1);
+  });
+  window.addEventListener('popstate', () => {
+    const value = new URLSearchParams(location.search).get('variant');
+    variant = variants.includes(value) ? value : 'direct';
+    browsing = variant === 'direct';
+    render();
+  });
+  render();
+})();
+</script>

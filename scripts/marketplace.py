@@ -8,31 +8,43 @@ import hashlib
 import html
 import json
 import os
+import platform
 import re
 import stat
+import subprocess
 import sys
 import unicodedata
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as distribution_version
 from pathlib import Path
 
 import yaml
+from catalog_cards import render_catalog_cards as _render_catalog_cards
+from install_choices import build_install_choices
 from jsonschema import Draft202012Validator, FormatChecker
+from publication import PublicationError, canonical, git, source_dates
 
 SCHEMA_VERSION = "bcgov-extension/v1alpha1"
-POLICY_VERSION = "bcgov-marketplace-policy/1.0"
 MANIFEST_NAME = "bcgov-extension.yaml"
 TYPE_DIRECTORIES = {
   "skills": "skill",
   "prompts": "prompt",
   "instructions": "instructions",
   "agents": "agent",
-  "hooks": "hook",
-  "mcp": "mcp",
 }
 ARTIFACT_FILES = {
   "skills": "SKILL.md",
   "prompts": "prompt.prompt.md",
   "instructions": "instructions.instructions.md",
   "agents": "agent.agent.md",
+}
+EMPTY_CAPABILITIES = {
+  "filesystem": {"read": [], "write": []},
+  "network": [],
+  "commands": [],
+  "environment-variables": [],
+  "secret-names": [],
+  "data-classes": [],
 }
 ROOT_FILES = {MANIFEST_NAME, *ARTIFACT_FILES.values()}
 RESOURCE_DIRECTORIES = {"agents", "assets", "references", "scripts"}
@@ -112,9 +124,8 @@ SECURITY_RULES = {
   "undeclared-environment-variable",
   "undeclared-script",
 }
-NETWORK_COMMAND_RE = re.compile(
-  r"(?i)\b(?:curl|wget|invoke-webrequest)\b[^\n]*https?://([A-Za-z0-9.-]+)"
-)
+NETWORK_COMMAND_RE = re.compile(r"(?i)\b(?:curl|wget|invoke-webrequest)\b([^\n]*)")
+NETWORK_HOST_RE = re.compile(r"(?i)https?://([A-Za-z0-9.-]+)")
 ENVIRONMENT_RE = re.compile(
   r"(?:\$\{?([A-Z][A-Z0-9_]{2,})\}?|\$env:([A-Z][A-Z0-9_]{2,})|%([A-Z][A-Z0-9_]{2,})%)"
 )
@@ -124,29 +135,82 @@ class MarketplaceError(Exception):
   """Represent one or more user-correctable marketplace validation failures."""
 
 
+class PublicDiagnostic(str):
+  """Mark a diagnostic built from safe file labels and trusted corrections."""
+
+
+class PublicMarketplaceError(MarketplaceError):
+  """Expose only diagnostics whose public provenance has been preserved."""
+
+
+def _diagnostic(path: Path, location: str, correction: str) -> PublicDiagnostic:
+  """Label a known file without disclosing arbitrary directories or filenames."""
+  files = {
+    **{name: name for name in ROOT_FILES},
+    **{
+      f"{name}.yaml": f"config/{name}.yaml"
+      for name in ("marketplace", "security-policy", "specialties")
+    },
+    **{
+      f"{name}.schema.json": f"schemas/{name}.schema.json"
+      for name in ("bcgov-extension-v1alpha1", "security-policy", "specialties")
+    },
+  }
+  label = files.get(path.name, "extension file")
+  for extension_type in ("prompt", "instructions", "agent"):
+    if path.name not in files and path.name.endswith(f".{extension_type}.md"):
+      label = f"<name>.{extension_type}.md"
+  return PublicDiagnostic(f"{label}: {location}: {correction}")
+
+
+def _validation_error(errors: list[str]) -> MarketplaceError:
+  """Preserve safe provenance when aggregating package validation diagnostics."""
+  message = "\n".join(errors)
+  if errors and all(isinstance(error, PublicDiagnostic) for error in errors):
+    return PublicMarketplaceError(message)
+  return MarketplaceError(message)
+
+
+class StrictYAMLError(yaml.constructor.ConstructorError):
+  """Carry a fixed public correction and a YAML source location."""
+
+  def __init__(self, correction: str, mark):
+    """Keep authored source text out of the public correction."""
+    super().__init__(None, None, correction, mark)
+    self.correction = correction
+
+
 class StrictSafeLoader(yaml.SafeLoader):
-  """Load safe YAML while rejecting aliases and duplicate mapping keys."""
+  """Load safe YAML with unique string mapping keys and no aliases."""
 
   def compose_node(self, parent, index):
     """Reject aliases before composing a YAML node."""
     if self.check_event(yaml.AliasEvent):
       event = self.peek_event()
-      raise yaml.constructor.ConstructorError(
-        None, None, f"YAML aliases are not allowed: *{event.anchor}", event.start_mark
+      raise StrictYAMLError(
+        "YAML aliases are not allowed; replace the alias with explicit values.",
+        event.start_mark,
       )
     return super().compose_node(parent, index)
 
 
 def _construct_mapping(loader, node, deep=False):
-  """Construct a mapping and reject duplicate keys."""
+  """Construct a mapping with unique string keys."""
+  if not isinstance(node, yaml.MappingNode):
+    raise StrictYAMLError(
+      "expected a mapping; replace the value with named fields.", node.start_mark
+    )
   mapping = {}
   for key_node, value_node in node.value:
     key = loader.construct_object(key_node, deep=deep)
+    if not isinstance(key, str):
+      raise StrictYAMLError(
+        "mapping keys must be strings; replace the key with a field name.",
+        key_node.start_mark,
+      )
     if key in mapping:
-      raise yaml.constructor.ConstructorError(
-        "while constructing a mapping",
-        node.start_mark,
-        f"duplicate key: {key}",
+      raise StrictYAMLError(
+        "duplicate key; remove or rename the repeated field.",
         key_node.start_mark,
       )
     mapping[key] = loader.construct_object(value_node, deep=deep)
@@ -158,15 +222,51 @@ StrictSafeLoader.add_constructor(
 )
 
 
-def load_yaml(path: Path) -> dict:
-  """Load a UTF-8 YAML mapping with the strict safe loader."""
+def load_yaml_text(
+  text: str, path: Path, *, context: str = "YAML", line_offset: int = 0
+) -> dict:
+  """Parse one strict mapping with safe corrections and numeric source locations."""
   try:
-    value = yaml.load(path.read_text(encoding="utf-8"), Loader=StrictSafeLoader)
-  except (OSError, UnicodeError, yaml.YAMLError) as exc:
-    raise MarketplaceError(f"{path}: invalid YAML: {exc}") from exc
+    value = yaml.load(text, Loader=StrictSafeLoader)
+  except (yaml.YAMLError, ValueError) as exc:
+    mark = getattr(exc, "problem_mark", None)
+    location = (
+      f"line {mark.line + 1 + line_offset}, column {mark.column + 1}"
+      if mark is not None
+      else "<root>"
+    )
+    correction = (
+      exc.correction
+      if isinstance(exc, StrictYAMLError)
+      else "invalid YAML syntax; correct the YAML formatting and scalar values."
+    )
+    raise PublicMarketplaceError(
+      _diagnostic(path, location, f"{context}: {correction}")
+    ) from exc
   if not isinstance(value, dict):
-    raise MarketplaceError(f"{path}: top-level YAML value must be a mapping")
+    raise PublicMarketplaceError(
+      _diagnostic(
+        path, "<root>", f"{context}: use a top-level mapping with named fields."
+      )
+    )
   return value
+
+
+def load_yaml(path: Path) -> dict:
+  """Read a UTF-8 YAML mapping using shared strict parsing and safe diagnostics."""
+  try:
+    text = path.read_text(encoding="utf-8")
+  except UnicodeError as exc:
+    raise PublicMarketplaceError(
+      _diagnostic(path, "<root>", "invalid UTF-8; save the YAML file as UTF-8 text.")
+    ) from exc
+  except OSError as exc:
+    raise PublicMarketplaceError(
+      _diagnostic(
+        path, "<root>", "cannot read YAML; check the file exists and is readable."
+      )
+    ) from exc
+  return load_yaml_text(text, path)
 
 
 def load_schema(root: Path) -> dict:
@@ -175,7 +275,55 @@ def load_schema(root: Path) -> dict:
   try:
     return json.loads(path.read_text(encoding="utf-8"))
   except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-    raise MarketplaceError(f"{path}: invalid JSON Schema: {exc}") from exc
+    raise PublicMarketplaceError(
+      _diagnostic(path, "<root>", "Restore a readable UTF-8 JSON Schema file.")
+    ) from exc
+
+
+def _schema_diagnostic(path: Path, error) -> PublicDiagnostic:
+  """Describe a schema failure using only schema-owned fields and constraints."""
+  schema_path = list(error.absolute_schema_path)
+  fields = {
+    schema_path[index + 1]
+    for index, keyword in enumerate(schema_path[:-1])
+    if keyword == "properties"
+  }
+  location = (
+    ".".join(
+      str(part) if isinstance(part, int) or part in fields else "<key>"
+      for part in error.absolute_path
+    )
+    or "<root>"
+  )
+  constraint = error.validator
+  if constraint == "required":
+    missing = [field for field in error.validator_value if field not in error.instance]
+    fix = "Add required fields: " + ", ".join(missing) + "."
+  elif constraint == "type":
+    fix = f"Use the required type: {error.validator_value}."
+  elif constraint == "const":
+    fix = f"Use the required value: {json.dumps(error.validator_value)}."
+  elif constraint == "enum":
+    choices = ", ".join(json.dumps(value) for value in error.validator_value)
+    fix = f"Use one of these allowed values: {choices}."
+  elif constraint == "pattern":
+    shape = f"valid {error.schema['format']}" if "format" in error.schema else "value"
+    fix = f"Use a {shape} matching this required pattern: {error.validator_value}."
+  elif constraint == "format":
+    fix = f"Use a valid {error.validator_value} value."
+  elif constraint == "additionalProperties":
+    fix = "Additional properties are not allowed; remove unknown fields."
+  elif constraint == "uniqueItems":
+    fix = "Remove duplicate items."
+  elif constraint == "minimum":
+    fix = f"Use a value of at least {error.validator_value}."
+  elif constraint in {"minLength", "minItems", "minProperties"}:
+    fix = f"Add content to meet {constraint}: {error.validator_value}."
+  elif constraint in {"maxLength", "maxItems", "maxProperties"}:
+    fix = f"Remove content to meet {constraint}: {error.validator_value}."
+  else:
+    fix = f"Use a value matching the documented {constraint} constraint."
+  return _diagnostic(path, location, fix)
 
 
 def manifest_paths(root: Path) -> list[Path]:
@@ -200,26 +348,31 @@ def manifest_paths(root: Path) -> list[Path]:
 
 def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]:
   """Validate one author-controlled manifest and package identity."""
+  if not path.exists():
+    return None, [
+      _diagnostic(
+        path,
+        "<root>",
+        "Add bcgov-extension.yaml alongside the native file on the same branch; "
+        "declare maintainers and capabilities.",
+      )
+    ]
   try:
     manifest = load_yaml(path)
+  except PublicMarketplaceError as exc:
+    return None, [PublicDiagnostic(str(exc))]
   except MarketplaceError as exc:
     return None, [str(exc)]
   validator = Draft202012Validator(schema, format_checker=FormatChecker())
-  errors = []
-  for error in sorted(
-    validator.iter_errors(manifest), key=lambda item: list(item.path)
-  ):
-    location = ".".join(str(part) for part in error.path) or "<root>"
-    errors.append(f"{path}: {location}: {error.message}")
-  expected_id = f"bcgov-public/{path.parent.name}"
-  if manifest.get("id") != expected_id:
-    errors.append(f"{path}: id must be {expected_id!r}")
+  errors = sorted(
+    {_schema_diagnostic(path, error) for error in validator.iter_errors(manifest)}
+  )
   parts = path.parts[-4:-1]
   root = path.parents[3]
   registry = (
     {item["id"] for item in load_specialties(root)}
     if (root / "config" / "specialties.yaml").exists()
-    else {"security"}
+    else set()
   )
   if (
     len(parts) != 3
@@ -227,48 +380,149 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
     or parts[1] not in {"community", *registry}
   ):
     errors.append(
-      f"{path.parent}: package must use a canonical type/specialty/name path"
+      _diagnostic(
+        path, "<root>", "Place the package under a canonical type/specialty/name path."
+      )
     )
   else:
-    artifact_path = path.parent / ARTIFACT_FILES[parts[0]]
-    errors.extend(_validate_artifact(artifact_path, TYPE_DIRECTORIES[parts[0]], path))
+    name = parts[2]
+    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name):
+      errors.append(
+        _diagnostic(
+          path,
+          "id",
+          "Use bcgov-public/<type>/<name> with a kebab-case package directory name.",
+        )
+      )
+    filename = (
+      "SKILL.md" if parts[0] == "skills" else f"{name}.{TYPE_DIRECTORIES[parts[0]]}.md"
+    )
+    artifact_path = path.parent / filename
+    lifecycle = manifest.get("lifecycle", "active")
+    frontmatter = {}
+    if lifecycle != "removed":
+      frontmatter, artifact_errors = read_native_content(
+        artifact_path, TYPE_DIRECTORIES[parts[0]]
+      )
+      errors.extend(artifact_errors)
+      if parts[0] == "skills":
+        # Source package directories define native identity; downloaded staging
+        # directories do not. Install choices bind metadata to Catalogue identity.
+        from validate_skill import name_directory_issues
+
+        for issue in name_directory_issues(frontmatter, str(path.parent)):
+          errors.append(
+            _diagnostic(artifact_path, f"frontmatter.{issue.field}", issue.correction)
+          )
+    elif any(item.name != MANIFEST_NAME for item in path.parent.iterdir()):
+      errors.append(
+        _diagnostic(path, "removed", "delete content files; keep only the Manifest")
+      )
+    if lifecycle != "active" and not manifest.get("notice"):
+      errors.append(
+        _diagnostic(path, "notice", "add a notice for non-active lifecycle")
+      )
+    if lifecycle == "active" and manifest.get("moved-to"):
+      errors.append(
+        _diagnostic(path, "moved-to", "use a non-active lifecycle for the old id")
+      )
+    identity = f"bcgov-public/{TYPE_DIRECTORIES[parts[0]]}/{name}"
+    if manifest.get("moved-to") and manifest["moved-to"] == identity:
+      errors.append(
+        _diagnostic(path, "moved-to", "replacement must have a different id")
+      )
+    if not manifest.get("summary") and not frontmatter.get("description"):
+      if lifecycle == "removed":
+        errors.append(_diagnostic(path, "summary", "add `summary:` to the Manifest"))
+      else:
+        errors.append(
+          _diagnostic(
+            artifact_path,
+            "summary",
+            "add `description:` to the frontmatter or `summary:` to the Manifest",
+          )
+        )
+    manifest = {
+      "schema-version": SCHEMA_VERSION,
+      "id": identity,
+      "name": name,
+      "display-name": frontmatter.get("name") or name,
+      "summary": frontmatter.get("description", ""),
+      "publisher": "Province of British Columbia",
+      "support": "https://github.com/bcgov/agent-marketplace/issues",
+      "license": "Apache-2.0",
+      "lifecycle": "active",
+      "prerequisites": [],
+      "compatibility": {"not-ready-on": []},
+      **manifest,
+    }
+    for field in ("display-name", "summary"):
+      value = manifest[field]
+      effective_schema = {"properties": {field: schema["properties"][field]}}
+      errors.extend(
+        _schema_diagnostic(path, error)
+        for error in Draft202012Validator(effective_schema).iter_errors({field: value})
+      )
+      if isinstance(value, str) and not value.strip():
+        errors.append(_diagnostic(path, field, "Add a non-empty string."))
+    if manifest.get("capabilities") == "none":
+      manifest["capabilities"] = {
+        **EMPTY_CAPABILITIES,
+        "filesystem": {"read": [], "write": []},
+      }
   return manifest, errors
 
 
-def _validate_artifact(
-  path: Path, extension_type: str, manifest_path: Path
-) -> list[str]:
-  """Validate the portable frontmatter required by one declarative asset type."""
+def read_native_content(path: Path, extension_type: str) -> tuple[dict, list[str]]:
+  """Read native content once for validation and effective metadata derivation."""
   errors = []
   if not path.is_file():
-    return [f"{manifest_path.parent}: missing {path.name}"]
+    return {}, [_diagnostic(path, "<root>", "Add the required content file.")]
   try:
     text = path.read_text(encoding="utf-8")
-  except (OSError, UnicodeError) as exc:
-    return [f"{path}: cannot read UTF-8 content: {exc}"]
-  if extension_type == "skill":
-    return [] if text.strip() else [f"{path}: content must not be empty"]
+  except (OSError, UnicodeError):
+    return {}, [_diagnostic(path, "<root>", "Save a readable UTF-8 text file.")]
+  if not text.startswith("---"):
+    if extension_type == "skill":
+      return {}, [
+        _diagnostic(
+          path, "frontmatter", "Add YAML frontmatter with name and description."
+        )
+      ]
+    return {}, (
+      [] if text.strip() else [_diagnostic(path, "<root>", "Add non-empty content.")]
+    )
   match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|\Z)", text, re.DOTALL)
   if not match:
-    return [f"{path}: expected a YAML frontmatter block"]
+    return {}, [
+      _diagnostic(
+        path, "frontmatter", "Add a YAML frontmatter block between --- delimiters."
+      )
+    ]
   try:
-    frontmatter = yaml.load(match.group(1), Loader=StrictSafeLoader)
-  except yaml.YAMLError as exc:
-    return [f"{path}: invalid YAML frontmatter: {exc}"]
-  if not isinstance(frontmatter, dict):
-    return [f"{path}: frontmatter must be a mapping"]
+    frontmatter = load_yaml_text(
+      match.group(1), path, context="YAML frontmatter", line_offset=1
+    )
+  except PublicMarketplaceError as exc:
+    return {}, [PublicDiagnostic(str(exc))]
 
-  required = {
-    "prompt": {"description"},
-    "instructions": {"description"},
-    "agent": {"name", "description"},
-  }[extension_type]
-  for field in sorted(required):
+  if extension_type == "skill":
+    # Reuse rules on the mapping already parsed above, without editorial checks.
+    from validate_skill import frontmatter_issues
+
+    for issue in frontmatter_issues(frontmatter):
+      errors.append(_diagnostic(path, f"frontmatter.{issue.field}", issue.correction))
+  # Non-skill native headers remain optional.
+  for field in sorted(frontmatter.keys() & {"name", "description"}):
     if not isinstance(frontmatter.get(field), str) or not frontmatter[field].strip():
-      errors.append(f"{path}: frontmatter field {field!r} must be a non-empty string")
+      errors.append(
+        _diagnostic(path, f"frontmatter.{field}", "Add a non-empty string.")
+      )
   if not text[match.end() :].strip():
-    errors.append(f"{path}: content after frontmatter must not be empty")
-  return errors
+    errors.append(
+      _diagnostic(path, "<root>", "Add non-empty content after frontmatter.")
+    )
+  return frontmatter, errors
 
 
 def _finding(
@@ -373,7 +627,9 @@ def _scan_text(
             line_number,
           )
         )
-    for host in NETWORK_COMMAND_RE.findall(line):
+    command = NETWORK_COMMAND_RE.search(line)
+    hosts = NETWORK_HOST_RE.findall(command.group(1)) if command else []
+    for host in hosts:
       if host not in declared_network and "*" not in declared_network:
         findings.append(
           _finding(
@@ -426,6 +682,10 @@ def capability_wildcards(capabilities: dict) -> list[str]:
     values = capabilities.get(field) or []
     if isinstance(values, list) and "*" in values:
       found.append(field)
+  filesystem = capabilities.get("filesystem") or {}
+  for access in ("read", "write"):
+    if "*" in (filesystem.get(access) or []):
+      found.append(f"filesystem.{access}")
   return found
 
 
@@ -521,7 +781,9 @@ def scan_package(package_dir: Path, manifest: dict) -> dict:
   type_directory = package_dir.parent.parent.name
   expected_root_files = {
     MANIFEST_NAME,
-    ARTIFACT_FILES.get(type_directory, "SKILL.md"),
+    "SKILL.md"
+    if type_directory not in ARTIFACT_FILES or type_directory == "skills"
+    else f"{package_dir.name}.{TYPE_DIRECTORIES.get(type_directory, 'skill')}.md",
   }
   for field in capability_wildcards(manifest.get("capabilities", {}) or {}):
     findings.append(
@@ -722,7 +984,7 @@ def package_digest(inventory: list[dict]) -> str:
   return f"sha256:{digest.hexdigest()}"
 
 
-def analyze_submission(root: Path, package_dir: Path) -> dict:
+def analyze_submission(root: Path, package_dir: Path, base: str | None = None) -> dict:
   """Analyze one submitted package without executing any of its content."""
   package_dir = package_dir.resolve()
   try:
@@ -731,7 +993,7 @@ def analyze_submission(root: Path, package_dir: Path) -> dict:
     raise MarketplaceError("submission package must be inside the marketplace") from exc
   manifest, errors = validate_manifest(package_dir / MANIFEST_NAME, load_schema(root))
   if errors or manifest is None:
-    raise MarketplaceError("\n".join(errors))
+    raise _validation_error(errors)
   parts = prospective_path.split("/")
   if (
     len(parts) != 3
@@ -773,6 +1035,7 @@ def analyze_submission(root: Path, package_dir: Path) -> dict:
     "files": inventory,
     "inventory-complete": not structural_findings,
     "scan": scan,
+    **({"transitions": analyze_transitions(root, base)} if base else {}),
   }
 
 
@@ -791,7 +1054,7 @@ def intake_submission(
   package_dir = package_dir.resolve()
   manifest, errors = validate_manifest(package_dir / MANIFEST_NAME, load_schema(root))
   if errors or manifest is None:
-    raise MarketplaceError("\n".join(errors))
+    raise _validation_error(errors)
   config = load_marketplace_config(root)
   scan = scan_package(package_dir, manifest)
   risk = capability_risk(manifest)
@@ -817,15 +1080,22 @@ def load_marketplace_config(root: Path) -> dict:
     "schema-version",
     "release-state",
     "repository",
-    "revision",
-    "version",
+    "publication",
+    "dependency-intake",
+    "history-start",
     "community-intake",
     "approved-discovery-sources",
   }
   unexpected = sorted(set(config) - allowed)
   if unexpected:
     raise MarketplaceError(f"{path}: unexpected keys: {', '.join(unexpected)}")
-  required = allowed - {"approved-discovery-sources", "community-intake"}
+  required = allowed - {
+    "approved-discovery-sources",
+    "community-intake",
+    "publication",
+    "dependency-intake",
+    "history-start",
+  }
   missing = sorted(required - set(config))
   if missing:
     raise MarketplaceError(f"{path}: missing keys: {', '.join(missing)}")
@@ -833,11 +1103,25 @@ def load_marketplace_config(root: Path) -> dict:
     raise MarketplaceError(f"{path}: unsupported schema-version")
   if config["release-state"] not in {"development", "published"}:
     raise MarketplaceError(f"{path}: release-state must be development or published")
-  if not re.fullmatch(r"[0-9a-f]{40}", str(config["revision"])):
-    raise MarketplaceError(f"{path}: revision must be a full lowercase commit SHA")
-  version = str(config["version"])
-  if not re.fullmatch(r"catalog-\d{4}\.\d{2}\.\d{2}(?:\.\d+)?", version):
-    raise MarketplaceError(f"{path}: version must be a catalog-YYYY.MM.DD release tag")
+  control = config.get("publication", {"enabled": False})
+  if (
+    not isinstance(control, dict)
+    or set(control) != {"enabled"}
+    or not isinstance(control["enabled"], bool)
+  ):
+    raise MarketplaceError(f"{path}: publication must contain Boolean enabled only")
+  dependency = config.get("dependency-intake", {"auto-merge": False})
+  if (
+    not isinstance(dependency, dict)
+    or set(dependency) != {"auto-merge"}
+    or not isinstance(dependency["auto-merge"], bool)
+  ):
+    raise MarketplaceError(
+      f"{path}: dependency-intake must contain Boolean auto-merge only"
+    )
+  baseline = config.get("history-start")
+  if baseline is not None and not re.fullmatch(r"[0-9a-f]{40}", str(baseline)):
+    raise MarketplaceError(f"{path}: history-start must be a full SHA")
   if config["repository"] != "https://github.com/bcgov/agent-marketplace":
     raise MarketplaceError(f"{path}: repository must use the canonical post-clone name")
   sources = config.get("approved-discovery-sources", [])
@@ -889,12 +1173,16 @@ def load_marketplace_config(root: Path) -> dict:
 
 
 def _validated_config(root: Path, name: str, schema_name: str) -> dict:
+  """Load configuration and reject schema failures with safe field diagnostics."""
   path = root / "config" / name
   data = load_yaml(path)
   schema = json.loads((root / "schemas" / schema_name).read_text(encoding="utf-8"))
-  errors = sorted(Draft202012Validator(schema).iter_errors(data), key=str)
+  errors = sorted(
+    _schema_diagnostic(path, error)
+    for error in Draft202012Validator(schema).iter_errors(data)
+  )
   if errors:
-    raise MarketplaceError(f"{path}: {errors[0].message}")
+    raise PublicMarketplaceError(errors[0])
   return data
 
 
@@ -939,14 +1227,24 @@ def load_security_policy(root: Path) -> dict:
   }
   unknown = set(policy["blocking"]) - implemented
   if unknown:
-    raise MarketplaceError(
-      f"security policy contains unimplemented rules: {sorted(unknown)}"
+    raise PublicMarketplaceError(
+      _diagnostic(
+        root / "config" / "security-policy.yaml",
+        "blocking",
+        "Remove unimplemented rule IDs; use only rules supported by this scanner.",
+      )
     )
-  for code, expression in policy.get("secret-patterns", {}).items():
+  for expression in policy["secret-patterns"].values():
     try:
       re.compile(expression)
-    except re.error as exc:
-      raise MarketplaceError(f"invalid secret pattern {code!r}: {exc}") from exc
+    except (re.error, OverflowError, RecursionError) as exc:
+      raise PublicMarketplaceError(
+        _diagnostic(
+          root / "config" / "security-policy.yaml",
+          "secret-patterns",
+          "invalid regular expression; correct the pattern syntax.",
+        )
+      ) from exc
   return policy
 
 
@@ -998,23 +1296,25 @@ def _validate_community_intake(path: Path, intake: object) -> None:
     "max-new-packages-per-window",
     "window-days",
   ):
-    if key in intake and (not isinstance(intake[key], int) or intake[key] < 0):
+    if key in intake and (type(intake[key]) is not int or intake[key] < 0):
       raise MarketplaceError(
         f"{path}: community-intake {key} must be a non-negative integer"
       )
+  if intake.get("max-new-packages-per-window", 10) > 10:
+    raise MarketplaceError(f"{path}: Community new-Extension ceiling cannot exceed 10")
+  if intake.get("window-days", 7) < 7:
+    raise MarketplaceError(f"{path}: Community rolling window must be at least 7 days")
   ceiling = intake.get("auto-publish-risk-ceiling", "elevated")
   if not isinstance(intake.get("auto-publish", False), bool):
     raise MarketplaceError(f"{path}: community-intake auto-publish must be boolean")
-  if ceiling not in RISK_ORDER:
+  if ceiling not in {"low", "elevated"}:
     raise MarketplaceError(
       f"{path}: community-intake auto-publish-risk-ceiling must be a risk band"
     )
 
 
 # Ordered by how likely a reader is to meet the type, not alphabetically.
-# The first four types are declarative assets; hooks and MCP servers stay
-# deferred until their runtime security models exist.
-EXTENSION_TYPE_ORDER = ["skill", "prompt", "instructions", "agent", "hook", "mcp"]
+EXTENSION_TYPE_ORDER = ["skill", "prompt", "instructions", "agent"]
 
 
 def _review_status(
@@ -1022,6 +1322,7 @@ def _review_status(
   content_digest: str,
   risk: str,
   advisory_count: int,
+  policy_version: int,
 ) -> dict:
   """Resolve trust without claiming a pinned human review for changed bytes."""
   if specialty == "community":
@@ -1029,7 +1330,7 @@ def _review_status(
       "status": "auto-scanned",
       "reviewers": [],
       "method": "automated-policy-scan",
-      "policy-version": POLICY_VERSION,
+      "policy-version": policy_version,
       "content-digest": content_digest,
       "risk": risk,
       "advisories": advisory_count,
@@ -1057,11 +1358,267 @@ def namespace_of(relative_path: str) -> str:
   return "community"
 
 
-def build_catalog(root: Path) -> tuple[dict, str]:
+def _git_bytes(root: Path, *arguments: str) -> bytes:
+  """Read Git objects and changes without executing package content."""
+  result = subprocess.run(
+    ["git", "-C", str(root), *arguments], capture_output=True, check=False
+  )
+  if result.returncode:
+    raise PublicMarketplaceError(
+      _diagnostic(
+        Path(MANIFEST_NAME),
+        "base",
+        "Use a reachable trusted base commit in a Git checkout.",
+      )
+    )
+  return result.stdout
+
+
+def load_legacy_ids(root: Path) -> dict[str, str]:
+  """Read the finite Admin-owned inventory of published pre-v1 identities."""
+  path = root / "config/legacy-ids.json"
+  if not path.exists():
+    return {}
+  try:
+    aliases = json.loads(path.read_text(encoding="utf-8"))
+  except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+    raise PublicMarketplaceError(
+      _diagnostic(
+        path, "<root>", "Restore the explicit legacy identity mapping as UTF-8 JSON."
+      )
+    ) from exc
+  if not isinstance(aliases, dict) or any(
+    not re.fullmatch(r"bcgov-public/[a-z0-9]+(?:-[a-z0-9]+)*", alias)
+    or not isinstance(target, str)
+    or not re.fullmatch(
+      r"bcgov-public/(?:skill|instructions|prompt|agent)/[a-z0-9]+(?:-[a-z0-9]+)*",
+      target,
+    )
+    for alias, target in aliases.items()
+  ):
+    raise PublicMarketplaceError(
+      _diagnostic(
+        path, "<root>", "Map only inventoried name-only IDs to canonical type/name IDs."
+      )
+    )
+  return aliases
+
+
+def analyze_transitions(root: Path, base: str) -> list[dict]:
+  """Compare every trusted-base identity and changed file with the proposed tree.
+
+  Valid sensitive changes are review facts, not format failures. This function
+  makes no authorization decision and never restores files into a contributor's
+  checkout. Both sides of moves are included by disabling rename inference.
+  """
+  revision = (
+    _git_bytes(root, "rev-parse", "--verify", "--end-of-options", f"{base}^{{commit}}")
+    .decode()
+    .strip()
+  )
+  base_paths = (
+    _git_bytes(
+      root, "ls-tree", "-r", "--name-only", "-z", revision, "--", *TYPE_DIRECTORIES
+    )
+    .decode("utf-8")
+    .split("\0")
+  )
+  previous = {}
+  for path in base_paths:
+    parts = path.split("/")
+    if len(parts) != 4 or parts[-1] != MANIFEST_NAME:
+      continue
+    metadata = load_yaml_text(
+      _git_bytes(root, "show", f"{revision}:{path}").decode("utf-8"),
+      Path(MANIFEST_NAME),
+    )
+    if metadata.get("lifecycle") == "draft":
+      continue
+    identity = f"bcgov-public/{TYPE_DIRECTORIES[parts[0]]}/{parts[2]}"
+    previous[identity] = {
+      **metadata,
+      "lifecycle": metadata.get("lifecycle", "active"),
+      "path": "/".join(parts[:3]),
+      "specialty": parts[1],
+    }
+  proposed = {item["id"]: item for item in build_catalog(root)[0]["extensions"]}
+  changed = set(
+    _git_bytes(
+      root,
+      "diff",
+      "--no-renames",
+      "--name-only",
+      "-z",
+      revision,
+      "--",
+      *TYPE_DIRECTORIES,
+    )
+    .decode("utf-8")
+    .split("\0")
+  )
+  changed.update(
+    _git_bytes(
+      root, "ls-files", "--others", "--exclude-standard", "-z", "--", *TYPE_DIRECTORIES
+    )
+    .decode("utf-8")
+    .split("\0")
+  )
+  changed.discard("")
+  return transition_facts(previous, proposed, changed)
+
+
+def transition_facts(previous: dict, proposed: dict, changed: set[str]) -> list[dict]:
+  """Compare canonical records and complete changed paths, independent of Git."""
+  errors = []
+  for _identity in previous.keys() - proposed.keys():
+    errors.append(
+      _diagnostic(
+        Path(MANIFEST_NAME),
+        "lifecycle",
+        "Keep a retained non-active Manifest for every retired trusted-base identity.",
+      )
+    )
+  paths = {item["source"]["path"] for item in proposed.values()} | {
+    item["path"] for item in previous.values()
+  }
+  for path in changed:
+    parts = path.split("/")
+    if len(parts) >= 4 and "/".join(parts[:3]) not in paths:
+      errors.append(
+        _diagnostic(
+          Path(MANIFEST_NAME),
+          "<root>",
+          "Add a Manifest alongside every changed native package.",
+        )
+      )
+  if errors:
+    raise _validation_error(errors)
+  facts = []
+  for identity, record in sorted(proposed.items()):
+    old = previous.get(identity)
+    path = record["source"]["path"]
+    old_path = old["path"] if old else None
+    files = sorted(
+      file
+      for file in changed
+      if any(
+        file.startswith(candidate + "/") for candidate in (path, old_path) if candidate
+      )
+    )
+    if not files:
+      continue
+    reasons = []
+    if old:
+      reasons.extend(
+        field
+        for field in ("lifecycle", "notice", "moved-to")
+        if old.get(field) != record.get(field)
+      )
+      if old["lifecycle"] != "active" and record["lifecycle"] == "active":
+        reasons.append("restoration")
+      if old["lifecycle"] == "removed" and record["lifecycle"] != "removed":
+        reasons.append("recreation")
+      if old["specialty"] != record["specialty"]:
+        reasons.append("specialty-transfer")
+    elif record["lifecycle"] != "active":
+      reasons.append("lifecycle")
+    if (
+      record["lifecycle"] != "active" or (old and old["lifecycle"] != "active")
+    ) and any(not file.endswith("/" + MANIFEST_NAME) for file in files):
+      reasons.append("non-active-content")
+    if (
+      old and record.get("moved-to") and old.get("moved-to") != record["moved-to"]
+    ) or any(
+      item.get("moved-to") == identity and item["id"] in previous
+      for item in proposed.values()
+    ):
+      reasons.append("identity-replacement")
+    facts.append(
+      {
+        "id": identity,
+        "base-path": old_path,
+        "path": path,
+        "base-specialty": old["specialty"] if old else None,
+        "specialty": record["specialty"],
+        "base-maintainers": old.get("maintainers", []) if old else [],
+        "new-identity": old is None,
+        "changed-files": files,
+        "reasons": sorted(set(reasons)),
+        "requires-human-review": bool(reasons),
+      }
+    )
+  return facts
+
+
+def engine_identity(root: Path) -> str:
+  """Hash the actual trusted validator, adapter, schemas and policy inputs."""
+  scripts = Path(__file__).parent
+  inputs = {}
+  for name in ("marketplace.py", "validate_skill.py", "install_choices.py"):
+    path = scripts / name
+    if path.exists():
+      inputs[f"scripts/{name}"] = hashlib.sha256(path.read_bytes()).hexdigest()
+  for path in sorted((root / "schemas").glob("*.json")):
+    inputs[f"schemas/{path.name}"] = json.loads(path.read_text(encoding="utf-8"))
+  inputs["security-policy"] = load_security_policy(root)
+  inputs["python"] = platform.python_version()
+  inputs["dependencies"] = {}
+  # Runtime schema dependencies also affect interpretation; dev-only tooling does not.
+  for name in (
+    "jsonschema",
+    "PyYAML",
+    "attrs",
+    "jsonschema-specifications",
+    "referencing",
+    "rpds-py",
+    "typing_extensions",
+  ):
+    try:
+      inputs["dependencies"][name] = distribution_version(name)
+    except PackageNotFoundError:
+      continue  # Some runtimes do not need typing_extensions.
+  return "sha256:" + hashlib.sha256(canonical(inputs)).hexdigest()
+
+
+def authorization_inputs(root: Path) -> dict:
+  """Identify actual intake code separately from package scan/install evidence.
+
+  Include the actual main-owned decision, API/data/dependency adapters and workflow.
+  These are input identities, not a claim that an Extension was auto-merged.
+  """
+  sources = {"scripts/marketplace.py": Path(__file__)}
+  for name in ("merge_gate.py", "gate_github.py", "gate_data.py", "gate_dependency.py"):
+    sources[f"scripts/{name}"] = Path(__file__).parent / name
+  sources[".github/workflows/merge-gate.yml"] = (
+    root / ".github/workflows/merge-gate.yml"
+  )
+  sources = {name: path for name, path in sources.items() if path.exists()}
+  return {
+    name: "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    for name, path in sources.items()
+  }
+
+
+def build_catalog(
+  root: Path, *, revision: str | None = None, version: str = "source"
+) -> tuple[dict, str]:
   """Build machine-readable and escaped HTML catalog projections."""
   schema = load_schema(root)
   config = load_marketplace_config(root)
-  load_security_policy(root)
+  policy = load_security_policy(root)
+  if revision is None:
+    try:
+      revision = git(root, "rev-parse", "HEAD").strip()
+    except PublicationError:
+      revision = "0" * 40  # Unpublished preview with no source history.
+  if not re.fullmatch(r"[0-9a-f]{40}", revision):
+    raise MarketplaceError("Catalogue source revision must be a full lowercase SHA")
+  dates = {}
+  if config.get("history-start"):
+    try:
+      dates = source_dates(root, config["history-start"], revision)
+    except PublicationError as exc:
+      raise MarketplaceError(str(exc)) from exc
   specialty_ids = {item["id"] for item in load_specialties(root)}
   records = []
   errors = []
@@ -1089,13 +1646,24 @@ def build_catalog(root: Path) -> tuple[dict, str]:
       "specialty": specialty,
       "source": {
         "repository": config["repository"],
-        "revision": config["revision"],
+        "revision": revision,
         "path": relative_path,
+        **dates.get(manifest["id"], {"added": None, "updated": None}),
       },
       "content-digest": "",
       "files": [],
-      "policy": {},
-      "review": {},
+      "policy-route": (
+        {"type": "community"}
+        if specialty == "community"
+        else {
+          "type": "specialty-review",
+          "owner-team": next(
+            item["owner-team"]
+            for item in load_specialties(root)
+            if item["id"] == specialty
+          ),
+        }
+      ),
     }
     scan = scan_package(package_dir, manifest)
     blocking = [item for item in scan["findings"] if item["severity"] == "blocking"]
@@ -1108,185 +1676,115 @@ def build_catalog(root: Path) -> tuple[dict, str]:
     inventory = package_inventory(package_dir)
     record["content-digest"] = package_digest(inventory)
     record["files"] = inventory
-    record["policy"] = scan
+    record["checks"] = {"content-digest": record["content-digest"], **scan}
+    record["risk"] = capability_risk(manifest)
     advisories = [item for item in scan["findings"] if item["severity"] == "advisory"]
-    record["review"] = _review_status(
+    evidence = _review_status(
       specialty,
       record["content-digest"],
       capability_risk(manifest),
       len(advisories),
+      scan["policy-version"],
     )
+    evidence.pop("risk", None)
+    record["checks"].update(evidence)
+    record["install-options"] = build_install_choices(record, package_dir)
     records.append(record)
+  by_id = {record["id"]: record for record in records}
+  legacy_ids = load_legacy_ids(root)
+  for identity in legacy_ids.values():
+    if identity not in by_id:
+      errors.append(
+        _diagnostic(
+          Path("legacy-ids.json"),
+          "target",
+          "Retain the canonical Manifest for every published legacy identity.",
+        )
+      )
+  for record in records:
+    record["legacy-ids"] = sorted(
+      alias for alias, identity in legacy_ids.items() if identity == record["id"]
+    )
+  for record in records:
+    current = record
+    visited = {current["id"]}
+    while target := current.get("moved-to"):
+      if target not in by_id:
+        errors.append(
+          _diagnostic(
+            Path(MANIFEST_NAME), "moved-to", "Use an existing canonical identity."
+          )
+        )
+        break
+      if target in visited:
+        errors.append(
+          _diagnostic(Path(MANIFEST_NAME), "moved-to", "Remove the replacement cycle.")
+        )
+        break
+      visited.add(target)
+      current = by_id[target]
+    else:
+      if current is not record:
+        record["replacement"] = {"id": current["id"], "lifecycle": current["lifecycle"]}
   if not records:
     errors.append("no hosted marketplace manifests found")
   if errors:
     raise MarketplaceError("\n".join(errors))
   records.sort(key=lambda item: item["id"])
   catalog = {
-    "schema-version": "bcgov-marketplace-catalog/v1alpha1",
+    "schema-version": "bcgov-marketplace/v1",
     "release-state": config["release-state"],
     "repository": config["repository"],
-    "revision": config["revision"],
-    "version": config["version"],
-    "policy-version": POLICY_VERSION,
+    "revision": revision,
+    "version": version,
+    "engine": engine_identity(root),
+    "authorization-inputs": authorization_inputs(root),
+    "submission-policy": {
+      "dependency-intake": {},
+      "community-intake": {
+        key: value
+        for key, value in (config.get("community-intake") or {}).items()
+        if key != "auto-publish"
+      },
+    },
+    "specialties": load_specialties(root),
+    "policy-version": policy["policy-version"],
     "approved-discovery-sources": config.get("approved-discovery-sources", []),
     "count": len(records),
     "extensions": records,
+    "legacy-ids": legacy_ids,
   }
-  cards = [_catalog_row(record) for record in records]
-  # The page builds its facets from the rendered rows, so the canonical type
-  # vocabulary travels with them. Types absent from the catalog still appear,
-  # disabled, which shows the reader what this marketplace intends to carry.
-  # Script content is raw text, so HTML escaping would survive into the parsed
-  # string. Escaping "<" at the JSON level keeps it valid and cannot close the
-  # element early.
-  vocabulary = json.dumps(
-    {
-      "types": EXTENSION_TYPE_ORDER,
-    },
-    sort_keys=True,
-  ).replace("<", "\\u003c")
-  header = (
-    f'<script type="application/json" id="catalog-vocabulary">{vocabulary}</script>'
-  )
-  return catalog, "\n\n".join([header, *cards]) + "\n"
+  return catalog, render_catalog_cards(catalog)
 
 
-TRUST_LABELS = {
-  "marketplace-reviewed": "Reviewed",
-  "domain-reviewed": "Domain reviewed",
-  "auto-scanned": "Auto-checked",
-  "locally-scanned-not-bc-gov-reviewed": "Scanned only",
-  "unreviewed": "Unreviewed",
-}
-
-RISK_LABELS = {
-  "low": "Low access",
-  "elevated": "Elevated access",
-  "high": "High access",
-}
-
-ACCESS_SIGNALS = (
-  ("commands", "Commands", "runs commands"),
-  ("network", "Network", "reaches the network"),
-  ("writes", "Writes", "writes files"),
-)
-
-
-def _access_signals(capabilities: dict) -> dict[str, list[str]]:
-  """Reduce declared capabilities to the three access facts users compare."""
-  filesystem = capabilities.get("filesystem") or {}
-  return {
-    "commands": list(capabilities.get("commands") or []),
-    "network": list(capabilities.get("network") or []),
-    "writes": list(filesystem.get("write") or []),
-  }
-
-
-def _catalog_row(record: dict) -> str:
-  """Render one catalog row, escaping every author-controlled value."""
-  capabilities = record["capabilities"]
-  signals = _access_signals(capabilities)
-  active = [key for key, _label, _phrase in ACCESS_SIGNALS if signals[key]]
-  status = (record.get("review") or {}).get("status") or "unreviewed"
-  trust = TRUST_LABELS.get(status, "Unreviewed")
-  risk = (record.get("review") or {}).get("risk") or ""
-  risk_label = RISK_LABELS.get(risk, "")
-  specialty = record.get("specialty") or "community"
-
-  granted = [phrase for key, _label, phrase in ACCESS_SIGNALS if signals[key]]
-  withheld = [phrase for key, _label, phrase in ACCESS_SIGNALS if not signals[key]]
-  sentence = (
-    f"Declared access: {_join_phrases(granted)}."
-    if granted
-    else ("Declares no commands, network, or file writes.")
-  )
-  if granted and withheld:
-    sentence += f" Does not declare that it {_join_phrases(withheld)}."
-
-  haystack = " ".join(
-    [
-      record["display-name"],
-      record["summary"],
-      specialty,
-      record.get("type") or "",
-      " ".join(record.get("maintainers") or []),
-      " ".join(signals["commands"]),
-      " ".join(signals["network"]),
-    ]
-  ).lower()
-
-  slots = []
-  for key, label, _phrase in ACCESS_SIGNALS:
-    state = "is-on" if signals[key] else "is-off"
-    detail = ", ".join(signals[key][:6]) if signals[key] else "not declared"
-    slots.append(
-      f'    <li class="cat-slot {state}" data-signal="{key}" '
-      f'title="{label}: {html.escape(detail, quote=True)}">{label}</li>'
-    )
-
-  return "\n".join(
-    [
-      '<article class="cat-row" '
-      f'data-extension-id="{html.escape(record["id"], quote=True)}"',
-      f'  data-type="{html.escape(record.get("type") or "", quote=True)}"',
-      f'  data-specialty="{html.escape(specialty, quote=True)}"',
-      f'  data-lifecycle="{html.escape(record.get("lifecycle") or "", quote=True)}"',
-      f'  data-status="{html.escape(status, quote=True)}"',
-      f'  data-risk="{html.escape(risk, quote=True)}"',
-      f'  data-access="{html.escape(" ".join(active), quote=True)}"',
-      f'  data-haystack="{html.escape(haystack, quote=True)}">',
-      '  <div class="cat-row-id">',
-      f'    <h3><button type="button" class="cat-row-open">'
-      f"{html.escape(record['display-name'])}</button></h3>",
-      f'    <p class="cat-row-summary">{html.escape(record["summary"])}</p>',
-      "  </div>",
-      f'  <p class="cat-row-domain">{html.escape(specialty)}</p>',
-      f'  <ul class="cat-slots" aria-label="{html.escape(sentence, quote=True)}">',
-      *slots,
-      "  </ul>",
-      f'  <p class="cat-row-trust" data-status="{html.escape(status, quote=True)}">'
-      f'<span class="trust-label" data-status="{html.escape(status, quote=True)}">'
-      f"{html.escape(trust)}</span>"
-      + (
-        f'<span class="cat-row-risk" data-risk="{html.escape(risk, quote=True)}">'
-        f"{html.escape(risk_label)}</span>"
-        if risk in {"elevated", "high"}
-        else ""
-      )
-      + "</p>",
-      "</article>",
-    ]
-  )
-
-
-def _join_phrases(items: list[str]) -> str:
-  """Join phrases into readable prose without Oxford-comma edge cases."""
-  if len(items) <= 1:
-    return "".join(items)
-  return f"{', '.join(items[:-1])} and {items[-1]}"
+def render_catalog_cards(catalog: dict) -> str:
+  """Render selected records without making presentation a scan/policy input."""
+  return _render_catalog_cards(catalog, EXTENSION_TYPE_ORDER)
 
 
 def _serialized_catalog(catalog: dict) -> str:
-  """Serialize the catalog in its canonical checked-in representation."""
+  """Serialize the catalog in its canonical immutable representation."""
   return json.dumps(catalog, indent=2, ensure_ascii=True, sort_keys=True) + "\n"
 
 
-def generate(root: Path, check: bool = False) -> list[str]:
+def generate(root: Path, check: bool = False, output: Path | None = None) -> list[str]:
   """Write generated projections or report checked-in drift."""
   catalog, cards = build_catalog(root)
   serialized_catalog = _serialized_catalog(catalog)
+  output = output or root
   outputs = {
     root / ".github" / "CODEOWNERS": render_codeowners(load_specialties(root)),
-    root / "catalog" / "catalog.json": serialized_catalog,
-    root / "docs" / "assets" / "catalog.json": serialized_catalog,
-    root / "docs" / "_generated" / "catalog-cards.html": cards,
+    output / "catalog" / "catalog.json": serialized_catalog,
+    output / "docs" / "assets" / "catalog.json": serialized_catalog,
+    output / "docs" / "_generated" / "catalog-cards.html": cards,
   }
   drift = []
   for path, expected in outputs.items():
     current = path.read_text(encoding="utf-8") if path.exists() else None
     if current != expected:
-      drift.append(path.relative_to(root).as_posix())
+      drift.append(
+        path.relative_to(root if path.is_relative_to(root) else output).as_posix()
+      )
       if not check:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(expected, encoding="utf-8")
@@ -1294,12 +1792,12 @@ def generate(root: Path, check: bool = False) -> list[str]:
 
 
 def validate(root: Path) -> None:
-  """Validate all packages and ensure generated projections are current."""
-  drift = generate(root, check=True)
-  if drift:
-    raise MarketplaceError(
-      "generated output drift: " + ", ".join(drift) + "; run marketplace.py generate"
-    )
+  """Validate source packages and the committed CODEOWNERS projection."""
+  build_catalog(root)
+  path = root / ".github" / "CODEOWNERS"
+  expected = render_codeowners(load_specialties(root))
+  if not path.exists() or path.read_text(encoding="utf-8") != expected:
+    raise MarketplaceError("CODEOWNERS drift; run marketplace.py generate")
 
 
 def check_policy(root: Path) -> bool:
@@ -1436,6 +1934,7 @@ def public_analysis(analysis: dict) -> dict:
       else "low"
     ),
     "scan": public_scan(analysis["scan"]),
+    **({"transitions": analysis["transitions"]} if "transitions" in analysis else {}),
   }
 
 
@@ -1444,16 +1943,28 @@ def _parser() -> argparse.ArgumentParser:
   parser = argparse.ArgumentParser(description=__doc__)
   parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
   subparsers = parser.add_subparsers(dest="command", required=True)
-  subparsers.add_parser("validate", help="validate packages and generated output")
+  validate_parser = subparsers.add_parser(
+    "validate", help="validate packages and generated output"
+  )
+  validate_parser.add_argument(
+    "--base", help="trusted base commit for identity/lifecycle transition validation"
+  )
   subparsers.add_parser("check", help="report policy findings for the PR check")
   generate_parser = subparsers.add_parser("generate", help="write generated output")
   generate_parser.add_argument("--check", action="store_true")
+  generate_parser.add_argument(
+    "--output", type=Path, help="isolated generated-output root"
+  )
   scan_parser = subparsers.add_parser("scan", help="scan one package directory")
   scan_parser.add_argument("package", type=Path)
   analyze_parser = subparsers.add_parser(
     "analyze", help="analyze one submitted package and route it for review"
   )
   analyze_parser.add_argument("package", type=Path)
+  analyze_parser.add_argument(
+    "--base",
+    help="trusted base commit for routing facts across all affected identities",
+  )
   intake_parser = subparsers.add_parser(
     "intake", help="decide whether a community submission can auto-publish"
   )
@@ -1479,11 +1990,13 @@ def main(argv: list[str] | None = None) -> int:
   root = args.root.resolve()
   try:
     if args.command == "validate":
+      if args.base:
+        analyze_transitions(root, args.base)
       validate(root)
     elif args.command == "check":
       return 0 if check_policy(root) else 1
     elif args.command == "generate":
-      drift = generate(root, check=args.check)
+      drift = generate(root, check=args.check, output=args.output)
       if args.check and drift:
         raise MarketplaceError("generated output drift: " + ", ".join(drift))
       for path in drift:
@@ -1492,7 +2005,7 @@ def main(argv: list[str] | None = None) -> int:
       manifest_path = args.package / MANIFEST_NAME
       manifest, errors = validate_manifest(manifest_path, load_schema(root))
       if errors or manifest is None:
-        raise MarketplaceError("\n".join(errors))
+        raise _validation_error(errors)
       print(
         json.dumps(
           public_scan(scan_package(args.package, manifest)), indent=2, sort_keys=True
@@ -1511,16 +2024,22 @@ def main(argv: list[str] | None = None) -> int:
     else:
       print(
         json.dumps(
-          public_analysis(analyze_submission(root, args.package)),
+          public_analysis(analyze_submission(root, args.package, args.base)),
           indent=2,
           sort_keys=True,
         )
       )
   except MarketplaceError as exc:
-    if args.command in {"scan", "analyze"}:
-      print("ERROR: Extension validation failed", file=sys.stderr)
-    else:
-      print(f"ERROR: {exc}", file=sys.stderr)
+    message = str(exc)
+    if args.command in {"scan", "analyze"} and not isinstance(
+      exc, PublicMarketplaceError
+    ):
+      message = _diagnostic(
+        Path(MANIFEST_NAME),
+        "<root>",
+        "Extension validation failed; correct the package or repository configuration.",
+      )
+    print(f"ERROR: {message}", file=sys.stderr)
     return 1
   return 0
 

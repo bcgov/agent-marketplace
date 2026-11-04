@@ -1,60 +1,94 @@
-<!-- TITLE: Contribute an Asset -->
+<!-- TITLE: Contribute an Extension -->
 <!-- NAV: contribute -->
 
-<h1>Contribute an Agent Asset</h1>
+<h1>Contribute an Extension</h1>
+<p>Share a skill, instructions, prompt or agent. Start with Community unless a registered Specialty fits. You can create both required files and one pull request using github.com alone. No local tools are required for this browser journey.</p>
+<p>Prefer working with an agent? <a href="install.html#finder">Use bcgov-create-extension</a>. For a local checkout, follow <a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.</p>
 
-<p>The creation companion owns the path from an idea in any workspace to a review-ready draft pull request. The contributor does not need a marketplace checkout, Python, or <code>uv</code>.</p>
+<h2 id="authoring-paths">Three authoring paths</h2>
+<p><strong>With an agent:</strong> use <code>bcgov-create-extension</code> to search for an existing solution, scaffold a native package, validate, inspect the diff and request explicit consent before opening a draft PR. <strong>Locally:</strong> create the same two files, validate and push signed commits following the repository guide. <strong>In a browser:</strong> complete the starter below, then create both files in the same fork branch and one PR.</p>
+<p>Declare actual access in the <a href="reference.html#manifest">Manifest</a>, add useful task instructions and validate before requesting review. Maintainers are contacts; editing another person's Community Extension needs human review unless the trusted-base individual maintainer eligibility is satisfied. Public bcgov membership is the automatic eligibility proxy, not proof of employment. Unknown/private membership holds for review; a public-membership 404 alone does not prove nonmembership.</p>
+<p>All publication and automatic merge switches are currently off pending <a href="https://github.com/bcgov/agent-marketplace/issues/43">repository activation</a>. After activation, eligible Community changes within the ten-new-identities/seven-day budget and elevated declared-risk ceiling can take the Community route only with Security-approved blockers and every required check. Exceeded or unavailable quota holds. Hard format/security failures remain failures. Specialty, non-maintainer edits, restoration and ownership changes require human review.</p>
+<h2 id="specialties">Specialties and onboarding</h2>
+<p>Choose Community or an active registered Specialty from the starter. Specialty owners review both native and Manifest files; the policy route is not proof that review occurred. To register a Specialty, agree scope and team coverage with Admins, add its registry entry and generated ownership in a reviewed PR, and prove reviewer delivery for both paths. Aim for at least two team members; document sole-owner coverage. See <a href="https://github.com/bcgov/agent-marketplace/blob/main/OPERATIONS.md#ownership-and-onboarding">ownership procedures</a>.</p>
+<style>
+    .browser-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: 1rem; margin: 1rem 0; }
+    .browser-fields label { display: flex; flex-direction: column; gap: .4rem; font-weight: 600; min-width: 0; }
+    .browser-fields input, .browser-fields select { font: inherit; padding: .6rem; width: 100%; box-sizing: border-box; color: var(--text-primary); background: var(--bg-primary, white); border: 1px solid #77818b; border-radius: .25rem; }
+    .browser-fields input:focus-visible, .browser-fields select:focus-visible { outline: 3px solid #1475cf; outline-offset: 2px; }
+    #starter-output pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+    #starter-output code, #branch-status, #starter-status { overflow-wrap: anywhere; }
+    #starter-output a:not([href]) { color: var(--text-secondary); text-decoration: none; }
+    #starter-output [hidden] { display: none; }
+</style>
 
-<pre><code>Turn this workflow idea into a BC Gov agent asset and prepare a draft pull request.</code></pre>
+<h2 id="start-in-browser">Start in browser</h2>
+<p>Contribution base: <a id="base-source" href="https://github.com/bcgov/agent-marketplace/tree/main"><code id="contribution-base">main</code></a>. A preview may select another base; its results do not prove production rules or activation. This page creates links and copyable text; it does not commit files or open a PR for you.</p>
+<noscript><p>Enable JavaScript for the registry-backed starter, or use the repository contribution guide linked above.</p></noscript>
+<form id="browser-starter" class="browser-fields">
+    <label for="extension-type">Extension type
+        <select id="extension-type" name="type"><option value="skill">Skill</option><option value="instructions">Instructions</option><option value="prompt">Prompt</option><option value="agent">Agent</option></select>
+    </label>
+    <label for="extension-specialty">Community or Specialty
+        <select id="extension-specialty" name="specialty"></select>
+    </label>
+    <label for="extension-name">Stable name
+        <input id="extension-name" name="name" required maxlength="64" placeholder="review-workflow" autocomplete="off" aria-describedby="identity-guidance">
+    </label>
+    <label for="extension-maintainer">Your GitHub username (without @)
+        <input id="extension-maintainer" name="maintainer" required maxlength="39" placeholder="your-login" autocomplete="off">
+    </label>
+    <label for="extension-summary">Summary: what it does and when to use it
+        <input id="extension-summary" name="summary" required placeholder="Describe one useful task and its trigger." autocomplete="off">
+    </label>
+</form>
+<p id="identity-guidance">Identity is <code>bcgov-public/&lt;type&gt;/&lt;name&gt;</code>. The same type/name must be unique across all Specialties, including removed records. Different types can share a name. Specialty transfers preserve identity and require review. This preview checks names known at build time; CI checks the current base again.</p>
+<p id="starter-status" role="status" aria-live="polite">Loading browser starter…</p>
 
-<h2>What it does</h2>
+<div id="starter-output" hidden>
+    <p>Identity: <code id="extension-identity"></code></p>
+    <p id="selected-review"></p>
+    <h3>1. Create the native file on a new branch</h3>
+    <p>Review the stub and replace its generic body with useful guidance. The supplied summary becomes native frontmatter; display name and other metadata have defaults. Keep the native filename shown here:</p>
+    <p><code id="native-path"></code></p>
+    <pre><code id="native-stub"></code></pre>
+    <p><a id="start-native" target="_blank" rel="noopener">Start native file on GitHub (new tab)</a></p>
+    <p>Sign in to GitHub. If you have no write access upstream, GitHub prompts you to fork/propose the change. Create or select your fork and a new contribution branch, then commit/propose this file. With upstream write access, choose a new branch there. <strong>Do not open the PR yet.</strong> If GitHub takes you to a comparison screen, return to the file in your fork's branch. Record its actual repository and branch below; the upstream base is a different branch.</p>
 
-<ol>
-    <li>Searches the BC Gov catalog and every approved upstream source for equivalents.</li>
-    <li>Asks which local files may become public and excludes sensitive or unselected material.</li>
-    <li>Creates a skill, prompt, instruction, or agent definition with closed marketplace metadata in an isolated staging directory using the hosted specification and schema.</li>
-    <li>Inventories public files and capabilities and performs a local content inspection without executing package scripts.</li>
-    <li>Shows one preview containing upstream evidence, public files, capabilities, destination, known findings, and checks deferred to CI.</li>
-    <li>After confirmation, uses an available GitHub integration or temporary checkout to open a draft pull request.</li>
-    <li>Uses protected-branch CI as the authoritative schema, policy, test, and generated-output validation loop.</li>
-</ol>
+    <h3>2. Add the Manifest on that same branch</h3>
+    <div id="branch-details" class="browser-fields">
+        <label for="working-repository">Repository containing file 1 (owner/repository)
+            <input id="working-repository" placeholder="your-login/agent-marketplace" autocomplete="off">
+        </label>
+        <label for="working-branch">Existing branch containing file 1
+            <input id="working-branch" placeholder="your-contribution-branch" autocomplete="off">
+        </label>
+    </div>
+    <p id="branch-status" role="status"></p>
+    <p><code id="manifest-path"></code></p>
+    <pre><code id="manifest-stub"></code></pre>
+    <p><a id="add-manifest" target="_blank" rel="noopener">Add matching Manifest on existing branch (new tab)</a></p>
+    <p>This second link prefills only the Manifest. You can also use <strong>Add file → Create new file</strong> in the repository and branch containing file 1, then copy the exact path and Manifest above. Commit directly to that existing branch. Do not create a second branch. <code>maintainers</code> and <code>capabilities</code> are the only mandatory authored Manifest fields. <code>none</code> means no declared access; replace it with the actual <a href="reference.html#manifest">capability declarations</a> if your Extension needs access. Never include secret values.</p>
 
-<p><a href="getting-started.html" class="hero-action primary">Install bcgov-create-extension</a></p>
+    <h3>3. Open one pull request containing both files</h3>
+    <p><a id="open-pr" target="_blank" rel="noopener">Compare branch and open one PR (new tab)</a></p>
+    <p>Confirm the base repository is <code>bcgov/agent-marketplace</code> and the base branch matches “Contribution base” above. Choose your fork and existing branch as the head. In <strong>Files changed</strong>, verify both displayed paths are together in the same package directory. Fill in the single type-neutral PR template. For Specialty submissions, mark the PR ready for review so GitHub requests the owners from the base branch's CODEOWNERS; a draft does not request owners automatically.</p>
+</div>
 
-<h2>Package contract</h2>
+<h2>Specialties and ownership</h2>
+<p>This list and the choices above come from <a href="https://github.com/bcgov/agent-marketplace/blob/main/config/specialties.yaml">the Specialty registry</a>. New Specialties require Admin-reviewed registration; registered content receives the same native-format and security validation as Community.</p>
+<ul id="specialty-registry"></ul>
 
-<pre data-no-copy><code>skills/&lt;community-or-specialty&gt;/&lt;name&gt;/
-├── SKILL.md
-└── bcgov-extension.yaml
-
-prompts/&lt;community-or-specialty&gt;/&lt;name&gt;/
-├── prompt.prompt.md
-└── bcgov-extension.yaml
-
-instructions/&lt;community-or-specialty&gt;/&lt;name&gt;/
-├── instructions.instructions.md
-└── bcgov-extension.yaml
-
-agents/&lt;community-or-specialty&gt;/&lt;name&gt;/
-├── agent.agent.md
-└── bcgov-extension.yaml</code></pre>
-
-<p>Hosted packages use Apache-2.0 and IDs of the form <code>bcgov-public/&lt;name&gt;</code>. Metadata declares prerequisites, capabilities, and optional author-declared harness exclusions. An exclusion list is not a compatibility test. Authors cannot set review fields. The installer automates skills only; other types use explicit manual import guidance.</p>
-
-<p>Authors must be members of the GitHub <code>bcgov</code> organization. This is an eligibility proxy, not employment verification. If the workflow cannot confirm membership, it blocks the PR and explains the membership-token check to investigate.</p>
-
-<h2>Publication boundary</h2>
-
-<div class="alert alert-warning"><div class="alert-icon" aria-hidden="true">!</div><div>The companion cannot approve, merge, assign human review evidence, or transfer evidence to changed bytes. CI and required reviewers decide publication for the exact pull-request revision.</div></div>
-
-<p>If GitHub integration, branch access, or commit signing is unavailable, staged work is preserved and the companion provides the access or recovery action. Forks are not used for submission.</p>
-
-<h2>Manual contribution</h2>
-
-<p>Marketplace maintainers working directly in this repository follow <a href="https://github.com/bcgov/agent-marketplace/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>. This optional local path uses the repository's Python and <code>uv</code> toolchain. Clone the repository once:</p>
-
-<pre><code>git clone https://github.com/bcgov/agent-marketplace.git && cd agent-marketplace && make setup</code></pre>
-
-<p>Then regenerate the catalogue and run the full gate before opening a pull request:</p>
-
-<pre><code>make generate && make verify</code></pre>
+<h2>Read checks and fix the branch</h2>
+<p>Open the PR's <strong>Checks</strong> and each check's details. Format, metadata, signature and security failures require correction on the same head branch. Checks describe the exact revision; a change reruns them. Required checks still apply when automatic merging and publication are off.</p>
+<ul>
+    <li><strong>Missing summary:</strong> add non-empty <code>description:</code> inside the native file's YAML frontmatter, or <code>summary:</code> in the Manifest. Native format requirements still apply. Quote YAML values containing a colon or other special punctuation.</li>
+    <li><strong>Missing Manifest:</strong> add <code>bcgov-extension.yaml</code> next to the native file on its existing branch using step 2. Confirm both paths in Files changed.</li>
+    <li><strong>Name unavailable:</strong> choose an unused type/name and update both paths and native name together. If you intended an edit or a Specialty transfer, edit the existing package and request human review.</li>
+    <li><strong>Blocking findings:</strong> follow the reported file, field or line and correction. Remove secrets and fix undeclared access; do not add secret values to capability metadata. Read the check's safe diagnostics and rerun by committing the fix.</li>
+    <li><strong>Review hold:</strong> a passing <code>human-review</code> route can require Specialty owners, maintainer eligibility, lifecycle review or unconfirmed membership. It is a valid review state, not an instruction to weaken checks. Read the route's reasons and request the named reviewer. With automation off, passing checks do not merge the PR.</li>
+    <li><strong>Membership:</strong> Community automatic eligibility requires public membership in the <code>bcgov</code> GitHub organization. If membership is private or cannot be confirmed, make it public in your organization's People settings when appropriate, or ask a maintainer to review the hold. Do not provide tokens or credentials.</li>
+    <li><strong>Signing:</strong> GitHub signs commits made through its web interface. Inspect each PR commit's <strong>Verified</strong> status; source commits must meet the repository's signing requirements. An unsigned local commit needs the signing recovery in the contribution guide. A green preview does not prove live signature rules or activation; Operations owners record that separately.</li>
+    <li><strong>Fork run awaiting approval:</strong> ask an upstream maintainer to approve the first workflow run under the existing policy. A missing route or check is pending evidence, not a pass. Do not change repository settings to bypass it.</li>
+</ul>
+<script src="assets/contribute.js" defer></script>

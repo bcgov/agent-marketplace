@@ -52,7 +52,7 @@ skills/<community-or-specialty>/<name>/
 ```
 
 Use the hosted
-[`SKILL_SPEC.md`](https://raw.githubusercontent.com/bcgov/agent-marketplace/main/spec/SKILL_SPEC.md)
+[skill profile](https://bcgov.github.io/agent-marketplace/reference.html#skill-profile)
 and
 [`bcgov-extension-v1alpha1.schema.json`](https://raw.githubusercontent.com/bcgov/agent-marketplace/main/schemas/bcgov-extension-v1alpha1.schema.json)
 as the live contracts. The skill name is kebab-case and matches its directory.

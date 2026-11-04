@@ -1,0 +1,27 @@
+<!-- TITLE: Install -->
+<!-- NAV: install -->
+<h1>Install an Extension</h1>
+<p>Choose a task in the <a href="catalog.html">Catalogue</a>, inspect its exact source, declared access and evidence, then choose a tested client and scope. Only active canonical records with matching install evidence offer actions. A replacement link opens another record for inspection.</p>
+<h2 id="choices">Tested choices</h2>
+<table><thead><tr><th>Type</th><th>VS Code Local project destination</th><th>Personal scope</th></tr></thead><tbody>
+<tr><td>Skill</td><td><code>.github/skills/&lt;name&gt;/SKILL.md</code> with its native resources</td><td><code>~/.copilot/skills/&lt;name&gt;/</code></td></tr>
+<tr><td>Instructions</td><td><code>.github/instructions/&lt;name&gt;.instructions.md</code></td><td>No tested choice</td></tr>
+<tr><td>Prompt</td><td><code>.github/prompts/&lt;name&gt;.prompt.md</code></td><td>No tested choice</td></tr>
+<tr><td>Agent</td><td><code>.github/agents/&lt;name&gt;.agent.md</code></td><td>No tested choice</td></tr>
+</tbody></table>
+<p>These choices were tested for native placement and byte comparison. They do not establish client discovery, model quality or runtime compatibility. A valid package can have no tested choice when its native headers, additional resources or author-declared exclusions do not fit this client. Use only the choices actually shown for that revision. Other client instructions require separate validation.</p>
+<h2 id="revision">Select the revision</h2>
+<p><strong>Latest published</strong> means the accepted Catalogue snapshot served on Pages. Its full source SHA pins the package; the snapshot tag identifies the Catalogue asset. <strong>Latest source</strong> links to mutable <code>main</code> and can differ from publication. A source preview is labelled as a preview. Publication remains disabled pending <a href="https://github.com/bcgov/agent-marketplace/issues/43">activation evidence</a>; an old production schema is unavailable as current v1 data.</p>
+<ol><li>Read the record's lifecycle, all replacement notices and declared access. Alias lookups require explicit canonical selection; they never authorize an overwrite.</li><li>Download the displayed full-SHA source and compare the complete package inventory and digest, then each mapped native file's SHA-256. A pinned URL alone does not verify downloaded bytes.</li><li>Inspect every destination and collision. Explicitly copy only mapped native files; keep skill resources together. The marketplace Manifest is not installed.</li><li>Compare installed bytes with the listed SHA-256 values. Preserve unrelated guidance. No package script is executed by the placement helper.</li></ol>
+<h2 id="finder">Use the finder</h2>
+<p>The portable <code>bcgov-find-extension</code> skill searches the published BC Gov Catalogue for a task, offers at most three matches and explains the same choices. Install its full-SHA native package using the preceding steps; portable companions do not require a marketplace checkout. <code>bcgov-create-extension</code> supports authoring. Neither companion provides a separate universal installer.</p>
+<p>For repository developers, the actual helper commands below use the shared native map. Run them from a tooling checkout with Python and uv. Review the displayed exact identity, SHA, scope and paths before confirming.</p>
+<pre>uv run python scripts/find_extension.py search "review a runbook" --extension-type instructions
+uv run python scripts/find_extension.py install bcgov-public/instructions/runbook-review-evidence --project /path/to/project --expected-revision FULL_SHA
+uv run python scripts/find_extension.py verify bcgov-public/instructions/runbook-review-evidence --project /path/to/project</pre>
+<p><code>FULL_SHA</code> is the selected 40-character lowercase source revision. Skill personal placement uses <code>--scope global --home /path/to/home</code>. Project scope is the default. <code>--yes</code> confirms that invocation's displayed plan; it does not bypass revision, lifecycle or integrity checks.</p>
+<h2 id="update-remove">Update and remove</h2>
+<p>Select the desired published revision, retain the old matching Catalogue for comparison, and review the diff. Updates require unchanged installed old bytes and the same canonical identity/scope. A changed source repository or path also requires explicit <code>--allow-migration</code>. Edited files and collisions require manual review.</p>
+<pre>uv run python scripts/find_extension.py --catalog selected-catalog.json install bcgov-public/skill/example --project /path/to/project --previous-catalog old-catalog.json --expected-revision FULL_SHA
+uv run python scripts/find_extension.py --catalog old-catalog.json remove bcgov-public/skill/example --project /path/to/project</pre>
+<p>Explicit historical selection checks current notices. A known current withdrawal blocks installing an old active pin. Failed current lookup reports uncertainty without silently substituting cached data; default current lookup fails closed. Historical pre-v1 inspection has no install actions. Removal can use the old explicit native map after withdrawal, but deletes only matching unchanged files and empty skill directories. For edited files, inspect and remove the exact native paths manually. The marketplace cannot remotely revoke installed copies. See <a href="reference.html#lifecycle">lifecycle and identity</a>.</p>

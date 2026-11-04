@@ -301,7 +301,7 @@ def build_status(cfg: Config, source_status, processed_refs=None) -> dict:
     out_groups[gname] = entry
   result: dict[str, Any] = {"groups": out_groups}
   # Preserve the doc-link registry (status.docs); it is maintained by doc_links.py /
-  # doc-link.sh, not by ingest, so carry it across reconciles untouched (like seals).
+  # doc_links.py, not by ingest, so carry it across reconciles untouched (like seals).
   docs = cfg.status.get("docs")
   if docs:
     result["docs"] = docs

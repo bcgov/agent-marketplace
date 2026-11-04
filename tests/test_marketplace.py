@@ -2,7 +2,6 @@
 
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
 
@@ -25,7 +24,6 @@ def _manifest(name="demo"):
   """Return a complete hosted extension manifest."""
   return {
     "schema-version": m.SCHEMA_VERSION,
-    "id": f"bcgov-public/{name}",
     "display-name": "Demo skill",
     "summary": "Demonstrates the marketplace contract.",
     "publisher": "Province of British Columbia",
@@ -61,8 +59,6 @@ def _root(tmp_path: Path) -> Path:
     "schema-version": "bcgov-marketplace/v1alpha1",
     "release-state": "published",
     "repository": "https://github.com/bcgov/agent-marketplace",
-    "revision": "a" * 40,
-    "version": "catalog-2026.01.01",
     "approved-discovery-sources": [],
   }
   config_path = tmp_path / "config" / "marketplace.yaml"
@@ -79,11 +75,280 @@ def _package(root: Path, name="demo", manifest=None) -> Path:
   """Create one minimal marketplace package."""
   package = root / "skills" / "community" / name
   package.mkdir(parents=True)
-  (package / "SKILL.md").write_text("# Demo\n", encoding="utf-8")
+  (package / "SKILL.md").write_text(_skill(name), encoding="utf-8")
   (package / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest or _manifest(name), sort_keys=False), encoding="utf-8"
   )
   return package
+
+
+def _skill(name="demo", body="# Demo\n"):
+  """Wrap test skill content in valid independent native metadata."""
+  return f"---\nname: {name}\ndescription: Useful guidance.\n---\n{body}"
+
+
+@pytest.mark.parametrize(
+  ("directory", "filename"),
+  [
+    ("skills", "SKILL.md"),
+    ("prompts", "demo.prompt.md"),
+    ("instructions", "demo.instructions.md"),
+    ("agents", "demo.agent.md"),
+  ],
+)
+def test_minimal_manifest_derives_four_types(tmp_path, directory, filename):
+  """The public catalog derives every type from its content and directory."""
+  root = _root(tmp_path)
+  package = root / directory / "community" / "demo"
+  package.mkdir(parents=True)
+  (package / filename).write_text(
+    "---\nname: demo\ndescription: Frontmatter summary\n---\n\nContent\n"
+  )
+  (package / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump({"maintainers": ["@bcgov/platform"], "capabilities": "none"})
+  )
+  catalog, _ = m.build_catalog(root)
+  record = catalog["extensions"][0]
+  assert (
+    catalog["schema-version"],
+    record["id"],
+    record["type"],
+    record["display-name"],
+    record["summary"],
+  ) == (
+    "bcgov-marketplace/v1",
+    f"bcgov-public/{m.TYPE_DIRECTORIES[directory]}/demo",
+    m.TYPE_DIRECTORIES[directory],
+    "demo",
+    "Frontmatter summary",
+  )
+
+
+def test_catalog_checks_bind_policy_findings_and_declared_risk_to_digest(tmp_path):
+  """Records publish #35's policy-versioned findings for the exact package."""
+  root = _root(tmp_path)
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text(encoding="utf-8"))
+  policy["policy-version"] = 17
+  policy_path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  package = _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "A package with an advisory",
+    },
+  )
+  (package / "SKILL.md").write_text(_skill(body="The example says to skip approval.\n"))
+
+  catalog, _ = m.build_catalog(root)
+  record = catalog["extensions"][0]
+  assert catalog["policy-version"] == 17
+  assert record["risk"] == "low"
+  assert record["checks"]["content-digest"] == record["content-digest"]
+  assert record["checks"]["policy-version"] == 17
+  assert record["checks"]["outcome"] == "passed"
+  assert record["checks"]["findings"][0]["rule-id"] == "approval-bypass"
+  assert record["checks"]["findings"][0]["policy-version"] == 17
+  assert record["checks"]["findings"][0]["disposition"] == "advisory"
+
+
+@pytest.mark.parametrize(
+  ("directory", "filename"),
+  [
+    ("skills", "SKILL.md"),
+    ("prompts", "demo.prompt.md"),
+    ("instructions", "demo.instructions.md"),
+    ("agents", "demo.agent.md"),
+  ],
+)
+def test_missing_summary_names_content_file_and_fix(tmp_path, directory, filename):
+  """Every type gives an actionable diagnostic instead of a body summary."""
+  root = _root(tmp_path)
+  package = root / directory / "community" / "demo"
+  package.mkdir(parents=True)
+  (package / filename).write_text("---\nname: Demo\n---\n\nContent\n")
+  (package / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump({"maintainers": ["@bcgov/platform"], "capabilities": "none"})
+  )
+  label = (
+    filename if directory == "skills" else f"<name>.{m.TYPE_DIRECTORIES[directory]}.md"
+  )
+  with pytest.raises(m.MarketplaceError, match=rf"{label}.*summary.*description:"):
+    m.build_catalog(root)
+
+
+def test_removed_tombstone_and_rename_keep_records_without_install_files(tmp_path):
+  """A rename publishes a tombstone and a replacement without old content."""
+  root = _root(tmp_path)
+  old = root / "skills" / "community" / "old-name"
+  old.mkdir(parents=True)
+  (old / m.MANIFEST_NAME).write_text(
+    yaml.safe_dump(
+      {
+        "maintainers": ["@bcgov/platform"],
+        "capabilities": "none",
+        "lifecycle": "removed",
+        "notice": "Moved to new-name",
+        "moved-to": "bcgov-public/skill/new-name",
+        "summary": "Old summary",
+      }
+    )
+  )
+  _package(
+    root,
+    name="new-name",
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "New summary",
+    },
+  )
+  records = {record["id"]: record for record in m.build_catalog(root)[0]["extensions"]}
+  assert (
+    records["bcgov-public/skill/old-name"]["moved-to"] == "bcgov-public/skill/new-name"
+  )
+  assert records["bcgov-public/skill/old-name"]["display-name"] == "old-name"
+  assert records["bcgov-public/skill/old-name"]["files"] == [
+    record
+    for record in records["bcgov-public/skill/old-name"]["files"]
+    if record["path"] == m.MANIFEST_NAME
+  ]
+  assert records["bcgov-public/skill/new-name"]["lifecycle"] == "active"
+
+
+def test_quarantine_keeps_content_without_install_action(tmp_path):
+  """Quarantine publishes the content and notice but blocks installation."""
+  root = _root(tmp_path)
+  package = _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "A quarantined asset",
+      "lifecycle": "quarantined",
+      "notice": "Under investigation",
+    },
+  )
+  record = m.build_catalog(root)[0]["extensions"][0]
+  assert (package / "SKILL.md").is_file()
+  assert record["notice"] == "Under investigation"
+  assert record["install-options"] == []
+  assert any(item["path"] == "SKILL.md" for item in record["files"])
+
+
+def test_non_active_record_requires_notice(tmp_path):
+  """A reviewer cannot publish a tombstone without an explanation."""
+  root = _root(tmp_path)
+  _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "summary": "Previous asset",
+      "lifecycle": "quarantined",
+    },
+  )
+  with pytest.raises(m.MarketplaceError, match=r"notice: add a notice"):
+    m.build_catalog(root)
+
+
+def test_active_record_cannot_redirect_to_replacement(tmp_path):
+  """An old id must stop offering installs before it points to a new id."""
+  root = _root(tmp_path)
+  package = _package(root)
+  manifest = {
+    "maintainers": ["@bcgov/platform"],
+    "capabilities": "none",
+    "summary": "Old summary",
+    "moved-to": "bcgov-public/skill/new-name",
+  }
+  (package / m.MANIFEST_NAME).write_text(yaml.safe_dump(manifest))
+  with pytest.raises(m.MarketplaceError, match=r"moved-to.*non-active"):
+    m.build_catalog(root)
+
+
+def test_manifest_overrides_frontmatter_and_path_fallback(tmp_path):
+  """Metadata override order is Manifest, frontmatter, then path for names."""
+  root = _root(tmp_path)
+  package = _package(
+    root,
+    manifest={
+      "maintainers": ["@bcgov/platform"],
+      "capabilities": "none",
+      "display-name": "Explicit title",
+      "summary": "Explicit summary",
+    },
+  )
+  (package / "SKILL.md").write_text(
+    "---\nname: demo\ndescription: Frontmatter summary\n---\nBody"
+  )
+  record = m.build_catalog(root)[0]["extensions"][0]
+  assert (record["display-name"], record["summary"], record["name"]) == (
+    "Explicit title",
+    "Explicit summary",
+    "demo",
+  )
+
+
+@pytest.mark.parametrize(
+  ("frontmatter", "field"),
+  [
+    ("name: demo", "description"),
+    ("name: another-skill\ndescription: Useful guidance.", "name"),
+  ],
+)
+def test_native_skill_requirements_survive_manifest_overrides(
+  tmp_path, frontmatter, field
+):
+  """Native CLI, submission analysis and trusted analysis reject invalid skills."""
+  import subprocess
+
+  from gate_data import RepositoryData
+  from test_merge_gate_github import BASE, HEAD, GitHub, gate
+
+  root = _root(tmp_path)
+  package = _package(root)
+  native = "---\n" + frontmatter + "\n---\n# Demo\n\n"
+  native += "\n".join(
+    f"## {heading}\nUseful guidance.\n"
+    for heading in (
+      "Use When",
+      "Don't Use When",
+      "Workflow",
+      "Rules",
+      "Examples",
+      "Edge Cases",
+      "References",
+    )
+  )
+  path = package / "SKILL.md"
+  path.write_text(native, encoding="utf-8")
+  cli = subprocess.run(
+    [
+      sys.executable,
+      str(ROOT / "scripts/validate_skill.py"),
+      str(path),
+      "--no-duplicates",
+    ],
+    capture_output=True,
+    text=True,
+    check=False,
+  )
+  assert cli.returncode == 1 and field in cli.stdout
+  with pytest.raises(m.MarketplaceError) as error:
+    m.analyze_submission(root, package)
+  assert "SKILL.md" in str(error.value)
+  assert f"frontmatter.{field}" in str(error.value)
+  assert "another-skill" not in str(error.value)
+  api = GitHub()
+  api.head["skills/community/demo/SKILL.md"] = native.encode()
+  api.head["skills/community/demo/bcgov-extension.yaml"] = (
+    package / m.MANIFEST_NAME
+  ).read_bytes()
+  data = RepositoryData(gate(api).request)
+  analysis = data.analyze(ROOT, BASE, HEAD, {"skills/community/demo/SKILL.md"})
+  assert analysis["hard-errors"]
 
 
 def test_marketplace_config_validates_typed_sources(tmp_path):
@@ -144,29 +409,46 @@ def test_specialty_and_security_policy_reject_invalid_data(tmp_path):
   policy = yaml.safe_load(path.read_text())
   policy["blocking"].append("unknown-rule")
   path.write_text(yaml.safe_dump(policy))
-  with pytest.raises(m.MarketplaceError, match="unknown-rule"):
+  with pytest.raises(
+    m.MarketplaceError, match="security-policy.yaml: blocking: Remove"
+  ):
     m.load_security_policy(root)
 
 
-def test_unapproved_security_rule_is_advisory(tmp_path):
+@pytest.mark.parametrize(
+  ("rule", "content", "script"),
+  [
+    ("SECRET_PATTERNS", "password=abcdefghijklmnop\n", False),
+    ("hidden-unicode", "# Hidden\u202e\n", False),
+    ("undeclared-network", "curl https://unlisted.example\n", False),
+    ("undeclared-environment-variable", "echo $UNLISTED_VALUE\n", False),
+    ("undeclared-script", "# Sample\n", True),
+  ],
+)
+def test_unapproved_security_rule_is_advisory(tmp_path, rule, content, script):
   """Removing a Security approval changes a rule's disposition, not its detection."""
   root = _root(tmp_path)
   policy_path = root / "config" / "security-policy.yaml"
   policy = yaml.safe_load(policy_path.read_text())
-  policy["blocking"].remove("hidden-unicode")
+  policy["blocking"].remove(rule)
   policy_path.write_text(yaml.safe_dump(policy))
   package = _package(root)
-  (package / "SKILL.md").write_text("# Hidden\u202e\n")
+  (package / "SKILL.md").write_text(content, encoding="utf-8")
+  if script:
+    (package / "scripts").mkdir()
+    (package / "scripts" / "run.sh").write_text("echo hello\n", encoding="utf-8")
   scan = m.scan_package(package, _manifest())
   assert scan["outcome"] == "passed"
   assert any(
-    item["code"] == "hidden-unicode" and item["severity"] == "advisory"
+    item["rule-id"] == rule
+    and item["severity"] == "advisory"
+    and item["disposition"] == "advisory"
     for item in scan["findings"]
   )
 
 
 def test_empty_security_blocking_set_keeps_findings_advisory(tmp_path):
-  """An empty Security-approved set never produces a blocking finding."""
+  """An empty Security-approved set keeps security findings advisory."""
   root = _root(tmp_path)
   policy_path = root / "config" / "security-policy.yaml"
   policy = yaml.safe_load(policy_path.read_text())
@@ -188,19 +470,54 @@ def test_empty_security_blocking_set_keeps_findings_advisory(tmp_path):
   )
 
 
+@pytest.mark.parametrize("violation", ["structure", "metadata"])
+def test_package_validation_fails_without_approved_security_rules(
+  tmp_path, capsys, violation
+):
+  """Package and metadata hard failures remain independent of Security approval."""
+  root = _root(tmp_path)
+  policy_path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(policy_path.read_text(encoding="utf-8"))
+  policy["blocking"] = []
+  policy_path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  manifest = _manifest()
+  if violation == "metadata":
+    manifest["maintainers"] = []
+  package = _package(root, manifest=manifest)
+  if violation == "structure":
+    (package / "package.json").write_text("{}\n", encoding="utf-8")
+    (package / "SKILL.md").write_text(
+      _skill(body="password=abcdefghijklmnop\n"), encoding="utf-8"
+    )
+    scan = m.scan_package(package, manifest)
+    assert scan["outcome"] == "blocked"
+    assert any(
+      item["category"] == "package" and item["disposition"] == "blocking"
+      for item in scan["findings"]
+    )
+    assert any(
+      item["rule-id"] == "SECRET_PATTERNS" and item["disposition"] == "advisory"
+      for item in scan["findings"]
+    )
+  assert m.main(["--root", str(root), "check"]) == 1
+  report = capsys.readouterr().out
+  expected = "blocked-extension-type" if violation == "structure" else "maintainers"
+  assert expected in report
+
+
 def test_read_only_check_reports_blocking_file_rule_location_and_fix(
   tmp_path, monkeypatch
 ):
   """The PR check renders actionable findings and fails only for blocking rules."""
   root = _root(tmp_path)
   package = _package(root)
-  (package / "SKILL.md").write_text("curl https://unlisted.example\n")
+  (package / "SKILL.md").write_text(_skill(body="curl https://unlisted.example\n"))
   summary = root / "summary.md"
   monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
   assert m.main(["--root", str(root), "check"]) == 1
   report = summary.read_text()
   assert "Blocking" in report
-  assert "SKILL.md:1" in report
+  assert "SKILL.md:5" in report
   assert "undeclared-network" in report
   assert "capabilities.network" in report
   assert "declare the host in capabilities.network" in report
@@ -213,25 +530,51 @@ def test_read_only_check_reports_blocking_file_rule_location_and_fix(
   assert "Advisory" in summary.read_text()
 
 
+@pytest.mark.parametrize("command", ["curl", "wget", "Invoke-WebRequest"])
+@pytest.mark.parametrize(
+  ("hosts", "blocked_hosts"),
+  [
+    (("unlisted.example", "listed.example"), 1),
+    (("listed.example", "unlisted.example"), 1),
+    (("unlisted.example", "other.example"), 2),
+    (("listed.example", "listed.example"), 0),
+  ],
+)
+def test_network_commands_check_every_recognized_url(
+  tmp_path, capsys, command, hosts, blocked_hosts
+):
+  """Scan and check inspect each supported URL without executing commands."""
+  root = _root(tmp_path)
+  manifest = _manifest()
+  manifest["capabilities"]["network"] = ["listed.example"]
+  package = _package(root, manifest=manifest)
+  (package / "SKILL.md").write_text(
+    _skill(body=f"{command} https://{hosts[0]} --next https://{hosts[1]}\n"),
+    encoding="utf-8",
+  )
+  assert m.main(["--root", str(root), "scan", str(package)]) == 0
+  result = json.loads(capsys.readouterr().out)
+  findings = [
+    item for item in result["findings"] if item["rule-id"] == "undeclared-network"
+  ]
+  assert len(findings) == blocked_hosts
+  assert all(item["disposition"] == "blocking" for item in findings)
+  assert result["outcome"] == ("blocked" if blocked_hosts else "passed")
+  assert m.main(["--root", str(root), "check"]) == (1 if blocked_hosts else 0)
+
+
 def test_scanner_cli_outputs_never_echo_matched_credential(
   tmp_path, monkeypatch, capsys
 ):
-  """Scan, analyze, and demo reports retain evidence without exposing content."""
-  import demo
-
+  """Scan, analyze and check reports retain evidence without exposing content."""
   root = _root(tmp_path)
   package = _package(root)
   sentinel = "AKIA" + "A" * 16
   (package / "SKILL.md").write_text(
-    f"curl https://{sentinel}.example\necho ${sentinel}\nsecret={sentinel}\n"
+    _skill(
+      body=f"curl https://{sentinel}.example\necho ${sentinel}\nsecret={sentinel}\n"
+    )
   )
-  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
-  fixture.mkdir(parents=True)
-  (fixture / "SKILL.md").write_bytes((package / "SKILL.md").read_bytes())
-  (fixture / m.MANIFEST_NAME).write_bytes((package / m.MANIFEST_NAME).read_bytes())
-  monkeypatch.setattr(demo, "ROOT", root)
-  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
-
   for command in ("scan", "analyze"):
     assert m.main(["--root", str(root), command, str(package)]) == 0
     output = capsys.readouterr()
@@ -246,33 +589,18 @@ def test_scanner_cli_outputs_never_echo_matched_credential(
       "undeclared-environment-variable",
     }
     assert all(finding["file"] == "SKILL.md" for finding in findings)
-  assert demo.main(["analyze-fixture", "benign-submission"]) == 0
-  output = capsys.readouterr()
-  assert sentinel not in output.out + output.err
-  result = json.loads(output.out)
-  assert result["scan"]["outcome"] == "blocked"
   summary = root / "summary.md"
   monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
   assert m.main(["--root", str(root), "check"]) == 1
   assert sentinel not in capsys.readouterr().out + summary.read_text()
 
 
-def test_scanner_cli_projects_only_public_evidence(tmp_path, monkeypatch, capsys):
+def test_scanner_cli_projects_only_public_evidence(tmp_path, capsys):
   """Untrusted paths and internal scanner fields never reach CLI JSON."""
-  import demo
-
   root = _root(tmp_path)
   package = _package(root)
   sentinel = "AKIA" + "B" * 16
   (package / f"{sentinel}.txt").write_text(f"secret={sentinel}\n")
-  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
-  fixture.mkdir(parents=True)
-  for path in package.iterdir():
-    if path.is_file():
-      (fixture / path.name).write_bytes(path.read_bytes())
-  monkeypatch.setattr(demo, "ROOT", root)
-  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
-
   for command in ("scan", "analyze"):
     assert m.main(["--root", str(root), command, str(package)]) == 0
     result = json.loads(capsys.readouterr().out)
@@ -282,10 +610,6 @@ def test_scanner_cli_projects_only_public_evidence(tmp_path, monkeypatch, capsys
     )
     assert {item["rule-id"] for item in findings} >= {"SECRET_PATTERNS"}
     assert all("code" not in item and "message" not in item for item in findings)
-  assert demo.main(["analyze-fixture", "benign-submission"]) == 0
-  result = json.loads(capsys.readouterr().out)
-  assert sentinel not in json.dumps(result)
-  assert result["scan"]["outcome"] == "blocked"
 
 
 def test_scanner_cli_reports_invalid_manifest_without_echoing_content(tmp_path, capsys):
@@ -301,24 +625,127 @@ def test_scanner_cli_reports_invalid_manifest_without_echoing_content(tmp_path, 
     assert "ERROR" in output.err
 
 
-def test_demo_cli_reports_invalid_fixture_without_echoing_manifest(
-  tmp_path, monkeypatch, capsys
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+@pytest.mark.parametrize("failure", ["identity", "yaml", "artifact"])
+def test_public_validation_diagnostics_do_not_echo_package_directory(
+  tmp_path, monkeypatch, capsys, command, failure
 ):
-  """Fixture errors cannot print author-controlled Manifest values."""
-  import demo
-
+  """Invalid packages retain safe file/field corrections without path disclosure."""
   root = _root(tmp_path)
-  sentinel = "AKIA" + "D" * 16
-  fixture = root / "docs" / "demos" / "fixtures" / "benign-submission"
-  fixture.mkdir(parents=True)
-  (fixture / "SKILL.md").write_text("# Demo\n")
-  (fixture / m.MANIFEST_NAME).write_text(f"id: {sentinel}\n")
-  monkeypatch.setattr(demo, "ROOT", root)
-  monkeypatch.setattr(demo, "FIXTURES", fixture.parent)
-  assert demo.main(["analyze-fixture", "benign-submission"]) == 1
+  sentinel = "AKIA" + "R" * 16
+  package = _package(root, name=sentinel, manifest=_manifest())
+  if failure == "yaml":
+    (package / m.MANIFEST_NAME).write_text("[invalid]: value\n", encoding="utf-8")
+  elif failure == "artifact":
+    (package / "SKILL.md").write_text("", encoding="utf-8")
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  if summary.exists():
+    report += summary.read_text(encoding="utf-8")
+  assert sentinel not in report
+  assert str(root) not in report
+  assert m.MANIFEST_NAME in report
+  if failure == "yaml":
+    assert "line 1, column 1" in report
+    assert "replace the key" in report
+  else:
+    assert "id:" in report
+    assert "Use bcgov-public/" in report
+  if failure == "artifact":
+    assert "SKILL.md" in report
+    assert "Add" in report
+
+
+def test_public_analysis_does_not_echo_internal_configuration_errors(tmp_path, capsys):
+  """Unexpected config fields cannot bypass the public error projection."""
+  root = _root(tmp_path)
+  package = _package(root)
+  sentinel = "AKIA" + "S" * 16
+  path = root / "config" / "marketplace.yaml"
+  config = yaml.safe_load(path.read_text(encoding="utf-8"))
+  config[sentinel] = sentinel
+  path.write_text(yaml.safe_dump(config), encoding="utf-8")
+  assert m.main(["--root", str(root), "analyze", str(package)]) == 1
   output = capsys.readouterr()
   assert sentinel not in output.out + output.err
-  assert "ERROR" in output.err
+  assert m.MANIFEST_NAME in output.err
+  assert "correct" in output.err
+
+
+@pytest.mark.parametrize("command", ["check", "scan", "analyze", "validate"])
+@pytest.mark.parametrize("invalid_field", ["maintainers", "support", "unknown"])
+def test_invalid_manifest_diagnostics_keep_field_and_fix_without_values(
+  tmp_path, monkeypatch, capsys, command, invalid_field
+):
+  """Public errors identify invalid metadata without exposing authored values."""
+  root = _root(tmp_path)
+  manifest = _manifest()
+  sentinel = "AKIA" + "Q" * 16
+  if invalid_field == "maintainers":
+    manifest["maintainers"] = [sentinel]
+  elif invalid_field == "support":
+    manifest["support"] = {sentinel: sentinel}
+  else:
+    manifest[sentinel] = sentinel
+  package = _package(root, manifest=manifest)
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  args = ["--root", str(root), command]
+  if command in {"scan", "analyze"}:
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  if summary.exists():
+    report += summary.read_text(encoding="utf-8")
+  assert sentinel not in report
+  assert m.MANIFEST_NAME in report
+  field = invalid_field if invalid_field != "unknown" else "root"
+  assert field in report
+  assert "Use" in report or "remove unknown fields" in report
+
+
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+@pytest.mark.parametrize(
+  ("field", "expected"),
+  [
+    ("schema-version", ("bcgov-extension/v1alpha1",)),
+    ("publisher", ("Province of British Columbia",)),
+    ("license", ("Apache-2.0",)),
+    ("lifecycle", ("active", "quarantined", "removed")),
+    ("maintainers", ("^@[A-Za-z0-9]",)),
+    ("support", ("valid uri", "^https://")),
+  ],
+)
+def test_public_schema_corrections_include_trusted_expected_values(
+  tmp_path, monkeypatch, capsys, command, field, expected
+):
+  """Known schema constraints provide concrete fixes without authored values."""
+  root = _root(tmp_path)
+  sentinel = "AKIA" + "U" * 16
+  manifest = _manifest()
+  manifest[field] = [sentinel] if field == "maintainers" else sentinel
+  package = _package(root, manifest=manifest)
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  if summary.exists():
+    report += summary.read_text(encoding="utf-8")
+  assert sentinel not in report
+  assert m.MANIFEST_NAME in report
+  assert field in report
+  assert all(value in report for value in expected)
 
 
 def test_security_pattern_parameters_are_read_from_policy(tmp_path):
@@ -338,18 +765,120 @@ def test_security_pattern_parameters_are_read_from_policy(tmp_path):
   )
 
 
+def test_check_reports_required_policy_version_minimum(tmp_path, capsys):
+  """Policy version errors identify the schema-owned lower bound and valid edge."""
+  root = _root(tmp_path)
+  _package(root)
+  path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(path.read_text(encoding="utf-8"))
+  policy["policy-version"] = 0
+  path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  assert m.main(["--root", str(root), "check"]) == 1
+  output = capsys.readouterr()
+  assert "config/security-policy.yaml: policy-version:" in output.err
+  assert "Use a value of at least 1." in output.err
+  assert "Traceback" not in output.out + output.err
+  policy["policy-version"] = 1
+  path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  assert m.main(["--root", str(root), "check"]) == 0
+
+
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+def test_cli_rejects_missing_secret_patterns(tmp_path, capsys, command):
+  """Incomplete policy cannot silently disable credential checks or crash."""
+  root = _root(tmp_path)
+  package = _package(root)
+  path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(path.read_text(encoding="utf-8"))
+  del policy["secret-patterns"]
+  path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  assert "security-policy.yaml" in output.err
+  assert "secret-patterns" in output.err
+  assert "Add" in output.err
+  assert "Traceback" not in output.out + output.err
+
+
+@pytest.mark.parametrize(
+  ("patterns", "fix"),
+  [
+    (None, "required type"),
+    ({}, "Add content"),
+    ([], "required type"),
+    ({"synthetic": 62}, "required type"),
+    ({"synthetic": "["}, "regular expression"),
+    ({"synthetic": "a{4294967296}"}, "regular expression"),
+    ({"synthetic": "(" * 600}, "regular expression"),
+  ],
+)
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+def test_cli_rejects_malformed_secret_patterns(
+  tmp_path, capsys, patterns, fix, command
+):
+  """Malformed credential detectors fail closed with a policy field correction."""
+  root = _root(tmp_path)
+  package = _package(root)
+  path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(path.read_text(encoding="utf-8"))
+  policy["secret-patterns"] = patterns
+  path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  assert "security-policy.yaml" in output.err
+  assert "secret-patterns" in output.err
+  assert fix in output.err
+  assert "Traceback" not in output.out + output.err
+
+
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+def test_cli_rejects_unknown_policy_rules_without_echoing_them(
+  tmp_path, monkeypatch, capsys, command
+):
+  """Unknown rules fail closed with a safe policy field and correction."""
+  sentinel = "AKIA" + "T" * 16
+  directory = tmp_path / sentinel
+  directory.mkdir()
+  root = _root(directory)
+  package = _package(root)
+  path = root / "config" / "security-policy.yaml"
+  policy = yaml.safe_load(path.read_text(encoding="utf-8"))
+  policy["blocking"].append(sentinel)
+  path.write_text(yaml.safe_dump(policy), encoding="utf-8")
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  if summary.exists():
+    report += summary.read_text(encoding="utf-8")
+  assert sentinel not in report
+  assert "config/security-policy.yaml: blocking:" in report
+  assert "Remove unimplemented rule IDs" in report
+  assert "Traceback" not in report
+
+
 def test_catalog_exposes_policy_version_and_advisory_finding(tmp_path):
   """Catalogue consumers receive the policy evidence for the exact extension."""
   root = _root(tmp_path)
   package = _package(root)
-  (package / "SKILL.md").write_text("# Demo\nhidden\u202einstruction\n")
+  (package / "SKILL.md").write_text(_skill(body="# Demo\nhidden\u202einstruction\n"))
   policy_path = root / "config" / "security-policy.yaml"
   policy = yaml.safe_load(policy_path.read_text())
   policy["blocking"].remove("hidden-unicode")
   policy["policy-version"] = 4
   policy_path.write_text(yaml.safe_dump(policy))
   catalog, _ = m.build_catalog(root)
-  finding = catalog["extensions"][0]["policy"]["findings"][0]
+  finding = catalog["extensions"][0]["checks"]["findings"][0]
   assert finding["rule-id"] == "hidden-unicode"
   assert finding["policy-version"] == 4
   assert finding["disposition"] == "advisory"
@@ -383,6 +912,75 @@ def test_strict_yaml_rejects_duplicate_keys(tmp_path):
     m.load_yaml(path)
 
 
+@pytest.mark.parametrize("command", ["check", "scan", "analyze"])
+@pytest.mark.parametrize(
+  ("content", "diagnostic"),
+  [
+    (b"[SYNTHETIC_KEY_62]: value\n", "mapping keys"),
+    (b"? {SYNTHETIC_KEY_62: value}\n: value\n", "mapping keys"),
+    (b"1: SYNTHETIC_KEY_62\n", "mapping keys"),
+    (b"id: first\nid: SYNTHETIC_KEY_62\n", "duplicate key"),
+    (b"id: &value SYNTHETIC_KEY_62\nsummary: *value\n", "aliases"),
+    (b"id: [SYNTHETIC_KEY_62\n", "YAML syntax"),
+    (b"id: 2026-99-99\n", "YAML syntax"),
+    (b"id: !!map [SYNTHETIC_KEY_62]\n", "expected a mapping"),
+    (b"id: SYNTHETIC_KEY_62\xff\n", "UTF-8"),
+  ],
+)
+def test_cli_reports_malformed_yaml_without_echoing_values(
+  tmp_path, monkeypatch, capsys, command, content, diagnostic
+):
+  """Invalid keys, syntax, and encoding fail with safe corrective diagnostics."""
+  root = _root(tmp_path)
+  package = _package(root)
+  (package / m.MANIFEST_NAME).write_bytes(content)
+  summary = root / "summary.md"
+  monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
+  args = ["--root", str(root), command]
+  if command != "check":
+    args.append(str(package))
+  assert m.main(args) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  if summary.exists():
+    report += summary.read_text(encoding="utf-8")
+  assert "SYNTHETIC_KEY_62" not in report
+  assert "Traceback" not in report
+  assert m.MANIFEST_NAME in report
+  assert diagnostic in report
+  assert any(fix in report for fix in ("replace", "remove", "correct", "save"))
+
+
+@pytest.mark.parametrize("target", ["policy", "frontmatter"])
+def test_shared_yaml_diagnostics_cover_policy_and_native_frontmatter(
+  tmp_path, capsys, target
+):
+  """Policy and native assets reject list keys through the shared CLI parser."""
+  root = _root(tmp_path)
+  if target == "policy":
+    path = root / "config" / "security-policy.yaml"
+    content = "[SYNTHETIC_KEY_62]: value\n"
+    line = 1
+  else:
+    package = root / "prompts" / "community" / "demo"
+    package.mkdir(parents=True)
+    (package / m.MANIFEST_NAME).write_text(
+      yaml.safe_dump(_manifest()), encoding="utf-8"
+    )
+    path = package / "demo.prompt.md"
+    content = "---\n[SYNTHETIC_KEY_62]: value\n---\nSample prompt.\n"
+    line = 2
+  path.write_text(content, encoding="utf-8")
+  assert m.main(["--root", str(root), "check"]) == 1
+  output = capsys.readouterr()
+  report = output.out + output.err
+  assert (path.name if target == "policy" else "&lt;name&gt;.prompt.md") in report
+  assert f"line {line}, column 1" in report
+  assert "mapping keys must be strings" in report
+  assert "replace the key with a field name" in report
+  assert "SYNTHETIC_KEY_62" not in report
+
+
 def test_manifest_schema_is_closed(tmp_path):
   """Unknown author-controlled metadata is rejected by the closed schema."""
   root = _root(tmp_path)
@@ -390,15 +988,19 @@ def test_manifest_schema_is_closed(tmp_path):
   manifest["review"] = {"status": "self-approved"}
   package = _package(root, manifest=manifest)
   _, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
-  assert any("Additional properties" in error and "review" in error for error in errors)
+  assert any(
+    "Additional properties" in error and "remove unknown fields" in error
+    for error in errors
+  )
 
 
 def test_manifest_id_matches_directory(tmp_path):
   """The stable public ID must derive from the package directory."""
   root = _root(tmp_path)
   package = _package(root, name="folder", manifest=_manifest("other"))
-  _, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
-  assert any("bcgov-public/folder" in error for error in errors)
+  manifest, errors = m.validate_manifest(package / m.MANIFEST_NAME, m.load_schema(root))
+  assert manifest["id"] == "bcgov-public/skill/folder"
+  assert not errors
 
 
 def test_manifest_paths_include_canonical_layouts(tmp_path):
@@ -406,14 +1008,14 @@ def test_manifest_paths_include_canonical_layouts(tmp_path):
   root = _root(tmp_path)
   community = root / "skills" / "community" / "azure-networking"
   community.mkdir(parents=True)
-  (community / "SKILL.md").write_text("# Azure networking\n", encoding="utf-8")
+  (community / "SKILL.md").write_text(_skill("azure-networking"), encoding="utf-8")
   manifest = _manifest("azure-networking")
   (community / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
   )
   package = root / "skills" / "security" / "repo-hardening"
   package.mkdir(parents=True)
-  (package / "SKILL.md").write_text("# Repo hardening\n", encoding="utf-8")
+  (package / "SKILL.md").write_text(_skill("repo-hardening"), encoding="utf-8")
   manifest = _manifest("repo-hardening")
   (package / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
@@ -447,19 +1049,19 @@ def test_manifest_paths_reject_flat_legacy_layout(tmp_path):
     (
       "prompts",
       "prompt",
-      "prompt.prompt.md",
+      "demo.prompt.md",
       "name: demo\ndescription: A focused task.\nagent: agent",
     ),
     (
       "instructions",
       "instructions",
-      "instructions.instructions.md",
+      "demo.instructions.md",
       "description: Persistent project guidance.",
     ),
     (
       "agents",
       "agent",
-      "agent.agent.md",
+      "demo.agent.md",
       "name: demo\ndescription: A focused assistant role.",
     ),
   ],
@@ -546,7 +1148,7 @@ def test_catalog_adds_type_and_specialty_metadata(tmp_path):
   config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
   package = root / "skills" / "security" / "repo-hardening"
   package.mkdir(parents=True)
-  (package / "SKILL.md").write_text("# Repo hardening\n", encoding="utf-8")
+  (package / "SKILL.md").write_text(_skill("repo-hardening"), encoding="utf-8")
   manifest = _manifest("repo-hardening")
   (package / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
@@ -607,34 +1209,14 @@ def test_scanner_blocks_undeclared_script(tmp_path):
     ("blocked-submission", "blocked", "blocked-extension-type"),
   ],
 )
-def test_phase5_demo_fixtures_are_deterministic(fixture, outcome, finding):
-  """Phase 5 fixtures demonstrate pass/block outcomes without execution."""
-  package = ROOT / "docs" / "demos" / "fixtures" / fixture
+def test_submission_fixtures_are_deterministic(fixture, outcome, finding):
+  """Real submission fixtures retain pass/block coverage without execution."""
+  package = ROOT / "tests" / "fixtures" / "submissions" / fixture
   manifest = m.load_yaml(package / m.MANIFEST_NAME)
   scan = m.scan_package(package, manifest)
   assert scan["outcome"] == outcome
   if finding:
     assert any(item["code"] == finding for item in scan["findings"])
-
-
-def test_phase5_demo_helper_isolated_and_non_executing():
-  """The demo helper reports evidence and removes its temporary package."""
-  result = subprocess.run(
-    [
-      sys.executable,
-      str(ROOT / "scripts" / "demo.py"),
-      "analyze-fixture",
-      "blocked-submission",
-    ],
-    cwd=ROOT,
-    check=True,
-    capture_output=True,
-    text=True,
-  )
-  evidence = json.loads(result.stdout)
-  assert evidence["classification"] == "blocked"
-  assert evidence["scan"]["outcome"] == "blocked"
-  assert not list((ROOT / "skills" / "community").glob("demo-*"))
 
 
 def test_analysis_routes_valid_submission_to_marketplace_review(tmp_path):
@@ -740,7 +1322,7 @@ def test_generation_is_deterministic_and_escaped(tmp_path):
   catalog = json.loads((root / "catalog" / "catalog.json").read_text())
   cards = (root / "docs" / "_generated" / "catalog-cards.html").read_text()
   assert catalog["count"] == 1
-  assert catalog["extensions"][0]["source"]["revision"] == "a" * 40
+  assert catalog["extensions"][0]["source"]["revision"] == "0" * 40
   assert "Demo &lt;script&gt;" in cards
   assert "Demo <script>" not in cards
 
@@ -771,16 +1353,41 @@ def test_wildcard_capability_is_flagged_but_not_blocking(tmp_path):
   assert m.capability_risk(manifest) == "high"
 
 
+@pytest.mark.parametrize(
+  ("filesystem", "risk"),
+  [
+    ({"read": ["*"], "write": []}, "high"),
+    ({"read": [], "write": ["*"]}, "high"),
+    ({"read": ["repo/.github/**"], "write": []}, "low"),
+    ({"read": [], "write": ["repo/.github/**"]}, "elevated"),
+  ],
+)
+def test_public_analysis_reports_declared_filesystem_risk(
+  tmp_path, capsys, filesystem, risk
+):
+  """Complete packages expose blanket and bounded filesystem risk in CLI JSON."""
+  root = _root(tmp_path)
+  manifest = _manifest()
+  manifest["capabilities"]["filesystem"] = filesystem
+  package = _package(root, manifest=manifest)
+  assert m.main(["--root", str(root), "analyze", str(package)]) == 0
+  result = json.loads(capsys.readouterr().out)
+  assert result["risk"] == risk
+  assert result["classification"] == "needs-review"
+  assert result["scan"]["outcome"] == "passed"
+  assert all(item["disposition"] == "advisory" for item in result["scan"]["findings"])
+
+
 def test_community_package_is_auto_scanned(tmp_path):
   """Community packages carry the automated tier, never a human-review claim."""
   root = _root(tmp_path)
   _package(root)
   catalog, _ = m.build_catalog(root)
-  review = catalog["extensions"][0]["review"]
+  review = catalog["extensions"][0]["checks"]
   assert review["status"] == "auto-scanned"
   assert review["reviewers"] == []
   assert review["method"] == "automated-policy-scan"
-  assert review["risk"] == "low"
+  assert catalog["extensions"][0]["risk"] == "low"
 
 
 def test_specialty_does_not_claim_human_review_from_config(tmp_path):
@@ -788,16 +1395,18 @@ def test_specialty_does_not_claim_human_review_from_config(tmp_path):
   root = _root(tmp_path)
   package = root / "skills" / "security" / "repo-hardening"
   package.mkdir(parents=True)
-  (package / "SKILL.md").write_text("# Hardening\n", encoding="utf-8")
+  (package / "SKILL.md").write_text(_skill("repo-hardening"), encoding="utf-8")
   manifest = _manifest("repo-hardening")
   (package / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
   )
   catalog, _ = m.build_catalog(root)
-  assert catalog["extensions"][0]["review"]["status"] == "unreviewed"
-  (package / "SKILL.md").write_text("# Hardening changed\n", encoding="utf-8")
+  assert catalog["extensions"][0]["checks"]["status"] == "unreviewed"
+  (package / "SKILL.md").write_text(
+    _skill("repo-hardening", "# Hardening changed\n"), encoding="utf-8"
+  )
   catalog, _ = m.build_catalog(root)
-  assert catalog["extensions"][0]["review"]["status"] == "unreviewed"
+  assert catalog["extensions"][0]["checks"]["status"] == "unreviewed"
 
 
 def test_intake_decision_matrix():
@@ -869,44 +1478,24 @@ def test_config_rejects_unknown_intake_key(tmp_path):
     m.load_marketplace_config(root)
 
 
-def test_config_requires_release_version(tmp_path):
-  """The release tag is a required field; a config without it fails closed."""
+def test_config_rejects_historical_revision_stamping(tmp_path):
+  """Snapshot coordinates belong to immutable assets, not authored config."""
   root = _root(tmp_path)
-  config_path = root / "config" / "marketplace.yaml"
-  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-  del config["version"]
-  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
-  with pytest.raises(m.MarketplaceError, match="missing keys"):
+  path = root / "config/marketplace.yaml"
+  config = yaml.safe_load(path.read_text())
+  config["revision"] = "a" * 40
+  path.write_text(yaml.safe_dump(config))
+  with pytest.raises(m.MarketplaceError, match="unexpected keys"):
     m.load_marketplace_config(root)
 
 
-def test_config_rejects_non_calver_version(tmp_path):
-  """The version must be a catalog-YYYY.MM.DD release tag, not a free string."""
-  root = _root(tmp_path)
-  config_path = root / "config" / "marketplace.yaml"
-  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-  config["version"] = "v1.2.3"
-  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
-  with pytest.raises(m.MarketplaceError, match="catalog-YYYY.MM.DD"):
-    m.load_marketplace_config(root)
-
-
-def test_config_accepts_dated_rerelease_suffix(tmp_path):
-  """A second release on the same day carries a numeric .N suffix."""
-  root = _root(tmp_path)
-  config_path = root / "config" / "marketplace.yaml"
-  config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-  config["version"] = "catalog-2026.10.01.2"
-  config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
-  assert m.load_marketplace_config(root)["version"] == "catalog-2026.10.01.2"
-
-
-def test_catalog_exposes_release_version(tmp_path):
-  """The generated catalog carries the release tag at the top level."""
+def test_catalog_coordinates_are_explicit_builder_inputs(tmp_path):
+  """A snapshot is bound to the selected source SHA and allocated tag."""
   root = _root(tmp_path)
   _package(root)
-  catalog, _ = m.build_catalog(root)
-  assert catalog["version"] == "catalog-2026.01.01"
+  catalog, _ = m.build_catalog(root, revision="b" * 40, version="catalog-2026.11.03")
+  assert catalog["version"] == "catalog-2026.11.03"
+  assert catalog["extensions"][0]["source"]["revision"] == "b" * 40
 
 
 def test_namespace_of_detects_specialty_for_every_type(tmp_path):
@@ -915,5 +1504,5 @@ def test_namespace_of_detects_specialty_for_every_type(tmp_path):
   assert m.namespace_of("prompts/community/demo") == "community"
   assert m.namespace_of("skills/security/hardening") == "security"
   assert m.namespace_of("agents/security/triage") == "security"
-  assert m.namespace_of("mcp/security/broker") == "security"
+  assert m.namespace_of("prompts/security/broker") == "security"
   assert m.namespace_of("instructions/privacy/redact") == "privacy"

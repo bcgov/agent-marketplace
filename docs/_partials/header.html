@@ -43,6 +43,19 @@
             flex-direction: column;
         }
 
+        .build-coordinates {
+            max-width: 92rem;
+            margin: 1.5rem auto 0;
+            padding: 1rem;
+            font-size: 0.75rem;
+            border-top: 1px solid #52667a;
+            color: #fff;
+        }
+        .build-coordinates p { margin: 0.4rem 0; }
+        .build-coordinates a { color: #ffdc7a; text-decoration: underline; }
+        .build-coordinates code { color: #fff; background: #204b76; }
+        .build-coordinates a code { color: #ffdc7a; }
+
         /* Header */
         .bc-header {
             background: var(--gradient-hero);
@@ -1417,14 +1430,14 @@
         }
 
         .footer-copyright p {
-            color: #64748b;
+            color: #b7c5d7;
             font-size: 0.75rem;
             margin: 0;
         }
 
         .footer-meta {
             margin-top: 0.5rem !important;
-            opacity: 0.7;
+            opacity: 1;
         }
 
         /* Responsive */
@@ -1788,18 +1801,16 @@
             <img src="assets/bc_citz_logo.jpg" alt="BC Government" class="bc-header-logo">
             <div>
                 <div class="bc-header-title">BC Gov Agent Marketplace</div>
-                <div class="bc-header-subtitle">A shared catalogue of agent skill profiles</div>
+                <div class="bc-header-subtitle">Skills, instructions, prompts and agents</div>
             </div>
         </a>
         <nav class="bc-nav" aria-label="Primary">
             <a href="index.html" class="{{NAV_INDEX}}">Home</a>
-            <a href="getting-started.html" class="{{NAV_GETTING_STARTED}}">Get Started</a>
             <a href="catalog.html" class="{{NAV_CATALOG}}">Catalogue</a>
-            <a href="consume.html" class="{{NAV_CONSUME}}">Consume</a>
+            <a href="install.html" class="{{NAV_INSTALL}}">Install</a>
             <a href="contribute.html" class="{{NAV_CONTRIBUTE}}">Contribute</a>
-            <a href="spec.html" class="{{NAV_SPEC}}">Spec</a>
-            <a href="faq.html" class="{{NAV_FAQ}}">FAQ</a>
-            <a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener" class="{{NAV_GITHUB}}">GitHub</a>
+            <a href="reference.html" class="{{NAV_REFERENCE}}">Reference</a>
+            <a href="https://github.com/bcgov/agent-marketplace" target="_blank" rel="noopener">GitHub</a>
 
             <!-- Search button -->
             <button class="search-btn" id="search-btn" type="button" aria-label="Search documentation">

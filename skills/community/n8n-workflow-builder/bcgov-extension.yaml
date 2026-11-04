@@ -1,14 +1,8 @@
-schema-version: bcgov-extension/v1alpha1
-id: bcgov-public/n8n-workflow-builder
 display-name: n8n Workflow Builder
-summary: Compose reviewed runbook snippets into local and n8n operational triage workflows with explicit API publication steps.
-publisher: Province of British Columbia
+summary: Compose reviewed runbook snippets into local and n8n operational triage workflows as reviewable fixed-input scaffolds; API publication is separate.
 maintainers:
   - "@mishraomp"
   - "@DerekRoberts"
-support: https://github.com/bcgov/agent-marketplace/issues
-license: Apache-2.0
-lifecycle: active
 prerequisites:
   - Bash and jq
   - n8n access is required only for pull and push operations
@@ -17,12 +11,14 @@ capabilities:
     read:
       - tools/n8n and selected cleaned snippets
     write:
-      - tools/n8n generated workflows after confirmation
+      - selected config directory and generated workflows after confirmation
   network:
-    - localhost
-    - cdn.jsdelivr.net
-    - img.shields.io
+    - "*"
   commands:
+    - bash
+    - jq
+    - curl
+    - shellcheck
     - merge.sh
     - n8n-entrypoint.sh
     - pull.sh
@@ -32,8 +28,39 @@ capabilities:
     - sync.sh
     - utils.sh
     - view.sh
+  # Includes shell-local/template variable references recognized by the static scan.
   environment-variables:
-    - "*"
+    - BASH_REMATCH
+    - BASH_SOURCE
+    - CONFIG
+    - DATA
+    - DEST_DIR
+    - DRY_RUN
+    - FOO
+    - GROUP
+    - HELPERS
+    - HERE
+    - JSON
+    - N8N
+    - N8N_CONFIG
+    - N8N_LOG_TAG
+    - N8N_URL
+    - N8N_WORKFLOWS_DIR
+    - NAME
+    - OUT
+    - OUTDIR
+    - PATH
+    - PRUNE
+    - ROOT
+    - SCRIPT_DIR
+    - SNIPPETS
+    - TEMPLATE
+    - VALS
+    - VAR
+    - WORKFLOWS_DIR
+    - NAMESPACE
+    - MERGE_ONE
+    - MERGE_TWO
   secret-names:
     - N8N_API_KEY
   data-classes:

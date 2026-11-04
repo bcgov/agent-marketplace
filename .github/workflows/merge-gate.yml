@@ -1,0 +1,64 @@
+name: Merge gate
+
+on:
+  workflow_run:
+    workflows: [PR]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run-id:
+        description: Current PR workflow run ID (provider metadata is reauthenticated)
+        type: string
+        required: true
+      attempt:
+        description: Current completed attempt
+        type: string
+        required: true
+        default: "1"
+
+permissions: {}
+
+# One queue covers all authors/PRs and their final rolling-budget rechecks.
+# Full queue plus manual retry prevents unrelated completions replacing each other.
+concurrency:
+  group: marketplace-merge-gate
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  gate:
+    if: github.repository == 'bcgov/agent-marketplace' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+      actions: write
+    steps:
+      - name: Checkout trusted main only
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Resolve queued trusted main
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout --detach origin/main
+
+      - name: Install trusted runtime
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.11.19"
+          enable-cache: false
+
+      - name: Authenticate, analyze and route the exact PR head
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id || inputs.run-id }}
+          ATTEMPT: ${{ github.event.workflow_run.run_attempt || inputs.attempt }}
+        run: |
+          set -euo pipefail
+          uv run --frozen --no-dev python scripts/gate_github.py \
+            --run-id "$RUN_ID" --attempt "$ATTEMPT"
