@@ -23,8 +23,11 @@
     if (!/^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i.test(maintainer)) {
       throw Error("Enter your GitHub username without @ (an individual maintainer).");
     }
-    if (!summary.trim() || summary.length > 1024 || /[<>\r\n]/.test(summary)) {
-      throw Error("Add a one-line summary of at most 1,024 characters without angle brackets.");
+    if (!summary.trim() || [...summary].length > 1024 || /[\r\n]/.test(summary)) {
+      throw Error("Add a one-line summary of at most 1,024 characters.");
+    }
+    if (type === "skill" && /[<>]/.test(summary)) {
+      throw Error("Remove angle brackets from the skill summary.");
     }
     const definition = data.types[type];
     const directory = `${definition.directory}/${specialty}/${name}`;

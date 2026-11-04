@@ -56,6 +56,10 @@ class GitHub:
             ROOT / "tests/fixtures/submissions/benign-submission"
           ).as_posix()
         ] = path.read_bytes()
+    native_path = "skills/community/demo/SKILL.md"
+    self.head[native_path] = self.head[native_path].replace(
+      b"name: benign-submission\n", b"name: demo\n"
+    )
     self.pr = {
       "number": 71,
       "state": "open",
@@ -634,8 +638,9 @@ def test_dependency_route_stays_dormant_without_publication_and_own_enable():
 
 
 def ledger(api, count, *, when="2026-11-03T20:22:02Z", author="Alice"):
-  """One squash merged PR introduces a batch; its historical PR base is irrelevant."""
+  """Model PR64's proven two-source-commit, unchanged-base squash topology."""
   before, after = "e" * 40, "f" * 40
+  first, head = "1" * 40, "2" * 40
   api.revisions[before] = dict(api.base)
   api.revisions[after] = dict(api.base)
   for index in range(count):
@@ -648,11 +653,17 @@ def ledger(api, count, *, when="2026-11-03T20:22:02Z", author="Alice"):
     "merged_at": when,
     "merge_commit_sha": after,
     "user": {"login": author},
-    "base": {"sha": "1" * 40, "ref": "main", "repo": dict(REPO)},
+    "base": {"sha": before, "ref": "main", "repo": dict(REPO)},
+    "head": {"sha": head},
     "commits": 2,
   }
   api.history = [pr]
   api.prs["pulls/70"] = pr
+  api.prs["pulls/70/commits"] = [
+    {"sha": first, "parents": [{"sha": before}]},
+    {"sha": head, "parents": [{"sha": first}]},
+  ]
+  api.revisions[head] = dict(api.revisions[after])
   api.commits[f"git/commits/{after}"] = {"sha": after, "parents": [{"sha": before}]}
 
 
@@ -666,6 +677,24 @@ def test_rolling_quota_uses_merged_author_time_and_actual_squash_parent_inventor
   api = GitHub()
   ledger(api, 10)
   assert gate(api).run(99, 1)["route"] == "human-review"
+
+
+def test_historical_rebase_tail_cannot_hide_the_complete_identity_contribution():
+  """A docs-only R2 cannot erase R1's nine identities from the rolling ledger."""
+  api = GitHub()
+  ledger(api, 9)
+  first, tail = "e" * 40, "f" * 40
+  api.revisions[first] = dict(api.revisions[tail])
+  api.revisions[tail]["README.md"] = b"Documentation-only second commit.\n"
+  api.prs["pulls/70"]["base"]["sha"] = BASE
+  api.prs["pulls/70"]["head"] = {"sha": tail}
+  api.prs["pulls/70/commits"] = [
+    {"sha": first, "parents": [{"sha": BASE}]},
+    {"sha": tail, "parents": [{"sha": first}]},
+  ]
+  result = gate(api).run(99, 1)
+  assert result["route"] == "human-review"
+  assert not any(endpoint.endswith("/merge") for _, endpoint, _ in api.effects)
 
 
 @pytest.mark.parametrize(
@@ -694,7 +723,9 @@ def test_eleven_identity_candidate_batch_is_held_without_historical_usage():
   native = api.head["skills/community/demo/SKILL.md"]
   manifest = api.head["skills/community/demo/bcgov-extension.yaml"]
   for index in range(10):
-    api.head[f"skills/community/new-{index}/SKILL.md"] = native
+    api.head[f"skills/community/new-{index}/SKILL.md"] = native.replace(
+      b"name: demo\n", f"name: new-{index}\n".encode()
+    )
     api.head[f"skills/community/new-{index}/bcgov-extension.yaml"] = manifest
   result = gate(api).run(99, 1)
   assert result["route"] == "human-review"
@@ -748,7 +779,9 @@ def test_sensitive_transitions_always_require_review(kind):
     if kind == "mixed-specialty":
       for source in list(api.head):
         if source.startswith("skills/security/demo/"):
-          api.head[source.replace("/demo/", "/second/")] = api.head.pop(source)
+          api.head[source.replace("/demo/", "/second/")] = api.head.pop(source).replace(
+            b"name: demo\n", b"name: second\n"
+          )
   else:
     target = (
       "bcgov-public/skill/second"
@@ -770,7 +803,9 @@ def test_sensitive_transitions_always_require_review(kind):
     api.head[new_path + "/bcgov-extension.yaml"] = api.base[path]
     api.head[
       new_path + ("/SKILL.md" if kind != "type-replacement" else "/second.prompt.md")
-    ] = api.base["skills/community/demo/SKILL.md"]
+    ] = api.base["skills/community/demo/SKILL.md"].replace(
+      b"name: demo\n", b"name: second\n"
+    )
   result = gate(api).run(99, 1)
   assert result["route"] == "human-review"
   assert result["conclusion"] == "success", result
@@ -801,7 +836,9 @@ def test_all_changed_file_pages_are_analyzed_without_manifest_only_selection():
   api = GitHub()
   native = api.head["skills/community/demo/SKILL.md"]
   manifest = api.head["skills/community/demo/bcgov-extension.yaml"]
-  api.head["skills/community/second/SKILL.md"] = native
+  api.head["skills/community/second/SKILL.md"] = native.replace(
+    b"name: demo\n", b"name: second\n"
+  )
   api.head["skills/community/second/bcgov-extension.yaml"] = manifest
   for name in ("demo", "second"):
     for index in range(51):
@@ -857,15 +894,25 @@ def test_real_transport_preserves_public_membership_http_status(monkeypatch, sta
   assert GitHubApi().public_membership("Alice") == status
 
 
-@pytest.mark.parametrize("missing", ["merged_at", "user"])
+@pytest.mark.parametrize(
+  "missing", ["merged_at", "user", "head", "second-parent", "source-parent"]
+)
 def test_incomplete_merged_author_history_cannot_silently_undercount_budget(missing):
-  """Unknown merged status or author is an integrity hold, rather than zero usage."""
+  """Unknown attribution or immutable topology holds rather than granting quota."""
   api = GitHub()
   ledger(api, 10)
-  del api.history[0][missing]
+  if missing in {"head", "second-parent"}:
+    api.commits[f"git/commits/{'f' * 40}"]["parents"].append({})
+    if missing == "head":
+      api.history[0]["head"] = None
+  elif missing == "source-parent":
+    api.prs["pulls/70/commits"][0]["parents"] = [None]
+  else:
+    del api.history[0][missing]
   result = gate(api).run(99, 1)
   assert result["route"] == "human-review"
-  assert "quota" in " ".join(result["reasons"]).lower()
+  assert result["reasons"]
+  assert not any(endpoint.endswith("/merge") for _, endpoint, _ in api.effects)
 
 
 def test_failed_ci_precedes_incomplete_inventory_and_disabled_switches():

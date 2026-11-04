@@ -75,11 +75,16 @@ def _package(root: Path, name="demo", manifest=None) -> Path:
   """Create one minimal marketplace package."""
   package = root / "skills" / "community" / name
   package.mkdir(parents=True)
-  (package / "SKILL.md").write_text("# Demo\n", encoding="utf-8")
+  (package / "SKILL.md").write_text(_skill(name), encoding="utf-8")
   (package / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest or _manifest(name), sort_keys=False), encoding="utf-8"
   )
   return package
+
+
+def _skill(name="demo", body="# Demo\n"):
+  """Wrap test skill content in valid independent native metadata."""
+  return f"---\nname: {name}\ndescription: Useful guidance.\n---\n{body}"
 
 
 @pytest.mark.parametrize(
@@ -97,7 +102,7 @@ def test_minimal_manifest_derives_four_types(tmp_path, directory, filename):
   package = root / directory / "community" / "demo"
   package.mkdir(parents=True)
   (package / filename).write_text(
-    "---\nname: Frontmatter name\ndescription: Frontmatter summary\n---\n\nContent\n"
+    "---\nname: demo\ndescription: Frontmatter summary\n---\n\nContent\n"
   )
   (package / m.MANIFEST_NAME).write_text(
     yaml.safe_dump({"maintainers": ["@bcgov/platform"], "capabilities": "none"})
@@ -114,7 +119,7 @@ def test_minimal_manifest_derives_four_types(tmp_path, directory, filename):
     "bcgov-marketplace/v1",
     f"bcgov-public/{m.TYPE_DIRECTORIES[directory]}/demo",
     m.TYPE_DIRECTORIES[directory],
-    "Frontmatter name",
+    "demo",
     "Frontmatter summary",
   )
 
@@ -134,7 +139,7 @@ def test_catalog_checks_bind_policy_findings_and_declared_risk_to_digest(tmp_pat
       "summary": "A package with an advisory",
     },
   )
-  (package / "SKILL.md").write_text("The example says to skip approval.\n")
+  (package / "SKILL.md").write_text(_skill(body="The example says to skip approval.\n"))
 
   catalog, _ = m.build_catalog(root)
   record = catalog["extensions"][0]
@@ -276,7 +281,7 @@ def test_manifest_overrides_frontmatter_and_path_fallback(tmp_path):
     },
   )
   (package / "SKILL.md").write_text(
-    "---\nname: Frontmatter title\ndescription: Frontmatter summary\n---\nBody"
+    "---\nname: demo\ndescription: Frontmatter summary\n---\nBody"
   )
   record = m.build_catalog(root)[0]["extensions"][0]
   assert (record["display-name"], record["summary"], record["name"]) == (
@@ -284,6 +289,66 @@ def test_manifest_overrides_frontmatter_and_path_fallback(tmp_path):
     "Explicit summary",
     "demo",
   )
+
+
+@pytest.mark.parametrize(
+  ("frontmatter", "field"),
+  [
+    ("name: demo", "description"),
+    ("name: another-skill\ndescription: Useful guidance.", "name"),
+  ],
+)
+def test_native_skill_requirements_survive_manifest_overrides(
+  tmp_path, frontmatter, field
+):
+  """Native CLI, submission analysis and trusted analysis reject invalid skills."""
+  import subprocess
+
+  from gate_data import RepositoryData
+  from test_merge_gate_github import BASE, HEAD, GitHub, gate
+
+  root = _root(tmp_path)
+  package = _package(root)
+  native = "---\n" + frontmatter + "\n---\n# Demo\n\n"
+  native += "\n".join(
+    f"## {heading}\nUseful guidance.\n"
+    for heading in (
+      "Use When",
+      "Don't Use When",
+      "Workflow",
+      "Rules",
+      "Examples",
+      "Edge Cases",
+      "References",
+    )
+  )
+  path = package / "SKILL.md"
+  path.write_text(native, encoding="utf-8")
+  cli = subprocess.run(
+    [
+      sys.executable,
+      str(ROOT / "scripts/validate_skill.py"),
+      str(path),
+      "--no-duplicates",
+    ],
+    capture_output=True,
+    text=True,
+    check=False,
+  )
+  assert cli.returncode == 1 and field in cli.stdout
+  with pytest.raises(m.MarketplaceError) as error:
+    m.analyze_submission(root, package)
+  assert "SKILL.md" in str(error.value)
+  assert f"frontmatter.{field}" in str(error.value)
+  assert "another-skill" not in str(error.value)
+  api = GitHub()
+  api.head["skills/community/demo/SKILL.md"] = native.encode()
+  api.head["skills/community/demo/bcgov-extension.yaml"] = (
+    package / m.MANIFEST_NAME
+  ).read_bytes()
+  data = RepositoryData(gate(api).request)
+  analysis = data.analyze(ROOT, BASE, HEAD, {"skills/community/demo/SKILL.md"})
+  assert analysis["hard-errors"]
 
 
 def test_marketplace_config_validates_typed_sources(tmp_path):
@@ -421,7 +486,9 @@ def test_package_validation_fails_without_approved_security_rules(
   package = _package(root, manifest=manifest)
   if violation == "structure":
     (package / "package.json").write_text("{}\n", encoding="utf-8")
-    (package / "SKILL.md").write_text("password=abcdefghijklmnop\n", encoding="utf-8")
+    (package / "SKILL.md").write_text(
+      _skill(body="password=abcdefghijklmnop\n"), encoding="utf-8"
+    )
     scan = m.scan_package(package, manifest)
     assert scan["outcome"] == "blocked"
     assert any(
@@ -444,13 +511,13 @@ def test_read_only_check_reports_blocking_file_rule_location_and_fix(
   """The PR check renders actionable findings and fails only for blocking rules."""
   root = _root(tmp_path)
   package = _package(root)
-  (package / "SKILL.md").write_text("curl https://unlisted.example\n")
+  (package / "SKILL.md").write_text(_skill(body="curl https://unlisted.example\n"))
   summary = root / "summary.md"
   monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
   assert m.main(["--root", str(root), "check"]) == 1
   report = summary.read_text()
   assert "Blocking" in report
-  assert "SKILL.md:1" in report
+  assert "SKILL.md:5" in report
   assert "undeclared-network" in report
   assert "capabilities.network" in report
   assert "declare the host in capabilities.network" in report
@@ -482,7 +549,8 @@ def test_network_commands_check_every_recognized_url(
   manifest["capabilities"]["network"] = ["listed.example"]
   package = _package(root, manifest=manifest)
   (package / "SKILL.md").write_text(
-    f"{command} https://{hosts[0]} --next https://{hosts[1]}\n", encoding="utf-8"
+    _skill(body=f"{command} https://{hosts[0]} --next https://{hosts[1]}\n"),
+    encoding="utf-8",
   )
   assert m.main(["--root", str(root), "scan", str(package)]) == 0
   result = json.loads(capsys.readouterr().out)
@@ -503,7 +571,9 @@ def test_scanner_cli_outputs_never_echo_matched_credential(
   package = _package(root)
   sentinel = "AKIA" + "A" * 16
   (package / "SKILL.md").write_text(
-    f"curl https://{sentinel}.example\necho ${sentinel}\nsecret={sentinel}\n"
+    _skill(
+      body=f"curl https://{sentinel}.example\necho ${sentinel}\nsecret={sentinel}\n"
+    )
   )
   for command in ("scan", "analyze"):
     assert m.main(["--root", str(root), command, str(package)]) == 0
@@ -801,7 +871,7 @@ def test_catalog_exposes_policy_version_and_advisory_finding(tmp_path):
   """Catalogue consumers receive the policy evidence for the exact extension."""
   root = _root(tmp_path)
   package = _package(root)
-  (package / "SKILL.md").write_text("# Demo\nhidden\u202einstruction\n")
+  (package / "SKILL.md").write_text(_skill(body="# Demo\nhidden\u202einstruction\n"))
   policy_path = root / "config" / "security-policy.yaml"
   policy = yaml.safe_load(policy_path.read_text())
   policy["blocking"].remove("hidden-unicode")
@@ -938,14 +1008,14 @@ def test_manifest_paths_include_canonical_layouts(tmp_path):
   root = _root(tmp_path)
   community = root / "skills" / "community" / "azure-networking"
   community.mkdir(parents=True)
-  (community / "SKILL.md").write_text("# Azure networking\n", encoding="utf-8")
+  (community / "SKILL.md").write_text(_skill("azure-networking"), encoding="utf-8")
   manifest = _manifest("azure-networking")
   (community / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
   )
   package = root / "skills" / "security" / "repo-hardening"
   package.mkdir(parents=True)
-  (package / "SKILL.md").write_text("# Repo hardening\n", encoding="utf-8")
+  (package / "SKILL.md").write_text(_skill("repo-hardening"), encoding="utf-8")
   manifest = _manifest("repo-hardening")
   (package / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
@@ -1078,7 +1148,7 @@ def test_catalog_adds_type_and_specialty_metadata(tmp_path):
   config_path.write_text(yaml.safe_dump(config), encoding="utf-8")
   package = root / "skills" / "security" / "repo-hardening"
   package.mkdir(parents=True)
-  (package / "SKILL.md").write_text("# Repo hardening\n", encoding="utf-8")
+  (package / "SKILL.md").write_text(_skill("repo-hardening"), encoding="utf-8")
   manifest = _manifest("repo-hardening")
   (package / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
@@ -1325,14 +1395,16 @@ def test_specialty_does_not_claim_human_review_from_config(tmp_path):
   root = _root(tmp_path)
   package = root / "skills" / "security" / "repo-hardening"
   package.mkdir(parents=True)
-  (package / "SKILL.md").write_text("# Hardening\n", encoding="utf-8")
+  (package / "SKILL.md").write_text(_skill("repo-hardening"), encoding="utf-8")
   manifest = _manifest("repo-hardening")
   (package / m.MANIFEST_NAME).write_text(
     yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8"
   )
   catalog, _ = m.build_catalog(root)
   assert catalog["extensions"][0]["checks"]["status"] == "unreviewed"
-  (package / "SKILL.md").write_text("# Hardening changed\n", encoding="utf-8")
+  (package / "SKILL.md").write_text(
+    _skill("repo-hardening", "# Hardening changed\n"), encoding="utf-8"
+  )
   catalog, _ = m.build_catalog(root)
   assert catalog["extensions"][0]["checks"]["status"] == "unreviewed"
 

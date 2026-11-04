@@ -211,8 +211,9 @@ class GitHubGate:
     """Count new canonical identities by authoritative merged PR author/time.
 
     Closed PR history is fully paginated, never inferred from lagging search.
-    First merge parent is the actual mainline before both squash and merge commits;
-    source commit count and historical PR base are not that mainline inventory.
+    Count from the actual mainline parent only after proving that the recorded
+    merge covers the complete immutable PR contribution. Ambiguous single-parent
+    histories require review rather than silently counting a rebase tail.
     """
     since = self.now - timedelta(days=days)
     count = 0
@@ -244,9 +245,61 @@ class GitHubGate:
         raise Incomplete("Merged PR author/time/base attribution is inconsistent.")
       revision = pr["merge_commit_sha"]
       commit = self.request("GET", f"git/commits/{revision}")
-      parents = commit.get("parents", [])
-      if commit.get("sha") != revision or len(parents) not in {1, 2}:
+      parents = commit.get("parents") if isinstance(commit, dict) else None
+      if (
+        not isinstance(parents, list)
+        or len(parents) not in {1, 2}
+        or not all(isinstance(parent, dict) for parent in parents)
+        or commit.get("sha") != revision
+      ):
         raise Incomplete("Merged PR topology cannot establish the rolling quota.")
+      source_head = pr.get("head")
+      head = source_head.get("sha") if isinstance(source_head, dict) else None
+      revisions = [revision, head, *(parent.get("sha") for parent in parents)]
+      if not all(
+        isinstance(sha, str) and re.fullmatch(r"[0-9a-f]{40}", sha) for sha in revisions
+      ):
+        raise Incomplete("Merged PR lacks complete immutable head/parent identities.")
+      if len(parents) == 2:
+        if parents[1].get("sha") != head:
+          raise Incomplete("Merged PR does not establish its complete source head.")
+      else:
+        # PR64 is a genuine two-source-commit squash: the recorded base is its
+        # actual mainline parent and its merged tree equals the complete head.
+        # After a rebase, merge_commit_sha can instead be only the final commit.
+        # A changed historical base or missing source chain remains ambiguous.
+        source_count = pr.get("commits")
+        if (
+          not isinstance(source_count, int)
+          or not 1 <= source_count <= 250
+          or pr["base"].get("sha") != parents[0].get("sha")
+        ):
+          raise Incomplete("Historical PR contribution is incomplete or ambiguous.")
+        sources = self.listing(f"pulls/{pr['number']}/commits", cap=251)
+        previous = pr["base"]["sha"]
+        seen = set()
+        for source in sources:
+          source_parents = source.get("parents") if isinstance(source, dict) else None
+          if not isinstance(source_parents, list) or not all(
+            isinstance(parent, dict) for parent in source_parents
+          ):
+            raise Incomplete("Historical PR source history is incomplete or ambiguous.")
+          sha = source.get("sha")
+          if (
+            not isinstance(sha, str)
+            or not re.fullmatch(r"[0-9a-f]{40}", sha)
+            or sha in seen
+            or [parent.get("sha") for parent in source_parents] != [previous]
+          ):
+            raise Incomplete("Historical PR source history is incomplete or ambiguous.")
+          seen.add(sha)
+          previous = sha
+        if len(sources) != source_count or previous != head:
+          raise Incomplete("Historical PR source history does not cover its head.")
+        if data.tree(head) != data.tree(revision):
+          raise Incomplete(
+            "Historical merged tree does not cover the complete PR head."
+          )
       before, after = data.records(parents[0]["sha"]), data.records(revision)
       if not before.keys() <= after.keys():
         raise Incomplete(

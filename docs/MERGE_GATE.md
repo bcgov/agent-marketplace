@@ -55,7 +55,10 @@ Unsupported or ambiguous dependency changes remain reviewable.
 One repository-wide queue serializes final re-evaluation, rolling author quota
 and guarded merge. The quota uses fully paginated closed PR facts, merged PR
 author and merge time, and canonical inventories before/after the actual merge's
-first parent, including squash merges. Missing/capped history holds. Immediately
+first parent, including squash merges. A single-parent history also needs a complete
+PR base-to-head source chain and an identical merged/head tree with that base as
+the actual parent; missing/capped evidence, advanced bases and unsupported source
+topologies hold for review. Immediately
 before effects, the gate re-fetches current head/base, controls, policy and
 eligibility. Synchronous squash merge supplies the exact authorized `sha`; no
 deferred native auto-merge is armed. Native strict current-base checks and all

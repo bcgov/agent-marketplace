@@ -56,7 +56,13 @@ def test_registry_only_specialty_and_reserved_names_reach_browser(tmp_path):
   assert data["reserved"] == ["bcgov-public/skill/reserved"]
 
 
-def browser_starter(data, kind, specialty="community", name="browser-demo"):
+def browser_starter(
+  data,
+  kind,
+  specialty="community",
+  name="browser-demo",
+  summary='Useful guidance: "review" & inspect café.',
+):
   """Render the browser's exact copyable files using its public JS interface."""
   result = subprocess.run(
     [
@@ -73,7 +79,7 @@ def browser_starter(data, kind, specialty="community", name="browser-demo"):
           "specialty": specialty,
           "name": name,
           "maintainer": "browser-author",
-          "summary": 'Useful guidance: "review" & inspect café.',
+          "summary": summary,
           "base": "v1/7-integration",
         }
       ),
@@ -83,18 +89,53 @@ def browser_starter(data, kind, specialty="community", name="browser-demo"):
     encoding="utf-8",
     check=False,
   )
-  assert result.returncode == 0, result.stderr
+  if result.returncode:
+    raise ValueError(result.stderr)
   return json.loads(result.stdout)
 
 
-@pytest.mark.parametrize("kind", ["skill", "instructions", "prompt", "agent"])
-@pytest.mark.parametrize("specialty", ["community", "security"])
+@pytest.mark.parametrize(
+  ("kind", "specialty", "summary", "valid"),
+  [
+    pytest.param(
+      kind,
+      specialty,
+      'Useful guidance: "review" & inspect café.',
+      True,
+      id=f"{specialty}-{kind}",
+    )
+    for kind in ("skill", "instructions", "prompt", "agent")
+    for specialty in ("community", "security")
+  ]
+  + [
+    pytest.param(
+      kind,
+      "community",
+      'Inspect <example> & "review" safely.',
+      True,
+      id=f"angles-{kind}",
+    )
+    for kind in ("instructions", "prompt", "agent")
+  ]
+  + [
+    pytest.param(
+      "skill", "community", "Inspect <example>.", False, id="skill-angle-ban"
+    ),
+    pytest.param("skill", "community", "😀" * 1024, True, id="unicode-limit"),
+    pytest.param("skill", "community", "😀" * 1025, False, id="unicode-over-limit"),
+  ],
+)
 def test_browser_two_file_stubs_validate_with_untouched_metadata_defaults(
-  tmp_path, kind, specialty
+  tmp_path, kind, specialty, summary, valid
 ):
   """Copying the filled stubs needs only maintainers and capability declarations."""
   root = _root(tmp_path)
-  result = browser_starter(starters(root), kind, specialty)
+  data = starters(root)
+  if not valid:
+    with pytest.raises(ValueError, match="summary"):
+      browser_starter(data, kind, specialty, summary=summary)
+    return
+  result = browser_starter(data, kind, specialty, summary=summary)
   assert set(yaml.safe_load(result["manifest"])) == {"maintainers", "capabilities"}
   assert result["nativePath"].endswith(
     "/SKILL.md" if kind == "skill" else f"/browser-demo.{kind}.md"
@@ -107,9 +148,7 @@ def test_browser_two_file_stubs_validate_with_untouched_metadata_defaults(
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(text, encoding="utf-8")
   catalog, _ = m.build_catalog(root)
-  assert catalog["extensions"][0]["summary"] == (
-    'Useful guidance: "review" & inspect café.'
-  )
+  assert catalog["extensions"][0]["summary"] == summary
   if kind == "skill":
     validation = subprocess.run(
       [

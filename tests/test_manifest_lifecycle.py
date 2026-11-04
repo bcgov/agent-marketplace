@@ -9,7 +9,7 @@ import sys
 import pytest
 import yaml
 from test_companions import creator, finder
-from test_marketplace import ROOT, _root, m
+from test_marketplace import ROOT, _root, _skill, m
 
 
 def package(root, directory="skills", specialty="community", name="demo", **metadata):
@@ -22,7 +22,7 @@ def package(root, directory="skills", specialty="community", name="demo", **meta
     else f"{name}.{m.TYPE_DIRECTORIES[directory]}.md"
   )
   (path / filename).write_text(
-    "---\nname: demo\ndescription: Useful native summary\n---\n\nContent\n",
+    f"---\nname: {name}\ndescription: Useful native summary\n---\n\nContent\n",
     encoding="utf-8",
   )
   (path / m.MANIFEST_NAME).write_text(
@@ -394,7 +394,9 @@ def test_hardblocked_bytes_require_fix_or_direct_removal(tmp_path):
   """Quarantine cannot bypass blockers; removal does not re-scan deleted bytes."""
   root = _root(tmp_path)
   path = package(root)
-  (path / "SKILL.md").write_text("password=abcdefghijklmnop\n", encoding="utf-8")
+  (path / "SKILL.md").write_text(
+    _skill(body="password=abcdefghijklmnop\n"), encoding="utf-8"
+  )
   base = commit_base(root)
   metadata = yaml.safe_load((path / m.MANIFEST_NAME).read_text(encoding="utf-8"))
   metadata.update(

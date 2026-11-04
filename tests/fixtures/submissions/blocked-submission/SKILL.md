@@ -1,5 +1,5 @@
 ---
-name: demo-submission
+name: blocked-submission
 description: Demonstrates a submission blocked by an unsupported package file.
 owner: bcgov
 tags: [demo, marketplace]

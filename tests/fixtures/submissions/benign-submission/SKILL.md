@@ -1,5 +1,5 @@
 ---
-name: demo-submission
+name: benign-submission
 description: Demonstrates a benign submission for the Phase 5 onboarding demo.
 owner: bcgov
 tags: [demo, marketplace]

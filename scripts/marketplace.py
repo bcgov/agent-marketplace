@@ -405,6 +405,15 @@ def validate_manifest(path: Path, schema: dict) -> tuple[dict | None, list[str]]
         artifact_path, TYPE_DIRECTORIES[parts[0]]
       )
       errors.extend(artifact_errors)
+      if parts[0] == "skills":
+        # Source package directories define native identity; downloaded staging
+        # directories do not. Install choices bind metadata to Catalogue identity.
+        from validate_skill import name_directory_issues
+
+        for issue in name_directory_issues(frontmatter, str(path.parent)):
+          errors.append(
+            _diagnostic(artifact_path, f"frontmatter.{issue.field}", issue.correction)
+          )
     elif any(item.name != MANIFEST_NAME for item in path.parent.iterdir()):
       errors.append(
         _diagnostic(path, "removed", "delete content files; keep only the Manifest")
@@ -474,6 +483,12 @@ def read_native_content(path: Path, extension_type: str) -> tuple[dict, list[str
   except (OSError, UnicodeError):
     return {}, [_diagnostic(path, "<root>", "Save a readable UTF-8 text file.")]
   if not text.startswith("---"):
+    if extension_type == "skill":
+      return {}, [
+        _diagnostic(
+          path, "frontmatter", "Add YAML frontmatter with name and description."
+        )
+      ]
     return {}, (
       [] if text.strip() else [_diagnostic(path, "<root>", "Add non-empty content.")]
     )
@@ -491,10 +506,14 @@ def read_native_content(path: Path, extension_type: str) -> tuple[dict, list[str
   except PublicMarketplaceError as exc:
     return {}, [PublicDiagnostic(str(exc))]
 
-  # VS Code Local accepts optional headers for prompts, instructions and agents.
-  # Independent client requirements (for example skill routing) gate choices.
-  required = set()
-  for field in sorted(required | (frontmatter.keys() & {"name", "description"})):
+  if extension_type == "skill":
+    # Reuse rules on the mapping already parsed above, without editorial checks.
+    from validate_skill import frontmatter_issues
+
+    for issue in frontmatter_issues(frontmatter):
+      errors.append(_diagnostic(path, f"frontmatter.{issue.field}", issue.correction))
+  # Non-skill native headers remain optional.
+  for field in sorted(frontmatter.keys() & {"name", "description"}):
     if not isinstance(frontmatter.get(field), str) or not frontmatter[field].strip():
       errors.append(
         _diagnostic(path, f"frontmatter.{field}", "Add a non-empty string.")
