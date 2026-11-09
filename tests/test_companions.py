@@ -37,7 +37,7 @@ creator = _load(
 
 
 def test_repo_local_marketplace_skills_replace_legacy_meta_skills():
-  """Phase 3 exposes marketplace workflows instead of generic authoring helpers."""
+  """Published companion skills provide marketplace discovery and authoring."""
   skill_root = ROOT / "skills" / "community"
   names = {path.name for path in skill_root.iterdir() if path.is_dir()}
   assert {"bcgov-find-extension", "bcgov-create-extension"} <= names
@@ -47,7 +47,8 @@ def test_repo_local_marketplace_skills_replace_legacy_meta_skills():
 def test_companion_packages_contain_no_runtime_python():
   """Portable companion packages contain instructions and references only."""
   for name in ["bcgov-find-extension", "bcgov-create-extension"]:
-    package = ROOT / ".github" / "skills" / name
+    package = ROOT / "skills" / "community" / name
+    assert package.is_dir()
     assert not list(package.rglob("*.py"))
 
 
@@ -218,14 +219,16 @@ def test_current_catalog_failure_never_silently_replays_historical_data(monkeypa
 def test_creator_scaffolds_every_declarative_asset_type(
   tmp_path, extension_type, directory, filename
 ):
-  """Every first-release declarative type gets a canonical package scaffold."""
+  """Every supported type preserves authored metadata in a valid scaffold."""
+  import marketplace
+
   args = SimpleNamespace(
     marketplace=tmp_path,
     name="demo",
     extension_type=extension_type,
-    description="A test asset.",
+    description='# Review: changes before "merging".',
     display_name="Demo",
-    summary="A demo asset.",
+    summary='# Review: changes before "merging".',
     maintainer=["@bcgov/platform-services"],
     specialty="community",
     support="https://github.com/bcgov/agent-marketplace/issues",
@@ -235,6 +238,14 @@ def test_creator_scaffolds_every_declarative_asset_type(
   package = tmp_path / directory / "community" / "demo"
   assert result["package"] == str(package)
   assert (package / filename).is_file()
+  native, errors = marketplace.read_native_content(package / filename, extension_type)
+  assert errors == []
+  assert native["description"] == '# Review: changes before "merging".'
+  effective, errors = marketplace.validate_manifest(
+    package / "bcgov-extension.yaml", marketplace.load_schema(ROOT)
+  )
+  assert errors == []
+  assert effective["summary"] == '# Review: changes before "merging".'
   manifest = yaml.safe_load(
     (package / "bcgov-extension.yaml").read_text(encoding="utf-8")
   )
@@ -264,7 +275,7 @@ def test_finder_reports_requested_removed_id_without_recommending_it():
 
 
 @pytest.mark.parametrize("extension_type", ["hook", "mcp"])
-def test_creator_keeps_executable_integrations_deferred(tmp_path, extension_type):
+def test_creator_rejects_unsupported_types(tmp_path, extension_type):
   """Executable integrations remain outside the first-release product boundary."""
   args = SimpleNamespace(
     marketplace=tmp_path,
@@ -272,12 +283,12 @@ def test_creator_keeps_executable_integrations_deferred(tmp_path, extension_type
     extension_type=extension_type,
     specialty="community",
   )
-  with pytest.raises(creator.CreateError, match="deferred"):
+  with pytest.raises(creator.CreateError, match="unsupported extension type"):
     creator.initialize(args)
 
 
-def test_reviewed_install_blocks_reserved_extension_types(tmp_path):
-  """A catalog record cannot make an unsupported type installable."""
+def test_reviewed_install_requires_a_tested_choice(tmp_path):
+  """A catalog record needs a tested install choice before placement."""
   args = SimpleNamespace(project=tmp_path, id="bcgov-public/release-prompt", yes=True)
   catalog = {
     "extensions": [

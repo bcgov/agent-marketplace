@@ -96,6 +96,7 @@
     return heading + alias + chain + replacement + `
       <p>${escape(record.summary)}</p>
       <p class="detail-category"><span class="specialty-flair">${escape(specialty?.['display-flair'] || specialty?.['display-name'] || (record.specialty === 'community' ? 'Community' : record.specialty))}</span> · ${escape(types[record.type] || record.type)}</p>
+      ${installDetail(catalog, record, matches && checks.outcome === 'passed' && record.lifecycle === 'active' && !record['moved-to'] && !resolved.alias)}
       ${record.lifecycle === 'quarantined' ? '<p class="lifecycle-notice">Source may contain withdrawn guidance. Inspect it with care; installation is unavailable.</p>' : ''}
       <dl>${pair('Source added', date(source.added))}${pair('Source updated', date(source.updated))}</dl>
       <p class="detail-note">Dates describe source history, not first publication.</p>
@@ -122,7 +123,6 @@
         ${pair('Prerequisites', escape((record.prerequisites || []).join('; ') || 'None declared'))}</dl>
       ${url ? `<p><a href="${url}">${record.lifecycle === 'quarantined' ? 'Inspect quarantined source at this revision (warning)' : 'Read exact source at this revision'}</a></p>` : ''}
       ${safeUrl(record.support) ? `<p><a href="${safeUrl(record.support)}">Contact maintainers for support</a></p>` : ''}
-      ${installDetail(catalog, record, matches && checks.outcome === 'passed' && record.lifecycle === 'active' && !record['moved-to'] && !resolved.alias)}
     `;
   }
 

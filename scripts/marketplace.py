@@ -722,50 +722,6 @@ def capability_risk(manifest: dict) -> str:
   return "low"
 
 
-def intake_decision(
-  *,
-  scan_outcome: str,
-  risk: str,
-  author_trusted: bool | None,
-  within_velocity: bool | None,
-  config: dict,
-) -> dict:
-  """Decide whether a community submission can auto-publish or needs a human.
-
-  ``author_trusted`` and ``within_velocity`` are ``None`` until the intake
-  workflow resolves them from live GitHub account data. When either is unknown
-  the submission is held, so the gate fails safe rather than open.
-  """
-  policy = config.get("community-intake") or {}
-  ceiling = policy.get("auto-publish-risk-ceiling", "elevated")
-  if scan_outcome == "blocked":
-    return {
-      "decision": "reject",
-      "reasons": ["package failed the automated policy scan"],
-    }
-  if not policy.get("auto-publish", False):
-    return {"decision": "hold-for-review", "reasons": ["auto-publish is disabled"]}
-  reasons = []
-  if RISK_ORDER.get(risk, len(RISK_BANDS)) > RISK_ORDER.get(ceiling, 1):
-    reasons.append(
-      f"capability risk '{risk}' exceeds the auto-publish ceiling '{ceiling}'"
-    )
-  if author_trusted is False:
-    reasons.append("author does not meet the community account-age threshold")
-  if within_velocity is False:
-    reasons.append("author exceeds the submission-velocity limit")
-  if author_trusted is None or within_velocity is None:
-    reasons.append("author tenure and velocity must be verified at intake")
-  if reasons:
-    return {"decision": "hold-for-review", "reasons": reasons}
-  return {
-    "decision": "auto-publish",
-    "reasons": [
-      "scan passed, capability risk within ceiling, author trusted, within velocity"
-    ],
-  }
-
-
 def scan_package(package_dir: Path, manifest: dict) -> dict:
   """Scan package bytes without importing or executing contributed content."""
   root = package_dir.parents[2]
@@ -1008,7 +964,7 @@ def analyze_submission(root: Path, package_dir: Path, base: str | None = None) -
   scan = scan_package(package_dir, manifest)
   files, structural_findings = _regular_files(package_dir)
   inventory = _inventory_regular_files(package_dir, files)
-  config = load_marketplace_config(root)
+  load_marketplace_config(root)
   risk = capability_risk(manifest)
   return {
     "classification": "blocked" if scan["outcome"] == "blocked" else "needs-review",
@@ -1024,51 +980,11 @@ def analyze_submission(root: Path, package_dir: Path, base: str | None = None) -
       else []
     ),
     "risk": risk,
-    "intake": intake_decision(
-      scan_outcome=scan["outcome"],
-      risk=risk,
-      author_trusted=None,
-      within_velocity=None,
-      config=config,
-    ),
     "package-tree-digest": package_digest(inventory),
     "files": inventory,
     "inventory-complete": not structural_findings,
     "scan": scan,
     **({"transitions": analyze_transitions(root, base)} if base else {}),
-  }
-
-
-def intake_submission(
-  root: Path,
-  package_dir: Path,
-  author_trusted: bool | None,
-  within_velocity: bool | None,
-) -> dict:
-  """Return the auto-publish decision for one community submission.
-
-  The scan and capability risk are computed here from package content. The
-  author-trust and velocity signals are resolved from live GitHub data by the
-  intake workflow and passed in, so this stays a deterministic, testable gate.
-  """
-  package_dir = package_dir.resolve()
-  manifest, errors = validate_manifest(package_dir / MANIFEST_NAME, load_schema(root))
-  if errors or manifest is None:
-    raise _validation_error(errors)
-  config = load_marketplace_config(root)
-  scan = scan_package(package_dir, manifest)
-  risk = capability_risk(manifest)
-  return {
-    "id": manifest["id"],
-    "risk": risk,
-    "scan-outcome": scan["outcome"],
-    "intake": intake_decision(
-      scan_outcome=scan["outcome"],
-      risk=risk,
-      author_trusted=author_trusted,
-      within_velocity=within_velocity,
-      config=config,
-    ),
   }
 
 
@@ -1269,10 +1185,6 @@ def render_codeowners(specialties: list[dict]) -> str:
     "/tests/security-policy/ @bcgov/security",
   ]
   return "\n".join(lines) + "\n"
-
-
-RISK_BANDS = ("low", "elevated", "high")
-RISK_ORDER = {band: index for index, band in enumerate(RISK_BANDS)}
 
 
 def _validate_community_intake(path: Path, intake: object) -> None:
@@ -1965,22 +1877,6 @@ def _parser() -> argparse.ArgumentParser:
     "--base",
     help="trusted base commit for routing facts across all affected identities",
   )
-  intake_parser = subparsers.add_parser(
-    "intake", help="decide whether a community submission can auto-publish"
-  )
-  intake_parser.add_argument("package", type=Path)
-  intake_parser.add_argument(
-    "--author-trust",
-    choices=["yes", "no", "unknown"],
-    default="unknown",
-    help="whether the author cleared the community account-age threshold",
-  )
-  intake_parser.add_argument(
-    "--velocity",
-    choices=["ok", "exceeded", "unknown"],
-    default="unknown",
-    help="whether the author is within the submission-velocity limit",
-  )
   return parser
 
 
@@ -2009,16 +1905,6 @@ def main(argv: list[str] | None = None) -> int:
       print(
         json.dumps(
           public_scan(scan_package(args.package, manifest)), indent=2, sort_keys=True
-        )
-      )
-    elif args.command == "intake":
-      trust = {"yes": True, "no": False, "unknown": None}[args.author_trust]
-      velocity = {"ok": True, "exceeded": False, "unknown": None}[args.velocity]
-      print(
-        json.dumps(
-          intake_submission(root, args.package, trust, velocity),
-          indent=2,
-          sort_keys=True,
         )
       )
     else:

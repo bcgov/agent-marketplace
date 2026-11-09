@@ -1409,53 +1409,6 @@ def test_specialty_does_not_claim_human_review_from_config(tmp_path):
   assert catalog["extensions"][0]["checks"]["status"] == "unreviewed"
 
 
-def test_intake_decision_matrix():
-  """The gate rejects blocked scans and holds anything not fully cleared."""
-  config = {
-    "community-intake": {"auto-publish": True, "auto-publish-risk-ceiling": "elevated"}
-  }
-  reject = m.intake_decision(
-    scan_outcome="blocked",
-    risk="low",
-    author_trusted=True,
-    within_velocity=True,
-    config=config,
-  )
-  assert reject["decision"] == "reject"
-  high = m.intake_decision(
-    scan_outcome="passed",
-    risk="high",
-    author_trusted=True,
-    within_velocity=True,
-    config=config,
-  )
-  assert high["decision"] == "hold-for-review"
-  untrusted = m.intake_decision(
-    scan_outcome="passed",
-    risk="low",
-    author_trusted=False,
-    within_velocity=True,
-    config=config,
-  )
-  assert untrusted["decision"] == "hold-for-review"
-  unknown = m.intake_decision(
-    scan_outcome="passed",
-    risk="low",
-    author_trusted=None,
-    within_velocity=None,
-    config=config,
-  )
-  assert unknown["decision"] == "hold-for-review"
-  clear = m.intake_decision(
-    scan_outcome="passed",
-    risk="elevated",
-    author_trusted=True,
-    within_velocity=True,
-    config=config,
-  )
-  assert clear["decision"] == "auto-publish"
-
-
 def test_config_rejects_cut_review_fields(tmp_path):
   """Review pins cannot be reintroduced to repository settings."""
   root = _root(tmp_path)
