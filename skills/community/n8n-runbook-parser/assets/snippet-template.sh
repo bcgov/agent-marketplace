@@ -3,7 +3,7 @@
 #
 # Cleaned from SOURCE NAME "SECTION" (read-only collection only).
 # Params:    PARAM (env or $1, required) — describe it.
-# Read-only: only READ-ONLY-COMMANDS; idempotent, safe to re-run any time.
+# Read-only: only READ-ONLY-COMMANDS; idempotency and side effects must be reviewed for the selected inputs.
 # Output:    stdout JSON { describe the shape }.
 set -euo pipefail
 

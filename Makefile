@@ -1,4 +1,4 @@
-.PHONY: setup validate validate-one marketplace generate test docs serve demo-analyze format lint verify
+.PHONY: setup validate validate-one marketplace generate test docs serve links format lint verify
 
 # One-time (or after pulling new deps): install the Python tooling declared in
 # pyproject.toml into a uv-managed virtualenv. Running `uv run` also does this
@@ -6,7 +6,7 @@
 setup:
 	uv sync
 
-# Validate every skill profile against the spec.
+# Validate every native skill package.
 validate:
 	uv run python scripts/validate_skill.py --all
 
@@ -15,7 +15,7 @@ validate-one:
 	@test -n "$(SKILL)" || (echo 'Usage: make validate-one SKILL=skills/<name>/SKILL.md' >&2; exit 2)
 	uv run python scripts/validate_skill.py $(SKILL)
 
-# Validate metadata, package policy, and checked-in generated projections.
+# Validate metadata, package policy, and committed CODEOWNERS.
 marketplace:
 	uv run python scripts/marketplace.py validate
 
@@ -40,11 +40,6 @@ serve:
 	@echo "Serving docs/ at http://localhost:$(PORT)/ (Ctrl+C to stop)"
 	@cd docs && uv run python -m http.server $(PORT)
 
-# Run a safe submission-analysis demo. Usage: make demo-analyze FIXTURE=benign-submission
-demo-analyze:
-	@test -n "$(FIXTURE)" || (echo 'Usage: make demo-analyze FIXTURE=benign-submission|blocked-submission' >&2; exit 2)
-	uv run python scripts/demo.py analyze-fixture $(FIXTURE)
-
 # Auto-format all Python to the repo style (2-space indent, double quotes).
 format:
 	uv run ruff format .
@@ -57,7 +52,10 @@ lint:
 	uv run yamllint .github/workflows
 
 # One launch gate: formatting, lint, tests, portable and marketplace
-# validation, generated catalog drift, Getting Started contracts, and docs.
+# validation, CODEOWNERS drift, internal file/anchor links, and isolated docs.
+links:
+	uv run python scripts/check_links.py .
+
 verify:
 	uv run ruff format --check .
 	uv run ruff check .
@@ -65,4 +63,5 @@ verify:
 	uv run pytest -q tests/
 	uv run python scripts/validate_skill.py --all
 	uv run python scripts/marketplace.py validate
-	bash docs/build.sh
+	uv run python scripts/check_links.py .
+	bash docs/build.sh "$$(mktemp -d)/docs"

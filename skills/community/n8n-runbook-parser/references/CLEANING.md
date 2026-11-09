@@ -2,7 +2,7 @@
 
 **Raw** snippets (under `working_dir/<group>/`) are the verbatim, 1:1 decomposition of a
 document — mostly useless on their own, but we keep their parts. **Cleaned** snippets are the
-safe, composable subset you (the agent) write to `snippets/<group>/` (no subfolder), where an
+reviewed, composable subset you (the agent) write to `snippets/<group>/` (no subfolder), where an
 n8n workflow can drop one in and chain it.
 
 This is entirely your judgement: read the raw `working_dir/<group>/<name>_<section>.*` files and
@@ -30,8 +30,8 @@ A cleaned `snippet-*` MUST be:
 2. **Parameterized** — inputs come from **CLI args and/or env vars**, never hardcoded
    cluster names, namespaces, timestamps, or pod ids. Document each parameter in a header
    comment; fail fast on a missing required one (`: "${NAMESPACE:?set NAMESPACE}"`).
-3. **Read-only and idempotent** — safe to run repeatedly, in any order, with no adverse
-   mutation or side effect. Observation only.
+3. **Read-only and idempotent** - review effects and repeatability for the selected
+   inputs. These are objectives, not safety guarantees from the parser or seal.
 4. **Processable output** — emit something a downstream snippet can consume. Use **JSON via
    `jq`** for verbose or structured data; plain stdout is fine for a single value. Use
    judgement — not everything needs JSON.
@@ -157,13 +157,13 @@ its section. So when cleaning a source, produce the collection `snippet-*` block
 `validator-*` checks for the data they emit — fetching and validation stay separate.
 
 **Doc links (the shim).** A validator never hardcodes a URL. It sources its group's shim — a
-sibling `snippets/<group>/<group>.sh`, a static `aspect|version -> url` table — and resolves its
+sibling `snippets/<group>/url-shim-<group>.sh`, a static `aspect|version -> url` table — and resolves its
 link with `doc_url <aspect> <version>` (version `latest` picks the newest on file). The shim is
 generated from the registry, so URLs stay out of the snippet and travel with the snippets (no
 yq/config at run time). To add or change a link: register the topic in `config.yaml`
 `status.docs.topics[]` (aspect, version, group, url), prune dead URLs with `scripts/doc_links.py`
-(it follows redirects; only 404/410 are removed), then regenerate with `scripts/doc-link.sh` and
-commit the refreshed `snippets/<group>/<group>.sh`. A missing topic (e.g. pruned) makes `doc_url`
+(it follows redirects; only 404/410 are removed), which also regenerates the shim from `assets/doc-url-shim-template.sh`; then
+commit the refreshed `snippets/<group>/url-shim-<group>.sh`. A missing topic (e.g. pruned) makes `doc_url`
 warn and the report simply omits the link. Validators also source `utils.sh` for standard
 messaging; both libs are optional at run time (the verdict still emits without them).
 
@@ -200,7 +200,7 @@ jq -n --arg ns "$NS" --argjson members "$members" \
   '{namespace: $ns, members: $members}'
 ```
 
-This is safe to chain: a downstream `snippet-*` reads its JSON on stdin; a final markdown
+After reviewing effects and input contracts, this can be composed: a downstream `snippet-*` reads its JSON on stdin; a final markdown
 `snippet-*` renders it for the user (below). The `reinit`/`restart`/PITR raw snippets are
 skipped per the rule above.
 

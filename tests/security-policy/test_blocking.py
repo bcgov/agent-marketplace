@@ -27,7 +27,11 @@ def test_approved_text_rules_block_undeclared_content(tmp_path, content, expecte
   (package / m.MANIFEST_NAME).write_text("id: bcgov-public/sample\n")
   scan = m.scan_package(package, {"capabilities": {}})
   assert scan["outcome"] == "blocked"
-  assert expected in {item["code"] for item in scan["findings"]}
+  finding = next(item for item in scan["findings"] if item["code"] == expected)
+  assert finding["disposition"] == "blocking"
+  assert finding["rule-id"] == (
+    "SECRET_PATTERNS" if expected == "assigned-secret" else expected
+  )
 
 
 def test_approved_script_rule_blocks_undeclared_script(tmp_path):
@@ -38,13 +42,62 @@ def test_approved_script_rule_blocks_undeclared_script(tmp_path):
   (package / m.MANIFEST_NAME).write_text("id: bcgov-public/sample\n")
   (package / "scripts" / "run.sh").write_text("echo hello\n")
   scan = m.scan_package(package, {"capabilities": {}})
-  assert "undeclared-script" in {item["code"] for item in scan["findings"]}
+  finding = next(
+    item for item in scan["findings"] if item["rule-id"] == "undeclared-script"
+  )
+  assert finding["disposition"] == "blocking"
+  assert scan["outcome"] == "blocked"
+  declared_scan = m.scan_package(package, {"capabilities": {"commands": ["run.sh"]}})
+  assert declared_scan["outcome"] == "passed"
+  assert not any(
+    item["rule-id"] == "undeclared-script" for item in declared_scan["findings"]
+  )
 
 
-def test_benign_declared_package_passes(tmp_path):
-  """An ordinary instruction remains publishable."""
+@pytest.mark.parametrize(
+  ("content", "capabilities"),
+  [
+    ("# Sample\nA safe instruction.\n", {}),
+    ("curl https://listed.example\n", {"network": ["listed.example"]}),
+    ("echo $DECLARED_VALUE\n", {"environment-variables": ["DECLARED_VALUE"]}),
+    ("echo $DECLARED_VALUE\n", {"secret-names": ["DECLARED_VALUE"]}),
+  ],
+)
+def test_benign_declared_package_passes(tmp_path, content, capabilities):
+  """Ordinary guidance and explicitly declared access remain publishable."""
   package = tmp_path / "skills" / "community" / "sample"
   package.mkdir(parents=True)
-  (package / "SKILL.md").write_text("# Sample\nA safe instruction.\n")
+  (package / "SKILL.md").write_text(content, encoding="utf-8")
   (package / m.MANIFEST_NAME).write_text("id: bcgov-public/sample\n")
-  assert m.scan_package(package, {"capabilities": {}})["outcome"] == "passed"
+  scan = m.scan_package(package, {"capabilities": capabilities})
+  assert scan["outcome"] == "passed"
+  assert scan["findings"] == []
+
+
+@pytest.mark.parametrize(
+  ("filesystem", "risk"),
+  [
+    ({"read": ["*"], "write": []}, "high"),
+    ({"read": [], "write": ["*"]}, "high"),
+    ({"read": ["*"], "write": ["*"]}, "high"),
+    ({"read": ["workspace"], "write": []}, "low"),
+    ({"read": ["repo/.github/**"], "write": []}, "low"),
+    ({"read": ["workspace"], "write": ["workspace/output"]}, "elevated"),
+    ({"read": [], "write": ["repo/.github/**"]}, "elevated"),
+  ],
+)
+def test_filesystem_wildcards_are_high_risk_and_advisory(tmp_path, filesystem, risk):
+  """Unbounded filesystem declarations raise declared risk without a blocker."""
+  package = tmp_path / "skills" / "community" / "sample"
+  package.mkdir(parents=True)
+  (package / "SKILL.md").write_text("# Sample\n", encoding="utf-8")
+  (package / m.MANIFEST_NAME).write_text("id: bcgov-public/sample\n", encoding="utf-8")
+  manifest = {"capabilities": {"filesystem": filesystem}}
+  assert m.capability_risk(manifest) == risk
+  scan = m.scan_package(package, manifest)
+  assert scan["outcome"] == "passed"
+  wildcard_findings = [
+    item for item in scan["findings"] if item["rule-id"] == "wildcard-capability"
+  ]
+  assert bool(wildcard_findings) == (risk == "high")
+  assert all(item["disposition"] == "advisory" for item in wildcard_findings)

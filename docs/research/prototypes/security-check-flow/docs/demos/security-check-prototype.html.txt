@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prototype: extension security checks</title>
+  <style>
+    :root {
+      font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: #17293d;
+      background: #edf2f6;
+      --blue: #003366;
+      --gold: #fcba19;
+      --line: #bbcbd9;
+      --muted: #40566d;
+      --paper: #fff;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; padding-bottom: 6rem; }
+    button { font: inherit; cursor: pointer; }
+    button:focus-visible, a:focus-visible { outline: 3px solid #006bb6; outline-offset: 3px; }
+    header { background: var(--blue); color: #fff; border-bottom: 5px solid var(--gold); padding: 1.1rem max(1.25rem, calc((100vw - 72rem)/2)); }
+    header strong { font-size: 1.1rem; }
+    header span { opacity: .8; margin-left: .7rem; }
+    main { max-width: 72rem; margin: auto; padding: 2rem 1.25rem 4rem; }
+    h1 { font-size: clamp(1.8rem, 3.8vw, 2.8rem); line-height: 1.15; margin: .4rem 0 1rem; max-width: 28ch; }
+    h2 { font-size: 1.35rem; line-height: 1.25; margin: 0 0 .8rem; }
+    h3 { font-size: 1.05rem; margin: 1rem 0 .35rem; }
+    p { margin: .3rem 0 1rem; max-width: 75ch; }
+    small, .small { font-size: .85rem; }
+    .muted { color: var(--muted); }
+    .intro { max-width: 65ch; margin-bottom: 1.5rem; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin: 1.5rem 0; }
+    .toolbar button, .tabs button { background: #fff; color: var(--blue); border: 2px solid var(--blue); border-radius: .2rem; padding: .5rem .85rem; min-height: 44px; }
+    .toolbar button[aria-pressed=true], .tabs button[aria-pressed=true] { background: var(--blue); color: #fff; }
+    .surface { background: var(--paper); border: 1px solid var(--line); padding: 1.35rem; }
+    .surface + .surface { margin-top: 1rem; }
+    .step { border-left: 5px solid var(--blue); padding-left: 1.3rem; margin: 0 0 1.4rem; }
+    .step:last-child { margin-bottom: 0; }
+    .tag { display: inline-block; font-size: .8rem; font-weight: 700; border: 1px solid currentColor; padding: .12rem .45rem; border-radius: .2rem; margin: .15rem .3rem .15rem 0; }
+    .hold { color: #8d291c; background: #fff2ef; }
+    .advisory { color: #785200; background: #fff5da; }
+    .ok { color: #17613a; background: #e8f4ec; }
+    .info { color: #174e81; background: #ebf4fc; }
+    .evidence { font: .9rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+    pre.evidence { white-space: pre-wrap; background: #edf4fa; padding: 1rem; }
+    .rule { border-top: 1px solid var(--line); padding: .7rem 0; }
+    .rule:first-child { border-top: none; }
+    .rule p { margin: .3rem 0; }
+    .callout { background: #edf4fa; border-left: 4px solid var(--blue); padding: .75rem 1rem; margin: 1rem 0; }
+    .warn { background: #fff4e0; border-left-color: #9c6100; }
+    .failure { background: #fff2ef; border-left-color: #a23225; }
+    .workspace { display: grid; grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr); gap: 1rem; }
+    .workspace nav { background: var(--blue); color: #fff; padding: 1.2rem; }
+    .workspace nav a { display: block; padding: .65rem 0; color: #fff; border-bottom: 1px solid #ffffff55; }
+    .record { border-top: 1px solid var(--line); padding: 1.1rem 0; }
+    .record:first-child { border: 0; }
+    .record .label { font-weight: 700; color: var(--blue); display: block; }
+    .tabs { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+    .switcher { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: .7rem; background: #122a43; color: #fff; padding: .55rem; border-radius: .5rem; box-shadow: 0 3px 14px #0006; max-width: calc(100vw - 1rem); z-index: 3; }
+    .switcher button { background: #fff; color: #123457; border: 0; border-radius: .3rem; min-width: 44px; min-height: 44px; }
+    .switcher output { min-width: 12rem; text-align: center; font-weight: 700; }
+    @media (max-width: 700px) {
+      .workspace { grid-template-columns: 1fr; }
+      .workspace nav { display: none; }
+      header span { display: block; margin-left: 0; }
+      .switcher output { min-width: 8rem; font-size: .85rem; }
+    }
+  </style>
+</head>
+<body>
+  <header><strong>GitHub PR checks + BC Gov Catalogue</strong><span>Throwaway storyboard, not a new website or a live check</span></header>
+  <main>
+    <h1>One Extension PR, from finding to publication</h1>
+    <p class="intro">The contributor works in GitHub, not in a separate marketplace app. This mockup illustrates proposed GitHub check summaries and a later Catalogue entry. Security rule changes are a separate, uncommon GitHub PR workflow; existing rules run automatically on every Extension PR. Nothing is scanned here.</p>
+    <div class="callout"><strong>Proposed v1 flow:</strong> open a Community Extension PR → read-only checks report a line and a fix → push a correction to the same PR → checks rerun for the new commit → if every gate passes and the author is eligible, a separate trusted job rechecks that exact commit and auto-merges → the built Catalogue shows evidence for the published revision. Specialty or exception PRs still need human review. This is the decided target, not the current CI implementation.</div>
+    <div class="tabs" role="group" aria-label="Audience and surface">
+      <button type="button" data-context="pr" aria-pressed="true">GitHub / Extension PR</button>
+      <button type="button" data-context="policy" aria-pressed="false">GitHub / rule-change PR</button>
+      <button type="button" data-context="catalogue" aria-pressed="false">Catalogue / published entry</button>
+    </div>
+    <div class="toolbar" id="example-revision" role="group" aria-label="Example submission">
+      <strong>Example revision:</strong>
+      <button type="button" id="held" aria-pressed="true">Held: missing declaration</button>
+      <button type="button" id="eligible" aria-pressed="false">Eligible: corrected declaration</button>
+    </div>
+    <div id="prototype" aria-live="polite"></div>
+  </main>
+  <div class="switcher" role="group" aria-label="Prototype layout switcher">
+    <button id="previous" type="button" aria-label="Previous layout">&#8592;</button>
+    <output id="variant-label" aria-live="polite"></output>
+    <button id="next" type="button" aria-label="Next layout">&#8594;</button>
+  </div>
+  <script>
+    // Three layouts of each hypothetical surface, switchable with ?variant=A|B|C.
+    const variants = { A: "Guided steps", B: "Working view", C: "Evidence sheet" };
+    const contexts = { policy: "GitHub / rule-change PR", pr: "GitHub / Extension PR", catalogue: "Catalogue / published entry" };
+    const params = new URLSearchParams(location.search);
+    let variant = variants[params.get("variant")] ? params.get("variant") : "A";
+    let context = contexts[params.get("context")] ? params.get("context") : "pr";
+    let held = true;
+
+    function governance() {
+      return `<h2>An infrequent rule-change PR, not an author setting</h2>
+        <p>Initially, use existing deterministic checks. The current baseline implements these in <span class="evidence">scripts/marketplace.py</span>, with <span class="evidence">POLICY_VERSION = "bcgov-marketplace-policy/1.0"</span>; there is no approved custom-rule YAML format yet. The future policy file format and governance details still need specifying. Security owns approvals to change what blocks; marketplace maintainers implement scanner adapters and the common finding schema.</p>
+        <div class="rule"><strong>Actual baseline rule examples:</strong> <span class="evidence">undeclared-network</span> blocks a curl/wget host missing from Manifest <span class="evidence">capabilities.network</span>; <span class="evidence">undeclared-environment-variable</span> blocks a referenced undeclared variable; <span class="evidence">hidden-unicode</span> blocks invisible/bidirectional characters; <span class="evidence">instruction-override</span> is advisory. These are illustrative of current code, not a claim that the proposed multi-scanner pipeline is deployed.</div>
+        <pre class="evidence"><code>Today: scripts/marketplace.py
+NETWORK_COMMAND_RE matches curl/wget + https://api.example.org
+if host not in manifest["capabilities"]["network"]:
+    finding("blocking", "undeclared-network", file, line)
+
+Author fix: declare api.example.org in bcgov-extension.yaml
+            or remove the network instruction.</code></pre>
+        <div class="rule"><strong>If a new blocking rule is ever needed:</strong> Security and maintainers agree on a precise match, test examples, false-positive handling and severity; a PR changes versioned policy/rule code and tests; Security reviews and approves that PR before merge. The next Extension PR checks use the new pinned policy revision. A scanner update alone cannot turn an advisory into a block.</div>
+        <div class="rule"><span class="tag info">Replaceable engine</span> GHAS secret scanning remains a separate native GitHub signal. Cisco skill-scanner and NVIDIA SkillSpector are planned static-only pilots, not installed baseline checks. Normalize their outputs before gating; the same approved rule/disposition and finding contract survive an engine change.</div>`;
+    }
+    function author() {
+      return `<h2>GitHub PR #48 · Community Skill · commit <span class="evidence">${held ? "a31f0c7" : "b74e231"}</span></h2>
+        <p>${held ? `<span class="tag hold">Required check failed; PR stays open</span> The submitted Extension mentions a network host that its Manifest does not declare.` : `<span class="tag ok">Required check passed on new commit</span> The author pushed a correction to the same PR; checks reran on b74e231. The trusted merge gate still checks membership, age, risk, velocity, paths and other required conditions.`}</p>
+        <div class="rule"><span class="tag ${held ? "hold" : "ok"}">${held ? "Blocking / high" : "Resolved on new commit"}</span> <strong>undeclared-network</strong> · <span class="evidence">skills/community/service-helper/SKILL.md:27</span><br>
+        ${held ? "This line references https://api.example.org but capabilities.network is empty. Add api.example.org to bcgov-extension.yaml, or remove the network instruction; push a commit to this PR to rerun checks." : "The Manifest now declares api.example.org; the previous failure was evidence for a31f0c7 only. A declared capability changes the calculated risk tier; it does not automatically make the PR eligible."}</div>
+        <div class="rule"><span class="tag advisory">Advisory / medium</span> <strong>instruction-override</strong> · <span class="evidence">skills/community/service-helper/SKILL.md:44</span><br>Possible instruction override in quoted sample text. Review the quote and remove or explain it; this advisory does not fail the check.</div>
+        <div class="callout">Open the check's <strong>Details</strong> link for the full grouped report: rule, severity, file/line, explanation, fix and policy/tool version. GitHub's check result is the primary notification; any label or comment on a fork PR must come later from a trusted stage.</div>
+        <div class="callout warn">Quality evals are optional and author-run locally. They measure task quality, not security, and do not count as a safety review or CI approval.</div>`;
+    }
+    function checks() {
+      return `<h2>PR checks and merge conditions</h2>
+        <div class="rule"><span class="tag ${held ? "hold" : "ok"}">Marketplace policy ${held ? "failed" : "passed"}</span> ${held ? "1 blocking finding" : "0 blocking findings"} · 1 advisory · baseline policy <span class="evidence">bcgov-marketplace-policy/1.0</span> · baseline scanner <span class="evidence">scripts/marketplace.py</span> · revision <span class="evidence">${held ? "a31f0c7" : "b74e231"}</span>. Category: capability mismatch; severity: high; location: SKILL.md:27. Proposed future checks would also show pinned scanner versions.</div>
+        <div class="rule"><span class="tag info">Read-only validation</span> Fork PR jobs can publish checks and job summaries, but cannot apply labels or comments. A separate trusted post-validation stage handles workflow labels and any comments after verifying the exact revision.</div>
+        <div class="rule"><span class="tag info">Separate GitHub condition</span> If adopted, “Require secret scanning alerts are resolved” appears in GitHub’s merge box alongside—not inside—the marketplace policy check. A green marketplace check cannot override it.</div>
+        <div class="rule"><span class="tag ${held ? "hold" : "ok"}">Trusted auto-merge ${held ? "not available" : "conditional"}</span> A failed scan holds the PR open. After a successful rerun, an eligible Community-only PR may auto-merge only if the trusted job revalidates the exact head and every required gate. Specialty and exception PRs remain for human review. This is planned behavior, not current CI.</div>
+        <div class="callout">Passing checks means no approved blocking finding was detected for these bytes under this policy. It is not a security certification.</div>`;
+    }
+    function catalogue() {
+      return `<h2>Catalogue result</h2>
+        <p>${held ? `<span class="tag hold">Not published</span> Held PRs have no new published Catalogue result. The previous published revision, if any, keeps its own evidence.` : `<span class="tag ok">Published / checked revision</span> Community Extension may publish after the trusted gate and all required conditions pass.`}</p>
+        <div class="rule"><strong>${held ? "Illustrative entry after a passing revision (not published)" : "Service helper"}</strong> · Skill · Community<br>
+        <span class="tag info">Checks passed for revision b74e231</span> <span class="tag advisory">Advisory finding: 1</span><br>
+        Evidence: policy <span class="evidence">bcgov-marketplace-policy/1.0</span>; tool <span class="evidence">baseline scanner (scripts/marketplace.py)</span>; category <span class="evidence">instruction-override</span>; severity <span class="evidence">medium</span>; location <span class="evidence">SKILL.md:44</span>; trust status <strong>BC Gov hosted / checked, not certified safe</strong>. Proposed evidence fields; not an existing live entry.</div>
+        <div class="callout">Proposed filters: Extension type, Specialty, hosted versus External source, and check status. A badge indicates provenance and revision-specific evidence; External-source links must not inherit hosted-check badges.</div>`;
+    }
+    function journey() {
+      const steps = {
+        policy: `<div class="step"><strong>Only when an existing rule needs changing</strong>${governance()}</div>`,
+        pr: `<div class="step"><strong>Open the PR; read the check result; fix and push</strong>${author()}</div><div class="step"><strong>Rerun checks; evaluate merge eligibility</strong>${checks()}</div>`,
+        catalogue: `<div class="step"><strong>Inspect the published entry</strong>${catalogue()}</div>`
+      };
+      return `<section class="surface"><h2>${contexts[context]}</h2>${steps[context]}</section>`;
+    }
+    function workspace() {
+      const side = {
+        policy: `<strong>Repository policy PR</strong><p>Owner: Security</p><p>Integration: marketplace maintainers</p><p>Approval: Security before blocking</p>`,
+        pr: `<strong>GitHub PR checks</strong><p>Revision: ${held ? "a31f0c7" : "b74e231"}</p><p>Policy: bcgov-marketplace-policy/1.0</p><p>Status: ${held ? "held" : "eligible for other gates"}</p>`,
+        catalogue: `<strong>Catalogue filters</strong><p>Extension type</p><p>Specialty</p><p>Hosted / External source</p><p>Check status</p>`
+      };
+      const body = {
+        policy: `<section class="surface">${governance()}</section>`,
+        pr: `<section class="surface">${author()}</section><section class="surface">${checks()}</section>`,
+        catalogue: `<section class="surface">${catalogue()}</section>`
+      };
+      return `<div class="workspace"><nav aria-label="Mock context summary">${side[context]}</nav><div>${body[context]}</div></div>`;
+    }
+    function record() {
+      const entries = {
+        policy: [["Owner and approval", "Security approves the versioned policy PR before new deterministic rules can block."], ["Rule and adapter", governance()]],
+        pr: [["Finding / next action", author()], ["Checks / merge conditions", checks()]],
+        catalogue: [["Published revision / evidence", catalogue()], ["Trust boundary", "Hosted check evidence applies to one published revision. External-source entries do not inherit its badges."]]
+      };
+      return `<section class="surface"><h2>${contexts[context]}: evidence sheet</h2>
+        <p>Fields are tied to the source they came from; a passed check is not a safety certification.</p>
+        ${entries[context].map(([label, detail]) => `<div class="record"><span class="label">${label}</span>${detail}</div>`).join("")}</section>`;
+    }
+    function render() {
+      document.getElementById("prototype").innerHTML = ({ A: journey, B: workspace, C: record })[variant]();
+      document.querySelectorAll("[data-context]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.context === context)));
+      document.getElementById("example-revision").hidden = context === "policy";
+      document.getElementById("variant-label").textContent = `${variant} / ${variants[variant]}`;
+      document.getElementById("held").setAttribute("aria-pressed", String(held));
+      document.getElementById("eligible").setAttribute("aria-pressed", String(!held));
+    }
+    function switchVariant(direction) {
+      const keys = Object.keys(variants);
+      variant = keys[(keys.indexOf(variant) + direction + keys.length) % keys.length];
+      params.set("variant", variant);
+      history.replaceState(null, "", `${location.pathname}?${params}${location.hash}`);
+      render();
+    }
+    document.querySelectorAll("[data-context]").forEach(button => button.addEventListener("click", () => {
+      context = button.dataset.context;
+      params.set("context", context);
+      history.replaceState(null, "", `${location.pathname}?${params}${location.hash}`);
+      render();
+    }));
+    document.getElementById("previous").addEventListener("click", () => switchVariant(-1));
+    document.getElementById("next").addEventListener("click", () => switchVariant(1));
+    document.getElementById("held").addEventListener("click", () => { held = true; render(); });
+    document.getElementById("eligible").addEventListener("click", () => { held = false; render(); });
+    document.addEventListener("keydown", event => {
+      if (!["ArrowLeft", "ArrowRight"].includes(event.key) || event.target.closest("input, textarea, select, [contenteditable]")) return;
+      switchVariant(event.key === "ArrowLeft" ? -1 : 1);
+    });
+    render();
+  </script>
+</body>
+</html>

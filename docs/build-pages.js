@@ -19,39 +19,41 @@ function replaceAll(value, token, replacement) {
   return value.split(token).join(replacement);
 }
 
-// Read the single source of truth for the published revision, installer
-// version, and release state so pages never carry a hand-edited SHA that can
-// drift from what the catalog was generated at.
+// Snapshot coordinates come from the exact selected immutable asset. Site
+// source/run and actual release evidence are separately recorded in site-build.json.
 function readReleaseConfig() {
-  const configPath = path.join(docsDir, "..", "config", "marketplace.yaml");
-  const text = fs.readFileSync(configPath, "utf8");
-  const field = (name) => {
-    const match = text.match(new RegExp(`^${name}:[ \\t]*(\\S+)[ \\t]*$`, "m"));
-    return match ? match[1].replace(/^["']|["']$/g, "") : "";
-  };
-  return {
-    version: field("version"),
-    revision: field("revision"),
-    releaseState: field("release-state"),
-  };
+  const catalog = JSON.parse(fs.readFileSync(path.join(docsDir, "assets", "catalog.json"), "utf8"));
+  return {version: catalog.version, revision: catalog.revision, releaseState: catalog["release-state"]};
 }
 
 function releaseBanner(state, revision) {
-  // Published releases show no banner. In development the command still works
-  // against the pinned pre-release revision, so the note says "preview", not
-  // "not live".
   if (state === "published") {
     return "";
   }
   return [
     '<div class="alert alert-info">',
     '    <div class="alert-icon" aria-hidden="true">i</div>',
-    "    <div><strong>Development preview.</strong> The companion install " +
-      "command below installs immutable bytes from a pinned pre-release " +
-      `revision (<code>${revision}</code>). Content is validated, but this ` +
-      "release is not final.</div>",
+    "    <div><strong>Development preview.</strong> Catalogue source " +
+      `<code>${revision}</code> is a source preview, not a newly accepted ` +
+      "publication or successful deployment. Inspect exact record evidence " +
+      "and tested choices before placement.</div>",
     "</div>",
   ].join("\n");
+}
+
+function buildCoordinates(catalog, meta) {
+  const escape = (value) => String(value ?? "Not recorded").replace(/[&<>"']/g, (c) => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));
+  const repository = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/?$/.test(catalog.repository || "") ? catalog.repository.replace(/\/$/, "") : null;
+  const source = (sha) => repository && /^[a-f0-9]{40}$/.test(sha || "") ? `<a href="${repository}/tree/${sha}"><code>${sha}</code></a>` : escape(sha);
+  const site = meta.site || {};
+  const snapshot = meta.catalogue || {};
+  const run = repository && /^\d+$/.test(String(site.run))
+    ? `<a href="${repository}/actions/runs/${site.run}${/^\d+$/.test(String(site.attempt)) ? `/attempts/${site.attempt}` : ""}">Build run ${site.run}${site.attempt ? `, attempt ${escape(site.attempt)}` : ""}</a>` : escape(site.run);
+  const release = snapshot.release?.published_at && /^https:\/\//.test(snapshot.release.url || "")
+    ? `<a href="${escape(snapshot.release.url)}">Recorded release</a> · published ${escape(snapshot.release.published_at)}` : "Not recorded";
+  const deployment = site.deployment?.status === "succeeded" && /^https:\/\//.test(site.deployment.url || "")
+    ? `<a href="${escape(site.deployment.url)}">Recorded successful deployment</a>` : "Not recorded for this build";
+  return `<div class="build-coordinates" style="overflow-wrap:anywhere"><p><strong>Current site</strong> · source ${source(site.source)} · ${run} · <a href="assets/site-build.json">Build metadata</a></p><p><strong>Catalogue ${catalog.version === "source" ? "Source preview" : "snapshot " + escape(catalog.version)}</strong> · source ${source(catalog.revision)} · asset digest <code>${escape(snapshot["asset-digest"])}</code> · <a href="assets/catalog.json">Exact Catalogue asset</a></p><p>Release: ${release}</p><p>Successful deployment: ${deployment}${repository ? ` · <a href="${repository}/deployments">Actual deployment history</a>` : ""}</p><p>Site build/run coordinates do not establish a successful deployment. Catalogue source and site source can differ.</p></div>`;
 }
 
 const release = readReleaseConfig();
@@ -97,6 +99,9 @@ for (const filename of fs.readdirSync(pagesDir).sort()) {
     releaseBanner(release.releaseState, release.revision),
   );
 
+  const meta = JSON.parse(fs.readFileSync(path.join(docsDir, "assets", "site-build.json"), "utf8"));
+  const coordinates = buildCoordinates(JSON.parse(fs.readFileSync(path.join(docsDir, "assets", "catalog.json"), "utf8")), meta);
+  footer = footer.replace("{{BUILD_COORDINATES}}", coordinates);
   const output = `${header.trimEnd()}\n${content}\n${footer.trimStart()}`;
   fs.writeFileSync(path.join(docsDir, filename), output, "utf8");
 }

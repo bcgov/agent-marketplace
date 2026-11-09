@@ -1,0 +1,1406 @@
+{
+  "status": "prepared; retained-main reachability and stable decision updates pending; no refs deleted",
+  "inventory_captured_at": "2026-11-03T21:33:40.508229+00:00",
+  "retained_main_before": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0",
+  "backup_bundle_sha256": "ad42a6a0a6e618b73c844659a80870a4fd2136502fb6eb136e7194835dc76192",
+  "candidates": [
+    {
+      "remote_ref": "refs/heads/prototype/catalogue-personality",
+      "tracking_ref": "refs/remotes/origin/prototype/catalogue-personality",
+      "expected_sha": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "branch_only_commits": 8
+    },
+    {
+      "remote_ref": "refs/heads/prototype/security-check-flow",
+      "tracking_ref": "refs/remotes/origin/prototype/security-check-flow",
+      "expected_sha": "dd143a4dd2bb779b21b51bd4b3d96bd81f29b879",
+      "branch_only_commits": 4
+    },
+    {
+      "remote_ref": "refs/heads/research/codex-patch-inventory",
+      "tracking_ref": "refs/remotes/origin/research/codex-patch-inventory",
+      "expected_sha": "acaad6023466cd8fc2d255469aa8420d0f1d4f8a",
+      "branch_only_commits": 1
+    },
+    {
+      "remote_ref": "refs/heads/research/extension-level-evidence",
+      "tracking_ref": "refs/remotes/origin/research/extension-level-evidence",
+      "expected_sha": "761c7b5f4840da170e29e3727d11482b528fc066",
+      "branch_only_commits": 1
+    },
+    {
+      "remote_ref": "refs/heads/research/fork-pr-automerge",
+      "tracking_ref": "refs/remotes/origin/research/fork-pr-automerge",
+      "expected_sha": "5c8e805b58b976de83f09037cc6ef016a51330b1",
+      "branch_only_commits": 1
+    },
+    {
+      "remote_ref": "refs/heads/research/native-install-formats",
+      "tracking_ref": "refs/remotes/origin/research/native-install-formats",
+      "expected_sha": "af91f4a80e011bfee8061636f9342c4ed7e544b8",
+      "branch_only_commits": 1
+    },
+    {
+      "remote_ref": "refs/heads/research/replaceable-skill-scanner",
+      "tracking_ref": "refs/remotes/origin/research/replaceable-skill-scanner",
+      "expected_sha": "3005d63679cab27c99a9461de8a273bf9353340e",
+      "branch_only_commits": 1
+    },
+    {
+      "remote_ref": "refs/heads/research/scan-extensibility",
+      "tracking_ref": "refs/remotes/origin/research/scan-extensibility",
+      "expected_sha": "81dcee04714260754018d351bc0df30e18f253cd",
+      "branch_only_commits": 3
+    }
+  ],
+  "sources": [
+    {
+      "ref": "refs/heads/prototype/catalogue-personality",
+      "commit": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "source": "docs/_pages/catalog.html",
+      "target": "docs/research/prototypes/catalogue-personality/docs/_pages/catalog.html.txt",
+      "git_blob": "fe07951547a7decc6ef272448a04655074d683ea",
+      "sha256": "ec6b765ef067ab1d962e49606c4cac9a985d6c217c0a9e7dced4abf9fcd3f06a",
+      "bytes": 31866,
+      "preserved_sha256": "ec6b765ef067ab1d962e49606c4cac9a985d6c217c0a9e7dced4abf9fcd3f06a"
+    },
+    {
+      "ref": "refs/heads/prototype/catalogue-personality",
+      "commit": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "source": "docs/_pages/catalog-detail-prototype.html",
+      "target": "docs/research/prototypes/catalogue-personality/docs/_pages/catalog-detail-prototype.html.txt",
+      "git_blob": "cb3ac3aeaed2b043a868749632cd8400d2160b0e",
+      "sha256": "6f5335a4622641e91c181f9124ef355aba88f00ead66e725660516b4493aba2c",
+      "bytes": 21264,
+      "preserved_sha256": "6f5335a4622641e91c181f9124ef355aba88f00ead66e725660516b4493aba2c"
+    },
+    {
+      "ref": "refs/heads/prototype/catalogue-personality",
+      "commit": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "source": "docs/_pages/catalog-personality-prototype.html",
+      "target": "docs/research/prototypes/catalogue-personality/docs/_pages/catalog-personality-prototype.html.txt",
+      "git_blob": "c19de5000183e6ebf90396622e6ff3d0a7b18e89",
+      "sha256": "7bbdf871e74ae5c7d9b293d449ff9183ede4e075b35ea5e0e283e1f237003253",
+      "bytes": 22380,
+      "preserved_sha256": "7bbdf871e74ae5c7d9b293d449ff9183ede4e075b35ea5e0e283e1f237003253"
+    },
+    {
+      "ref": "refs/heads/prototype/catalogue-personality",
+      "commit": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "source": "docs/catalog.html",
+      "target": "docs/research/prototypes/catalogue-personality/docs/catalog.html.txt",
+      "git_blob": "06e3c615af4598616b58d421d80214b3f413888c",
+      "sha256": "f17ed619412e91f57b7fb2f02df3212cc7059b408374f71a5f544dbe139d9815",
+      "bytes": 107539,
+      "preserved_sha256": "f17ed619412e91f57b7fb2f02df3212cc7059b408374f71a5f544dbe139d9815"
+    },
+    {
+      "ref": "refs/heads/prototype/catalogue-personality",
+      "commit": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "source": "docs/catalog-detail-prototype.html",
+      "target": "docs/research/prototypes/catalogue-personality/docs/catalog-detail-prototype.html.txt",
+      "git_blob": "17289737447d748c25a4064045d563eaff601391",
+      "sha256": "bd4829bb7d83f2d86b0f0ec860b70db5004de0c7ccec9e0f981d20845c1676ca",
+      "bytes": 82655,
+      "preserved_sha256": "bd4829bb7d83f2d86b0f0ec860b70db5004de0c7ccec9e0f981d20845c1676ca"
+    },
+    {
+      "ref": "refs/heads/prototype/catalogue-personality",
+      "commit": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "source": "docs/catalog-personality-prototype.html",
+      "target": "docs/research/prototypes/catalogue-personality/docs/catalog-personality-prototype.html.txt",
+      "git_blob": "11817875e774a004334e107e4c95c88e5757a1ed",
+      "sha256": "24af0dc4bbce842e8b3330ab572241fe938abb021e44eb1ac5e57a3f7933c2ee",
+      "bytes": 84153,
+      "preserved_sha256": "24af0dc4bbce842e8b3330ab572241fe938abb021e44eb1ac5e57a3f7933c2ee"
+    },
+    {
+      "ref": "refs/heads/prototype/catalogue-personality",
+      "commit": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "source": "docs/assets/skill-previews-prototype.json",
+      "target": "docs/research/prototypes/catalogue-personality/docs/assets/skill-previews-prototype.json.txt",
+      "git_blob": "61cbb9a8decb1ac28e87ea4355523fe0785c860d",
+      "sha256": "46845bc23401feaf58185deae2f4fd97a715926c4a23ca85048833af68fc0c66",
+      "bytes": 21746,
+      "preserved_sha256": "46845bc23401feaf58185deae2f4fd97a715926c4a23ca85048833af68fc0c66"
+    },
+    {
+      "ref": "refs/heads/prototype/catalogue-personality",
+      "commit": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "source": "docs/generate-skill-previews-prototype.js",
+      "target": "docs/research/prototypes/catalogue-personality/docs/generate-skill-previews-prototype.js.txt",
+      "git_blob": "be52f177aaf3636a257e6e9591cb6b65932c3695",
+      "sha256": "8953502a114c6916e95daa04ea9b382bafa42fdf1923a2181f1e080db1a5ec64",
+      "bytes": 2165,
+      "preserved_sha256": "8953502a114c6916e95daa04ea9b382bafa42fdf1923a2181f1e080db1a5ec64"
+    },
+    {
+      "ref": "refs/heads/prototype/catalogue-personality",
+      "commit": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "source": "docs/build.sh",
+      "target": "docs/research/prototypes/catalogue-personality/docs/build.sh.txt",
+      "git_blob": "479497efd594d740453e9720d2de951f08ef2b5e",
+      "sha256": "acd26e26ef21c8823c1118c036e257ce5927ef45b32ede8d73b36c24d615a896",
+      "bytes": 1700,
+      "preserved_sha256": "acd26e26ef21c8823c1118c036e257ce5927ef45b32ede8d73b36c24d615a896"
+    },
+    {
+      "ref": "refs/heads/prototype/security-check-flow",
+      "commit": "dd143a4dd2bb779b21b51bd4b3d96bd81f29b879",
+      "source": "research/marketplace-source-benchmark.md",
+      "target": "docs/research/marketplace-source-benchmark.md",
+      "git_blob": "d6d23a0f54d6d3b4eb5286ce16cc8e34473bf9fc",
+      "sha256": "382da4bbc4515d735c9231fd13b74c68981ae4471660d514de9eb9ebfadb6051",
+      "bytes": 32498,
+      "preserved_sha256": "382da4bbc4515d735c9231fd13b74c68981ae4471660d514de9eb9ebfadb6051"
+    },
+    {
+      "ref": "refs/heads/prototype/security-check-flow",
+      "commit": "dd143a4dd2bb779b21b51bd4b3d96bd81f29b879",
+      "source": "docs/demos/security-check-prototype.html",
+      "target": "docs/research/prototypes/security-check-flow/docs/demos/security-check-prototype.html.txt",
+      "git_blob": "8373a8c104fb2373a08e1201ac3ad0f18566321e",
+      "sha256": "f7ce6b15a1faa9e9e3bd69b9cf49356b64358507de0c4eb5c752fd1ee5171699",
+      "bytes": 19081,
+      "preserved_sha256": "f7ce6b15a1faa9e9e3bd69b9cf49356b64358507de0c4eb5c752fd1ee5171699"
+    },
+    {
+      "ref": "refs/heads/research/codex-patch-inventory",
+      "commit": "acaad6023466cd8fc2d255469aa8420d0f1d4f8a",
+      "source": "research/codex-patch-inventory.md",
+      "target": "docs/research/codex-patch-inventory.md",
+      "git_blob": "33f22e3607c395d042f648061266e3709237f5bd",
+      "sha256": "87c6c74acc5e95c3d886bcacefd25066f8b2b6ba5856778a9903442a23a97441",
+      "bytes": 60892,
+      "preserved_sha256": "87c6c74acc5e95c3d886bcacefd25066f8b2b6ba5856778a9903442a23a97441"
+    },
+    {
+      "ref": "refs/heads/research/extension-level-evidence",
+      "commit": "761c7b5f4840da170e29e3727d11482b528fc066",
+      "source": "research/extension-level-evidence-findings.md",
+      "target": "docs/research/extension-level-evidence-findings.md",
+      "git_blob": "fc47aafce6fb7d0396b8cfa0abbc114a84cbf5b9",
+      "sha256": "dc1325c743bb2f302e647ffc8b75dcc55bab11b6790419919217e8edbac0f01d",
+      "bytes": 40091,
+      "preserved_sha256": "dc1325c743bb2f302e647ffc8b75dcc55bab11b6790419919217e8edbac0f01d"
+    },
+    {
+      "ref": "refs/heads/research/fork-pr-automerge",
+      "commit": "5c8e805b58b976de83f09037cc6ef016a51330b1",
+      "source": "research/fork-pr-automerge.md",
+      "target": "docs/research/fork-pr-automerge.md",
+      "git_blob": "2ebc962c4b7639c5acd7bb94de012f571946c121",
+      "sha256": "4135c621e441d839b5da17f5214801b9202dd14b3bd2ec4a91cb16460ff8e3ed",
+      "bytes": 15003,
+      "preserved_sha256": "de5b41d47036daad11dee1036eb40f3b81bfed7cf530d55d4e109b1626086f26"
+    },
+    {
+      "ref": "refs/heads/research/native-install-formats",
+      "commit": "af91f4a80e011bfee8061636f9342c4ed7e544b8",
+      "source": "research/native-install-formats.md",
+      "target": "docs/research/native-install-formats.md",
+      "git_blob": "6b4524fd81220f00aadbabc596b62273fcdc0faa",
+      "sha256": "bddb03e4f4beab7740daedf8d6ff2f0a3a57765b953d0daaf13f794ce9bdba55",
+      "bytes": 12656,
+      "preserved_sha256": "bddb03e4f4beab7740daedf8d6ff2f0a3a57765b953d0daaf13f794ce9bdba55"
+    },
+    {
+      "ref": "refs/heads/research/replaceable-skill-scanner",
+      "commit": "3005d63679cab27c99a9461de8a273bf9353340e",
+      "source": "research/replaceable-skill-scanner-findings.md",
+      "target": "docs/research/replaceable-skill-scanner-findings.md",
+      "git_blob": "12597dbecf025444a6ce817f3782da662dbf3bd3",
+      "sha256": "74dda24c4deba285d9aaba16f9bcba1574252d28432f4bd0d47fa409c656419f",
+      "bytes": 43051,
+      "preserved_sha256": "74dda24c4deba285d9aaba16f9bcba1574252d28432f4bd0d47fa409c656419f"
+    },
+    {
+      "ref": "refs/heads/research/scan-extensibility",
+      "commit": "81dcee04714260754018d351bc0df30e18f253cd",
+      "source": "research/scan-extensibility-findings.md",
+      "target": "docs/research/scan-extensibility-findings.md",
+      "git_blob": "3c70e4d3b0b5bb188cdf43a1ab83e6e9e1bb7053",
+      "sha256": "6e47d6112b5ccdd80bdfeefdf605e60f8bb21a02013b31211e1bfd23046b4998",
+      "bytes": 49037,
+      "preserved_sha256": "6e47d6112b5ccdd80bdfeefdf605e60f8bb21a02013b31211e1bfd23046b4998"
+    }
+  ],
+  "historical_local_refs": [
+    {
+      "ref": "refs/heads/main",
+      "sha": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/main"
+    },
+    {
+      "ref": "refs/heads/v1/38-minimal-manifest",
+      "sha": "17845ae3990b90fb93b87f66e744e1e71107e794",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/38-minimal-manifest"
+    },
+    {
+      "ref": "refs/heads/v1/61-validation-isolation",
+      "sha": "7beff7caf6ff5b52ffb0614834652bb5bbb81eb4",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/61-validation-isolation"
+    },
+    {
+      "ref": "refs/heads/v1/62-policy-corrections",
+      "sha": "5be91b5aeed87b4147e52493b8299e0ca2530769",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/62-policy-corrections"
+    },
+    {
+      "ref": "refs/heads/v1/7-38-manifest",
+      "sha": "da3b01936479f4f70cd6457197dcda3f27f23fa2",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-38-manifest"
+    },
+    {
+      "ref": "refs/heads/v1/7-62-policy",
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-62-policy"
+    },
+    {
+      "ref": "refs/heads/v1/7-integration",
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-integration"
+    },
+    {
+      "ref": "refs/remotes/origin/HEAD",
+      "sha": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "refs/remotes/origin/main",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/main",
+      "sha": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/prototype/catalogue-personality",
+      "sha": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/prototype/security-check-flow",
+      "sha": "dd143a4dd2bb779b21b51bd4b3d96bd81f29b879",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/codex-patch-inventory",
+      "sha": "acaad6023466cd8fc2d255469aa8420d0f1d4f8a",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/extension-level-evidence",
+      "sha": "761c7b5f4840da170e29e3727d11482b528fc066",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/fork-pr-automerge",
+      "sha": "5c8e805b58b976de83f09037cc6ef016a51330b1",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/native-install-formats",
+      "sha": "af91f4a80e011bfee8061636f9342c4ed7e544b8",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/replaceable-skill-scanner",
+      "sha": "3005d63679cab27c99a9461de8a273bf9353340e",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/scan-extensibility",
+      "sha": "81dcee04714260754018d351bc0df30e18f253cd",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/38-minimal-manifest",
+      "sha": "17845ae3990b90fb93b87f66e744e1e71107e794",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/62-policy-corrections",
+      "sha": "5be91b5aeed87b4147e52493b8299e0ca2530769",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-38-manifest",
+      "sha": "da3b01936479f4f70cd6457197dcda3f27f23fa2",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-62-policy",
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-integration",
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/tags/catalog-2026.10.01",
+      "sha": "3863008f9bfe668d9b7f0fab0d7b4a99b17b129d",
+      "object_type": "tag",
+      "peeled_sha": "246f032d1b99d594834e16e1654a37eb2c09ef56"
+    }
+  ],
+  "historical_remote_refs": [
+    {
+      "ref": "refs/heads/main",
+      "sha": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0"
+    },
+    {
+      "ref": "refs/heads/prototype/catalogue-personality",
+      "sha": "c6c012a7d8b9a2606cb77c295945da697b0913c1"
+    },
+    {
+      "ref": "refs/heads/prototype/security-check-flow",
+      "sha": "dd143a4dd2bb779b21b51bd4b3d96bd81f29b879"
+    },
+    {
+      "ref": "refs/heads/research/codex-patch-inventory",
+      "sha": "acaad6023466cd8fc2d255469aa8420d0f1d4f8a"
+    },
+    {
+      "ref": "refs/heads/research/extension-level-evidence",
+      "sha": "761c7b5f4840da170e29e3727d11482b528fc066"
+    },
+    {
+      "ref": "refs/heads/research/fork-pr-automerge",
+      "sha": "5c8e805b58b976de83f09037cc6ef016a51330b1"
+    },
+    {
+      "ref": "refs/heads/research/native-install-formats",
+      "sha": "af91f4a80e011bfee8061636f9342c4ed7e544b8"
+    },
+    {
+      "ref": "refs/heads/research/replaceable-skill-scanner",
+      "sha": "3005d63679cab27c99a9461de8a273bf9353340e"
+    },
+    {
+      "ref": "refs/heads/research/scan-extensibility",
+      "sha": "81dcee04714260754018d351bc0df30e18f253cd"
+    },
+    {
+      "ref": "refs/heads/v1/38-minimal-manifest",
+      "sha": "17845ae3990b90fb93b87f66e744e1e71107e794"
+    },
+    {
+      "ref": "refs/heads/v1/62-policy-corrections",
+      "sha": "5be91b5aeed87b4147e52493b8299e0ca2530769"
+    },
+    {
+      "ref": "refs/heads/v1/7-38-manifest",
+      "sha": "da3b01936479f4f70cd6457197dcda3f27f23fa2"
+    },
+    {
+      "ref": "refs/heads/v1/7-62-policy",
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440"
+    },
+    {
+      "ref": "refs/heads/v1/7-integration",
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440"
+    },
+    {
+      "ref": "refs/pull/1/head",
+      "sha": "d00c5470891a7c04ceda598c0e7004f9383183b6"
+    },
+    {
+      "ref": "refs/pull/2/head",
+      "sha": "1e71ade05727863930f8ee483e18bcecb8ceee09"
+    },
+    {
+      "ref": "refs/pull/20/head",
+      "sha": "dea9bd121ed5f0f56c5537a97682a851a764bf9b"
+    },
+    {
+      "ref": "refs/pull/3/head",
+      "sha": "c15eb6dc79da78c89d4c478d943fe710be439361"
+    },
+    {
+      "ref": "refs/pull/4/head",
+      "sha": "7b7a07f144093d40b9f221adbbc7709612050423"
+    },
+    {
+      "ref": "refs/pull/56/head",
+      "sha": "d0228afdceb8e7bfedaadc76b1a66d5cf87e5220"
+    },
+    {
+      "ref": "refs/pull/57/head",
+      "sha": "71a4539de562d212ed451c20b2b96418f59821ce"
+    },
+    {
+      "ref": "refs/pull/58/head",
+      "sha": "76eb6cf0056c862bf25d3037ca9267d37d7816ac"
+    },
+    {
+      "ref": "refs/pull/59/head",
+      "sha": "dd143a4dd2bb779b21b51bd4b3d96bd81f29b879"
+    },
+    {
+      "ref": "refs/pull/6/head",
+      "sha": "975ca9faee90cbc46176ca0f80c4a3e0e5497096"
+    },
+    {
+      "ref": "refs/pull/60/head",
+      "sha": "17845ae3990b90fb93b87f66e744e1e71107e794"
+    },
+    {
+      "ref": "refs/pull/60/merge",
+      "sha": "66b9db2d2fa098db20a28bd79d53a3d862c665ac"
+    },
+    {
+      "ref": "refs/pull/63/head",
+      "sha": "5be91b5aeed87b4147e52493b8299e0ca2530769"
+    },
+    {
+      "ref": "refs/pull/63/merge",
+      "sha": "84e7cf6ecf48106bc7b02f8925f857afa6590a06"
+    },
+    {
+      "ref": "refs/pull/64/head",
+      "sha": "7beff7caf6ff5b52ffb0614834652bb5bbb81eb4"
+    },
+    {
+      "ref": "refs/pull/65/head",
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440"
+    },
+    {
+      "ref": "refs/pull/65/merge",
+      "sha": "4ec86b367799860fae0092ce25a1c0fd33219697"
+    },
+    {
+      "ref": "refs/tags/catalog-2026.10.01",
+      "sha": "3863008f9bfe668d9b7f0fab0d7b4a99b17b129d"
+    }
+  ],
+  "decision_source_links": [
+    {
+      "issue": 53,
+      "title": "Rewrite v1 documentation, record ADRs, move research, delete working/",
+      "record_kind": "issue-body",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/53",
+      "branch_urls": [],
+      "path_mentions": [
+        "research/evidence",
+        "research/prototype"
+      ]
+    },
+    {
+      "issue": 23,
+      "title": "What evidence do approved External sources publish for individual Extensions?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/23#issuecomment-6586492153",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/research/extension-level-evidence/research/extension-level-evidence-findings.md",
+        "https://github.com/bcgov/agent-marketplace/tree/research/extension-level-evidence"
+      ],
+      "path_mentions": [
+        "research/extension-level-evidence"
+      ]
+    },
+    {
+      "issue": 22,
+      "title": "How should extension security scanning and author evals appear to contributors?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/22#issuecomment-6585403405",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/security-check-flow/docs/demos/security-check-prototype.html"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 22,
+      "title": "How should extension security scanning and author evals appear to contributors?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/22#issuecomment-6585858825",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/security-check-flow/docs/demos/security-check-prototype.html"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 22,
+      "title": "How should extension security scanning and author evals appear to contributors?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/22#issuecomment-6586049435",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/security-check-flow/docs/demos/security-check-prototype.html"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 22,
+      "title": "How should extension security scanning and author evals appear to contributors?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/22#issuecomment-6586142447",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/security-check-flow/docs/demos/security-check-prototype.html"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 21,
+      "title": "Which replaceable OSS scanner fits agent-skill security checks alongside GHAS?",
+      "record_kind": "issue-body",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/21",
+      "branch_urls": [],
+      "path_mentions": [
+        "research/replaceable-skill-scanner"
+      ]
+    },
+    {
+      "issue": 21,
+      "title": "Which replaceable OSS scanner fits agent-skill security checks alongside GHAS?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/21#issuecomment-6534577933",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/research/replaceable-skill-scanner/research/replaceable-skill-scanner-findings.md"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 18,
+      "title": "Catalogue site personality: what flair, and can a static build compute it?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/18#issuecomment-6585317913",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/catalogue-personality/docs/catalog-personality-prototype.html",
+        "https://github.com/bcgov/agent-marketplace/tree/prototype/catalogue-personality"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 18,
+      "title": "Catalogue site personality: what flair, and can a static build compute it?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/18#issuecomment-6585732122",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/catalogue-personality/docs/catalog-personality-prototype.html"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 18,
+      "title": "Catalogue site personality: what flair, and can a static build compute it?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/18#issuecomment-6586199307",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/catalogue-personality/docs/catalog.html",
+        "https://github.com/bcgov/agent-marketplace/tree/prototype/catalogue-personality"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 18,
+      "title": "Catalogue site personality: what flair, and can a static build compute it?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/18#issuecomment-6586340241",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/catalogue-personality/docs/catalog-detail-prototype.html?id=bcgov-public%2Frepo-hardening",
+        "https://github.com/bcgov/agent-marketplace/tree/prototype/catalogue-personality"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 18,
+      "title": "Catalogue site personality: what flair, and can a static build compute it?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/18#issuecomment-6586569384",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/catalogue-personality/docs/catalog-detail-prototype.html"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 18,
+      "title": "Catalogue site personality: what flair, and can a static build compute it?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/18#issuecomment-6587394385",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/catalogue-personality/docs/catalog-detail-prototype.html"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 18,
+      "title": "Catalogue site personality: what flair, and can a static build compute it?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/18#issuecomment-6587567278",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/catalogue-personality/docs/catalog-detail-prototype.html",
+        "https://github.com/bcgov/agent-marketplace/blob/prototype/catalogue-personality/docs/catalog.html",
+        "https://github.com/bcgov/agent-marketplace/tree/prototype/catalogue-personality"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 13,
+      "title": "Scan extensibility: how do domain teams add checks, tags and labels?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/13#issuecomment-6534578725",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/research/replaceable-skill-scanner/research/replaceable-skill-scanner-findings.md"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 11,
+      "title": "Which native install/marketplace formats can this repo serve?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/11#issuecomment-6532078327",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/research/native-install-formats/research/native-install-formats.md"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 10,
+      "title": "How can Actions safely validate and auto-merge fork PRs in a bcgov repo?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/10#issuecomment-6531948973",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/research/fork-pr-automerge/research/fork-pr-automerge.md"
+      ],
+      "path_mentions": []
+    },
+    {
+      "issue": 9,
+      "title": "What does the Codex patch add over the baseline?",
+      "record_kind": "issue-body",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/9",
+      "branch_urls": [],
+      "path_mentions": [
+        "working/APPLY-CHANGES.txt",
+        "working/agent-marketplace-changes.patch"
+      ]
+    },
+    {
+      "issue": 9,
+      "title": "What does the Codex patch add over the baseline?",
+      "record_kind": "comment",
+      "record_url": "https://github.com/bcgov/agent-marketplace/issues/9#issuecomment-6531829971",
+      "branch_urls": [
+        "https://github.com/bcgov/agent-marketplace/blob/research/codex-patch-inventory/research/codex-patch-inventory.md"
+      ],
+      "path_mentions": []
+    }
+  ],
+  "working": {
+    "present": false,
+    "tracked_history_found": false,
+    "original_patch_bytes_available": false
+  },
+  "current_inventory_captured_at": "2026-11-03T23:39:52.942190+00:00",
+  "current_local_refs": [
+    {
+      "ref": "refs/heads/main",
+      "sha": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/main"
+    },
+    {
+      "ref": "refs/heads/v1/38-minimal-manifest",
+      "sha": "17845ae3990b90fb93b87f66e744e1e71107e794",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/38-minimal-manifest"
+    },
+    {
+      "ref": "refs/heads/v1/61-validation-isolation",
+      "sha": "7beff7caf6ff5b52ffb0614834652bb5bbb81eb4",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/61-validation-isolation"
+    },
+    {
+      "ref": "refs/heads/v1/62-policy-corrections",
+      "sha": "5be91b5aeed87b4147e52493b8299e0ca2530769",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/62-policy-corrections"
+    },
+    {
+      "ref": "refs/heads/v1/7-38-manifest",
+      "sha": "45b97b68d5cd487eb6a0448a84e88bb8a870aea7",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-38-manifest"
+    },
+    {
+      "ref": "refs/heads/v1/7-38-manifest-final",
+      "sha": "f44b09e86ed922cd09fceaf25ec3f2a49ff6a7fd",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-38-manifest-final"
+    },
+    {
+      "ref": "refs/heads/v1/7-40-publication",
+      "sha": "7a524b3045389928beca1a25230e381a6ddb2711",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-40-publication"
+    },
+    {
+      "ref": "refs/heads/v1/7-40-publication-final",
+      "sha": "ca0912b58ddde53b2f354b72b45a9f37db242849",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-40-publication-final"
+    },
+    {
+      "ref": "refs/heads/v1/7-42-gate",
+      "sha": "ca0912b58ddde53b2f354b72b45a9f37db242849",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/heads/v1/7-42-gate-final",
+      "sha": "16ba4e5751df89d0055ec698b49f710a07b94565",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-42-gate-final"
+    },
+    {
+      "ref": "refs/heads/v1/7-46-catalogue",
+      "sha": "54ff2432e6f5d1b38c74ca32c59bac8f4a0d95a3",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-46-catalogue"
+    },
+    {
+      "ref": "refs/heads/v1/7-46-catalogue-combined",
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-46-catalogue-combined"
+    },
+    {
+      "ref": "refs/heads/v1/7-46-catalogue-final",
+      "sha": "d18956909e40f538f8f9efe177ba390eab6e03b3",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-46-catalogue-final"
+    },
+    {
+      "ref": "refs/heads/v1/7-47-install",
+      "sha": "05e03f9d5364cd1e7beb71ad482ed586ee21a5be",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-47-install"
+    },
+    {
+      "ref": "refs/heads/v1/7-48-browser",
+      "sha": "3d5bd4ed88df86e58fac623f09e5c3f42f969184",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-48-browser"
+    },
+    {
+      "ref": "refs/heads/v1/7-49-finder",
+      "sha": "a3092f91c6b0e6e414c109ad1259e072e1ad0530",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-49-finder"
+    },
+    {
+      "ref": "refs/heads/v1/7-51-content",
+      "sha": "7fe7e9ec693536ffffbdf2ddf6c88901b64ee157",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-51-content"
+    },
+    {
+      "ref": "refs/heads/v1/7-53-docs",
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/heads/v1/7-62-policy",
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-62-policy"
+    },
+    {
+      "ref": "refs/heads/v1/7-integration",
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": "refs/remotes/origin/v1/7-integration"
+    },
+    {
+      "ref": "refs/remotes/origin/HEAD",
+      "sha": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "refs/remotes/origin/main",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/main",
+      "sha": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/prototype/catalogue-personality",
+      "sha": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/prototype/security-check-flow",
+      "sha": "dd143a4dd2bb779b21b51bd4b3d96bd81f29b879",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/codex-patch-inventory",
+      "sha": "acaad6023466cd8fc2d255469aa8420d0f1d4f8a",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/extension-level-evidence",
+      "sha": "761c7b5f4840da170e29e3727d11482b528fc066",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/fork-pr-automerge",
+      "sha": "5c8e805b58b976de83f09037cc6ef016a51330b1",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/native-install-formats",
+      "sha": "af91f4a80e011bfee8061636f9342c4ed7e544b8",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/replaceable-skill-scanner",
+      "sha": "3005d63679cab27c99a9461de8a273bf9353340e",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/research/scan-extensibility",
+      "sha": "81dcee04714260754018d351bc0df30e18f253cd",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/38-minimal-manifest",
+      "sha": "17845ae3990b90fb93b87f66e744e1e71107e794",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/62-policy-corrections",
+      "sha": "5be91b5aeed87b4147e52493b8299e0ca2530769",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-38-manifest",
+      "sha": "45b97b68d5cd487eb6a0448a84e88bb8a870aea7",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-38-manifest-final",
+      "sha": "f44b09e86ed922cd09fceaf25ec3f2a49ff6a7fd",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-40-publication",
+      "sha": "7a524b3045389928beca1a25230e381a6ddb2711",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-40-publication-final",
+      "sha": "ca0912b58ddde53b2f354b72b45a9f37db242849",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-42-gate-final",
+      "sha": "16ba4e5751df89d0055ec698b49f710a07b94565",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-46-catalogue",
+      "sha": "54ff2432e6f5d1b38c74ca32c59bac8f4a0d95a3",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-46-catalogue-combined",
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-46-catalogue-final",
+      "sha": "d18956909e40f538f8f9efe177ba390eab6e03b3",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-47-install",
+      "sha": "05e03f9d5364cd1e7beb71ad482ed586ee21a5be",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-48-browser",
+      "sha": "3d5bd4ed88df86e58fac623f09e5c3f42f969184",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-49-finder",
+      "sha": "a3092f91c6b0e6e414c109ad1259e072e1ad0530",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-51-content",
+      "sha": "7fe7e9ec693536ffffbdf2ddf6c88901b64ee157",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-62-policy",
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/remotes/origin/v1/7-integration",
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/stash",
+      "sha": "4459037480867ac17c738a16a143f9c1b5deb00a",
+      "object_type": "commit",
+      "peeled_sha": "",
+      "symbolic_target": "",
+      "upstream": ""
+    },
+    {
+      "ref": "refs/tags/catalog-2026.10.01",
+      "sha": "3863008f9bfe668d9b7f0fab0d7b4a99b17b129d",
+      "object_type": "tag",
+      "peeled_sha": "246f032d1b99d594834e16e1654a37eb2c09ef56",
+      "symbolic_target": "",
+      "upstream": ""
+    }
+  ],
+  "current_remote_refs": [
+    {
+      "sha": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0",
+      "ref": "HEAD"
+    },
+    {
+      "sha": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0",
+      "ref": "refs/heads/main"
+    },
+    {
+      "sha": "c6c012a7d8b9a2606cb77c295945da697b0913c1",
+      "ref": "refs/heads/prototype/catalogue-personality"
+    },
+    {
+      "sha": "dd143a4dd2bb779b21b51bd4b3d96bd81f29b879",
+      "ref": "refs/heads/prototype/security-check-flow"
+    },
+    {
+      "sha": "acaad6023466cd8fc2d255469aa8420d0f1d4f8a",
+      "ref": "refs/heads/research/codex-patch-inventory"
+    },
+    {
+      "sha": "761c7b5f4840da170e29e3727d11482b528fc066",
+      "ref": "refs/heads/research/extension-level-evidence"
+    },
+    {
+      "sha": "5c8e805b58b976de83f09037cc6ef016a51330b1",
+      "ref": "refs/heads/research/fork-pr-automerge"
+    },
+    {
+      "sha": "af91f4a80e011bfee8061636f9342c4ed7e544b8",
+      "ref": "refs/heads/research/native-install-formats"
+    },
+    {
+      "sha": "3005d63679cab27c99a9461de8a273bf9353340e",
+      "ref": "refs/heads/research/replaceable-skill-scanner"
+    },
+    {
+      "sha": "81dcee04714260754018d351bc0df30e18f253cd",
+      "ref": "refs/heads/research/scan-extensibility"
+    },
+    {
+      "sha": "17845ae3990b90fb93b87f66e744e1e71107e794",
+      "ref": "refs/heads/v1/38-minimal-manifest"
+    },
+    {
+      "sha": "5be91b5aeed87b4147e52493b8299e0ca2530769",
+      "ref": "refs/heads/v1/62-policy-corrections"
+    },
+    {
+      "sha": "45b97b68d5cd487eb6a0448a84e88bb8a870aea7",
+      "ref": "refs/heads/v1/7-38-manifest"
+    },
+    {
+      "sha": "f44b09e86ed922cd09fceaf25ec3f2a49ff6a7fd",
+      "ref": "refs/heads/v1/7-38-manifest-final"
+    },
+    {
+      "sha": "7a524b3045389928beca1a25230e381a6ddb2711",
+      "ref": "refs/heads/v1/7-40-publication"
+    },
+    {
+      "sha": "ca0912b58ddde53b2f354b72b45a9f37db242849",
+      "ref": "refs/heads/v1/7-40-publication-final"
+    },
+    {
+      "sha": "16ba4e5751df89d0055ec698b49f710a07b94565",
+      "ref": "refs/heads/v1/7-42-gate-final"
+    },
+    {
+      "sha": "54ff2432e6f5d1b38c74ca32c59bac8f4a0d95a3",
+      "ref": "refs/heads/v1/7-46-catalogue"
+    },
+    {
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "ref": "refs/heads/v1/7-46-catalogue-combined"
+    },
+    {
+      "sha": "d18956909e40f538f8f9efe177ba390eab6e03b3",
+      "ref": "refs/heads/v1/7-46-catalogue-final"
+    },
+    {
+      "sha": "05e03f9d5364cd1e7beb71ad482ed586ee21a5be",
+      "ref": "refs/heads/v1/7-47-install"
+    },
+    {
+      "sha": "3d5bd4ed88df86e58fac623f09e5c3f42f969184",
+      "ref": "refs/heads/v1/7-48-browser"
+    },
+    {
+      "sha": "a3092f91c6b0e6e414c109ad1259e072e1ad0530",
+      "ref": "refs/heads/v1/7-49-finder"
+    },
+    {
+      "sha": "7fe7e9ec693536ffffbdf2ddf6c88901b64ee157",
+      "ref": "refs/heads/v1/7-51-content"
+    },
+    {
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440",
+      "ref": "refs/heads/v1/7-62-policy"
+    },
+    {
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "ref": "refs/heads/v1/7-integration"
+    },
+    {
+      "sha": "d00c5470891a7c04ceda598c0e7004f9383183b6",
+      "ref": "refs/pull/1/head"
+    },
+    {
+      "sha": "1e71ade05727863930f8ee483e18bcecb8ceee09",
+      "ref": "refs/pull/2/head"
+    },
+    {
+      "sha": "dea9bd121ed5f0f56c5537a97682a851a764bf9b",
+      "ref": "refs/pull/20/head"
+    },
+    {
+      "sha": "c15eb6dc79da78c89d4c478d943fe710be439361",
+      "ref": "refs/pull/3/head"
+    },
+    {
+      "sha": "7b7a07f144093d40b9f221adbbc7709612050423",
+      "ref": "refs/pull/4/head"
+    },
+    {
+      "sha": "d0228afdceb8e7bfedaadc76b1a66d5cf87e5220",
+      "ref": "refs/pull/56/head"
+    },
+    {
+      "sha": "71a4539de562d212ed451c20b2b96418f59821ce",
+      "ref": "refs/pull/57/head"
+    },
+    {
+      "sha": "76eb6cf0056c862bf25d3037ca9267d37d7816ac",
+      "ref": "refs/pull/58/head"
+    },
+    {
+      "sha": "dd143a4dd2bb779b21b51bd4b3d96bd81f29b879",
+      "ref": "refs/pull/59/head"
+    },
+    {
+      "sha": "975ca9faee90cbc46176ca0f80c4a3e0e5497096",
+      "ref": "refs/pull/6/head"
+    },
+    {
+      "sha": "17845ae3990b90fb93b87f66e744e1e71107e794",
+      "ref": "refs/pull/60/head"
+    },
+    {
+      "sha": "66b9db2d2fa098db20a28bd79d53a3d862c665ac",
+      "ref": "refs/pull/60/merge"
+    },
+    {
+      "sha": "5be91b5aeed87b4147e52493b8299e0ca2530769",
+      "ref": "refs/pull/63/head"
+    },
+    {
+      "sha": "84e7cf6ecf48106bc7b02f8925f857afa6590a06",
+      "ref": "refs/pull/63/merge"
+    },
+    {
+      "sha": "7beff7caf6ff5b52ffb0614834652bb5bbb81eb4",
+      "ref": "refs/pull/64/head"
+    },
+    {
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "ref": "refs/pull/65/head"
+    },
+    {
+      "sha": "d740e7108d6f4ba6c022d7169e133a5dc26f5d96",
+      "ref": "refs/pull/65/merge"
+    },
+    {
+      "sha": "3863008f9bfe668d9b7f0fab0d7b4a99b17b129d",
+      "ref": "refs/tags/catalog-2026.10.01"
+    },
+    {
+      "sha": "246f032d1b99d594834e16e1654a37eb2c09ef56",
+      "ref": "refs/tags/catalog-2026.10.01^{}"
+    }
+  ],
+  "current_worktree_refs": [
+    {
+      "sha": "d9da79c4f5856cb1aaa47f5963d63253efeecbe0",
+      "branch": "refs/heads/main"
+    },
+    {
+      "sha": "17845ae3990b90fb93b87f66e744e1e71107e794",
+      "branch": "refs/heads/v1/38-minimal-manifest"
+    },
+    {
+      "sha": "7beff7caf6ff5b52ffb0614834652bb5bbb81eb4",
+      "branch": "refs/heads/v1/61-validation-isolation"
+    },
+    {
+      "sha": "5be91b5aeed87b4147e52493b8299e0ca2530769",
+      "branch": "refs/heads/v1/62-policy-corrections"
+    },
+    {
+      "sha": "f44b09e86ed922cd09fceaf25ec3f2a49ff6a7fd",
+      "branch": "refs/heads/v1/7-38-manifest-final"
+    },
+    {
+      "sha": "7a524b3045389928beca1a25230e381a6ddb2711",
+      "branch": "refs/heads/v1/7-40-publication"
+    },
+    {
+      "sha": "ca0912b58ddde53b2f354b72b45a9f37db242849",
+      "branch": "refs/heads/v1/7-40-publication-final"
+    },
+    {
+      "sha": "ca0912b58ddde53b2f354b72b45a9f37db242849",
+      "branch": "refs/heads/v1/7-42-gate"
+    },
+    {
+      "sha": "16ba4e5751df89d0055ec698b49f710a07b94565",
+      "branch": "refs/heads/v1/7-42-gate-final"
+    },
+    {
+      "sha": "54ff2432e6f5d1b38c74ca32c59bac8f4a0d95a3",
+      "branch": "refs/heads/v1/7-46-catalogue"
+    },
+    {
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "branch": "refs/heads/v1/7-46-catalogue-combined"
+    },
+    {
+      "sha": "d18956909e40f538f8f9efe177ba390eab6e03b3",
+      "branch": "refs/heads/v1/7-46-catalogue-final"
+    },
+    {
+      "sha": "05e03f9d5364cd1e7beb71ad482ed586ee21a5be",
+      "branch": "refs/heads/v1/7-47-install"
+    },
+    {
+      "sha": "3d5bd4ed88df86e58fac623f09e5c3f42f969184",
+      "branch": "refs/heads/v1/7-48-browser"
+    },
+    {
+      "sha": "a3092f91c6b0e6e414c109ad1259e072e1ad0530",
+      "branch": "refs/heads/v1/7-49-finder"
+    },
+    {
+      "sha": "7fe7e9ec693536ffffbdf2ddf6c88901b64ee157",
+      "branch": "refs/heads/v1/7-51-content"
+    },
+    {
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "branch": "refs/heads/v1/7-53-docs"
+    },
+    {
+      "sha": "a1fee1ec4b9cbd0fdf6c6a39cd545f82cd43b440",
+      "branch": "refs/heads/v1/7-62-policy"
+    },
+    {
+      "sha": "a929f08074e7ef62c24a3c6b0a96501582535bc7",
+      "branch": "refs/heads/v1/7-integration"
+    }
+  ]
+}

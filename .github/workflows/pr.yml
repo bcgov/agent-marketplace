@@ -1,22 +1,21 @@
 name: PR
 
 # Runs on every pull request. Four jobs, three phases:
-#   1. fork-gate  — records fork provenance; subsequent checks are read-only
+#   1. fork-gate  â€” records fork provenance; subsequent checks are read-only
 #      and do not receive secrets or execute contributed package content.
-#   2. lint-tests — formats, lints, and unit-tests the tooling that produces
+#   2. lint-tests â€” formats, lints, and unit-tests the tooling that produces
 #      skills (scripts/, tests/, pyproject.toml). Runs after fork-gate: if the
 #      generator is broken, validating skill output is meaningless.
-#   3. skills     — validates the SKILL.md profiles the PR changed. Gated on
+#   3. skills     â€” validates the SKILL.md profiles the PR changed. Gated on
 #      lint-tests passing.
-#   4. results    — always runs (`if: always()`), needs every other job, and
+#   4. results    â€” always runs (`if: always()`), needs every other job, and
 #      fails if any of them failed or was cancelled. This is the SINGLE
 #      required status check on `main`, so we can add or rename jobs in this
 #      file without touching branch protection.
 #
 # Action pinning policy:
 #   * First-party actions owned by GitHub (actions/*) are pinned to a major
-#     version tag — GitHub guarantees those tags forward-only. Easier to read,
-#     Dependabot still bumps majors.
+#     version tag. Dependabot bumps majors.
 #   * Third-party actions are pinned to an immutable commit SHA with the
 #     human-readable version in a trailing comment, so a tag hijack cannot
 #     silently swap the action's code under us. Dependabot bumps these too.
@@ -50,7 +49,7 @@ jobs:
           set -euo pipefail
           echo "Read-only validation for $HEAD_REPO targeting $BASE_REPO"
 
-  # 1. Validate the codebase that produces skills — runs before skill validation.
+  # 1. Validate the codebase that produces skills â€” runs before skill validation.
   lint-tests:
     needs: fork-gate
     runs-on: ubuntu-24.04
@@ -74,10 +73,21 @@ jobs:
       - name: Run unit tests
         run: uv run pytest -q tests/
 
+      - name: Flag Extension path renames for review
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-status -M "$BASE_SHA" HEAD -- skills prompts instructions agents |
+            awk -F '\t' '$1 ~ /^R/ {
+              print "Extension path rename: " $2 " -> " $3
+              print "- Extension path rename: `" $2 "` -> `" $3 "`"
+            }' | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Run Security-owned policy fixtures
         run: uv run pytest -q tests/security-policy/
 
-  # 2. Validate the skill profiles the PR changed — only after codebase passes.
+  # 2. Validate the skill profiles the PR changed â€” only after codebase passes.
   skills:
     needs: lint-tests
     runs-on: ubuntu-24.04
@@ -102,6 +112,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
@@ -118,22 +130,22 @@ jobs:
         run: uv run python scripts/marketplace.py check
 
       - name: Validate marketplace packages and generated projections
-        run: uv run python scripts/marketplace.py validate
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: uv run python scripts/marketplace.py validate --base "$BASE_SHA"
 
-      - name: Regenerate and check CODEOWNERS
+      - name: Build isolated Catalogue and check CODEOWNERS
         run: |
-          uv run python scripts/marketplace.py generate
+          uv run python scripts/marketplace.py generate --output "$RUNNER_TEMP/marketplace-build"
           git diff --exit-code -- .github/CODEOWNERS
 
       - name: Build documentation
-        run: bash docs/build.sh
+        run: bash docs/build.sh "$RUNNER_TEMP/marketplace-build/docs"
 
-      - name: Reject generated documentation drift
-        run: git diff --exit-code -- catalog docs
 
   # 3. Aggregator. Always runs (even if upstream jobs failed or were cancelled)
   #    and fails if any required job failed or was cancelled. Branch protection
-  #    only needs to require THIS one check — adding or renaming jobs above
+  #    only needs to require THIS one check â€” adding or renaming jobs above
   #    never requires updating branch protection again.
   #
   #    Note: a `skipped` result is treated as a pass on purpose, so jobs we add

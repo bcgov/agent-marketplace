@@ -17,14 +17,6 @@ class CreateError(Exception):
   """Represent an authoring or submission error safe to show to the user."""
 
 
-EXTENSION_TYPE_STATUS = {
-  "skill": "active",
-  "prompt": "active",
-  "instructions": "active",
-  "agent": "active",
-  "hook": "deferred",
-  "mcp": "deferred",
-}
 TYPE_DIRECTORIES = {
   "skill": "skills",
   "prompt": "prompts",
@@ -33,21 +25,10 @@ TYPE_DIRECTORIES = {
 }
 ARTIFACT_FILENAMES = {
   "skill": "SKILL.md",
-  "prompt": "prompt.prompt.md",
-  "instructions": "instructions.instructions.md",
-  "agent": "agent.agent.md",
+  "prompt": "{name}.prompt.md",
+  "instructions": "{name}.instructions.md",
+  "agent": "{name}.agent.md",
 }
-
-
-def _require_active_type(extension_type: str) -> None:
-  """Reject types without a complete marketplace adapter."""
-  status = EXTENSION_TYPE_STATUS.get(extension_type)
-  if status is None:
-    raise CreateError(f"unsupported extension type: {extension_type}")
-  if status != "active":
-    raise CreateError(
-      f"extension type {extension_type!r} is {status}; scaffolding is unavailable"
-    )
 
 
 def _run(command: list[str], cwd: Path, capture: bool = True) -> str:
@@ -75,7 +56,8 @@ def _package_dir(
   """Validate package metadata and return its canonical asset directory."""
   if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name) or len(name) > 64:
     raise CreateError("extension name must be kebab-case and at most 64 characters")
-  _require_active_type(extension_type)
+  if extension_type not in TYPE_DIRECTORIES:
+    raise CreateError(f"unsupported extension type: {extension_type}")
   registry = marketplace / "config" / "specialties.yaml"
   if not registry.exists():
     registry = Path(__file__).resolve().parents[1] / "config" / "specialties.yaml"
@@ -90,12 +72,19 @@ def _package_dir(
 
 def _skill_template(name: str, description: str, display_name: str) -> str:
   """Render a portable SKILL.md authoring template."""
+  serialized = yaml.safe_dump(
+    {
+      "name": name,
+      "description": description,
+      "owner": "bcgov",
+      "tags": ["bcgov"],
+      "license": "Apache-2.0",
+    },
+    sort_keys=False,
+    allow_unicode=False,
+  ).rstrip()
   return f"""---
-name: {name}
-description: {description}
-owner: bcgov
-tags: [bcgov]
-license: Apache-2.0
+{serialized}
 ---
 
 # {display_name}
@@ -125,7 +114,7 @@ no bundled references are required.
 """
 
 
-def _artifact_template(
+def native_template(
   extension_type: str, name: str, description: str, display_name: str
 ) -> str:
   """Render a portable starter file for one supported agent asset type."""
@@ -156,27 +145,19 @@ def _artifact_template(
 
 def _manifest(args) -> dict:
   """Build author-controlled marketplace metadata for a new package."""
-  return {
-    "schema-version": "bcgov-extension/v1alpha1",
-    "id": f"bcgov-public/{args.name}",
-    "display-name": args.display_name,
-    "summary": args.summary,
-    "publisher": "Province of British Columbia",
-    "maintainers": args.maintainer,
-    "support": args.support,
-    "license": "Apache-2.0",
-    "lifecycle": "active",
-    "prerequisites": [],
-    "compatibility": {"not-ready-on": getattr(args, "not_ready_on", [])},
-    "capabilities": {
-      "filesystem": {"read": [], "write": []},
-      "network": [],
-      "commands": [],
-      "environment-variables": [],
-      "secret-names": [],
-      "data-classes": ["PUBLIC"],
-    },
-  }
+  manifest = {"maintainers": args.maintainer, "capabilities": "none"}
+  if args.display_name != args.name:
+    manifest["display-name"] = args.display_name
+  if args.summary != args.description:
+    manifest["summary"] = args.summary
+  if (
+    getattr(args, "support", "https://github.com/bcgov/agent-marketplace/issues")
+    != "https://github.com/bcgov/agent-marketplace/issues"
+  ):
+    manifest["support"] = args.support
+  if getattr(args, "not_ready_on", []):
+    manifest["compatibility"] = {"not-ready-on": args.not_ready_on}
+  return manifest
 
 
 def initialize(args) -> dict:
@@ -184,14 +165,14 @@ def initialize(args) -> dict:
   extension_type = getattr(args, "extension_type", "skill")
   marketplace = args.marketplace.resolve()
   package = _package_dir(marketplace, args.name, extension_type, args.specialty)
-  for directory in TYPE_DIRECTORIES.values():
-    existing = marketplace / directory / args.specialty / args.name
-    if existing.exists():
-      raise CreateError(f"extension id is already in use: bcgov-public/{args.name}")
+  if any((marketplace / TYPE_DIRECTORIES[extension_type]).glob(f"*/{args.name}")):
+    raise CreateError(
+      f"extension id is already in use: bcgov-public/{extension_type}/{args.name}"
+    )
   package.mkdir(parents=True)
-  artifact_filename = ARTIFACT_FILENAMES[extension_type]
+  artifact_filename = ARTIFACT_FILENAMES[extension_type].format(name=args.name)
   (package / artifact_filename).write_text(
-    _artifact_template(extension_type, args.name, args.description, args.display_name),
+    native_template(extension_type, args.name, args.description, args.display_name),
     encoding="utf-8",
   )
   (package / "bcgov-extension.yaml").write_text(
@@ -326,12 +307,7 @@ def submit(args) -> dict:
     raise CreateError(f"checkout is on {current_branch!r}, expected {args.branch!r}")
   _validate(marketplace, args.name, args.specialty, extension_type)
   package_path = package.relative_to(marketplace).as_posix()
-  allowed = (
-    f"{package_path}/",
-    "catalog/catalog.json",
-    "docs/assets/catalog.json",
-    "docs/_generated/catalog-cards.html",
-  )
+  allowed = (f"{package_path}/",)
   changed = _run(["git", "status", "--porcelain"], marketplace).splitlines()
   unexpected = []
   for line in changed:
@@ -348,9 +324,6 @@ def submit(args) -> dict:
       "git",
       "add",
       package_path,
-      "catalog/catalog.json",
-      "docs/assets/catalog.json",
-      "docs/_generated/catalog-cards.html",
     ],
     marketplace,
   )
@@ -409,7 +382,7 @@ def _parser() -> argparse.ArgumentParser:
   initialize_parser.add_argument("--marketplace", type=Path, required=True)
   initialize_parser.add_argument("--name", required=True)
   initialize_parser.add_argument(
-    "--extension-type", choices=sorted(EXTENSION_TYPE_STATUS), default="skill"
+    "--extension-type", choices=sorted(TYPE_DIRECTORIES), default="skill"
   )
   initialize_parser.add_argument("--description", required=True)
   initialize_parser.add_argument("--display-name", required=True)
@@ -424,14 +397,14 @@ def _parser() -> argparse.ArgumentParser:
   preview_parser.add_argument("--marketplace", type=Path, required=True)
   preview_parser.add_argument("--name", required=True)
   preview_parser.add_argument(
-    "--extension-type", choices=sorted(EXTENSION_TYPE_STATUS), default="skill"
+    "--extension-type", choices=sorted(TYPE_DIRECTORIES), default="skill"
   )
   preview_parser.add_argument("--specialty", default="community")
   submit_parser = commands.add_parser("submit")
   submit_parser.add_argument("--marketplace", type=Path, required=True)
   submit_parser.add_argument("--name", required=True)
   submit_parser.add_argument(
-    "--extension-type", choices=sorted(EXTENSION_TYPE_STATUS), default="skill"
+    "--extension-type", choices=sorted(TYPE_DIRECTORIES), default="skill"
   )
   submit_parser.add_argument("--branch", required=True)
   submit_parser.add_argument("--title", required=True)

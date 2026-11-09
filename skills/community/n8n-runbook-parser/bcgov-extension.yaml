@@ -1,14 +1,8 @@
-schema-version: bcgov-extension/v1alpha1
-id: bcgov-public/n8n-runbook-parser
 display-name: n8n Runbook Parser
 summary: Extract code from prose runbooks into version-controlled snippets, detect drift, and backport reviewed fixes to source documentation.
-publisher: Province of British Columbia
 maintainers:
   - "@mishraomp"
   - "@DerekRoberts"
-support: https://github.com/bcgov/agent-marketplace/issues
-license: Apache-2.0
-lifecycle: active
 prerequisites:
   - Python 3.12 or newer
   - Read access to each configured source document
@@ -19,10 +13,12 @@ capabilities:
     write:
       - generated snippets and parser state after confirmation
   network:
-    - github.com
-    - raw.githubusercontent.com
-    - img.shields.io
+    - "*"
   commands:
+    - python
+    - shellcheck
+    - jq
+    - bash
     - doc_links.py
     - parser.py
     - rb_commands.py
@@ -32,8 +28,19 @@ capabilities:
     - rb_model.py
     - rb_reconstruct.py
     - rb_seal.py
+  # Includes shell-local/template variable references recognized by the static scan.
   environment-variables:
-    - "*"
+    - RUNBOOK_PARSER_CACHE
+    - CHECK
+    - FOO
+    - GROUP
+    - HERE
+    - NAMESPACE
+    - PARAM
+    - PRIMARY_POD
+    - PRODUCT_VERSION
+    - SEP
+    - VAR
   secret-names: []
   data-classes:
     - INTERNAL

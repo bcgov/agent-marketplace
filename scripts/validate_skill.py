@@ -26,6 +26,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 import yaml
 from marketplace import MarketplaceError, load_specialties
@@ -119,7 +120,15 @@ def parse_frontmatter(text: str):
 # --- Validation -------------------------------------------------------------
 
 
-def validate_frontmatter(data) -> list:
+class NativeIssue(NamedTuple):
+  """Keep native-rule detail separate from safe public correction guidance."""
+
+  field: str
+  message: str
+  correction: str
+
+
+def frontmatter_issues(data) -> list[NativeIssue]:
   """Check the frontmatter against the spec's field rules.
 
   Confirms the required fields are present, that ``name`` is a well-formed
@@ -131,8 +140,9 @@ def validate_frontmatter(data) -> list:
     data: The parsed frontmatter mapping, or ``None`` if parsing failed.
 
   Returns:
-    A list of error strings, one per problem found. Empty when the frontmatter
-    satisfies the spec (or when ``data`` is ``None``, since a parse error has
+    Structured issues with field, CLI detail and safe public correction guidance.
+    Empty when the frontmatter satisfies the spec (or when ``data`` is ``None``,
+    since a parse error has
     already been reported upstream).
   """
   errors = []
@@ -141,21 +151,40 @@ def validate_frontmatter(data) -> list:
 
   for field in REQUIRED_FRONTMATTER:
     val = data.get(field)
-    if val is None or (isinstance(val, str) and not val.strip()):
-      errors.append(f"frontmatter missing required field '{field}'")
+    if not isinstance(val, str) or not val.strip():
+      errors.append(
+        NativeIssue(
+          field,
+          f"frontmatter missing required non-empty string field '{field}'",
+          "Add a non-empty string.",
+        )
+      )
 
   name = data.get("name")
   if isinstance(name, str) and name.strip():
     n = name.strip()
     if len(n) > MAX_NAME_LEN:
+      correction = f"Use at most {MAX_NAME_LEN} characters."
       errors.append(
-        f"frontmatter 'name' is {len(n)} chars — exceeds the {MAX_NAME_LEN}-char limit"
+        NativeIssue(
+          "name",
+          f"frontmatter 'name' exceeds the {MAX_NAME_LEN}-char limit",
+          correction,
+        )
       )
     if not NAME_RE.match(n):
+      correction = "Use kebab-case: lowercase letters and digits "
+      correction += (
+        "in hyphen-separated groups, with no leading, trailing, or consecutive hyphens."
+      )
       errors.append(
-        "frontmatter 'name' must be kebab-case: lowercase letters and digits "
-        "in hyphen-separated groups, with no leading, trailing, or consecutive "
-        "hyphens"
+        NativeIssue(
+          "name",
+          "frontmatter 'name' must be kebab-case: lowercase letters and digits "
+          "in hyphen-separated groups, with no leading, trailing, or consecutive "
+          "hyphens",
+          correction,
+        )
       )
 
   desc = data.get("description")
@@ -163,22 +192,41 @@ def validate_frontmatter(data) -> list:
     d = desc.strip()
     if len(d) > MAX_DESCRIPTION_LEN:
       errors.append(
-        f"frontmatter 'description' is {len(d)} chars — exceeds the "
-        f"{MAX_DESCRIPTION_LEN}-char limit"
+        NativeIssue(
+          "description",
+          f"frontmatter 'description' is {len(d)} chars — exceeds the "
+          f"{MAX_DESCRIPTION_LEN}-char limit",
+          f"Use at most {MAX_DESCRIPTION_LEN} characters.",
+        )
       )
     if "<" in d or ">" in d:
       errors.append(
-        "frontmatter 'description' must not contain angle brackets ('<' or '>')"
+        NativeIssue(
+          "description",
+          "frontmatter 'description' must not contain angle brackets ('<' or '>')",
+          "Remove angle brackets from the description.",
+        )
       )
 
   for key in data:
     if key not in ALLOWED_FRONTMATTER:
       errors.append(
-        f"frontmatter has unexpected key '{key}' — allowed keys are: "
-        f"{', '.join(sorted(ALLOWED_FRONTMATTER))}"
+        NativeIssue(
+          "<root>",
+          f"frontmatter has unexpected key '{key}' — allowed keys are: "
+          f"{', '.join(sorted(ALLOWED_FRONTMATTER))}",
+          "Use only permitted frontmatter fields: "
+          + ", ".join(sorted(ALLOWED_FRONTMATTER))
+          + ".",
+        )
       )
 
   return errors
+
+
+def validate_frontmatter(data) -> list[str]:
+  """Check parsed native frontmatter using the shared portable skill rules."""
+  return [issue.message for issue in frontmatter_issues(data)]
 
 
 def _heading_positions(body: str):
@@ -330,7 +378,7 @@ def validate_length(text: str) -> list:
   return []
 
 
-def validate_name_matches_dir(data, skill_dir: str) -> list:
+def name_directory_issues(data, skill_dir: str) -> list[NativeIssue]:
   """Check that the frontmatter ``name`` equals the skill's directory name.
 
   The name is the skill's identity — it must match the directory so the
@@ -341,7 +389,7 @@ def validate_name_matches_dir(data, skill_dir: str) -> list:
     skill_dir: Path to the directory that holds the skill's ``SKILL.md``.
 
   Returns:
-    A single-item error list when a valid ``name`` does not match the directory
+    A single structured issue when a valid ``name`` does not match the directory
     basename, otherwise an empty list.
   """
   if not isinstance(data, dict):
@@ -352,10 +400,19 @@ def validate_name_matches_dir(data, skill_dir: str) -> list:
   dirname = os.path.basename(os.path.normpath(skill_dir))
   if name.strip() != dirname:
     return [
-      f"frontmatter 'name' ('{name.strip()}') must match the skill directory "
-      f"name ('{dirname}')"
+      NativeIssue(
+        "name",
+        f"frontmatter 'name' ('{name.strip()}') must match the skill directory "
+        f"name ('{dirname}')",
+        "Set the native name to the package directory name.",
+      )
     ]
   return []
+
+
+def validate_name_matches_dir(data, skill_dir: str) -> list[str]:
+  """Check native name and directory agreement using the shared skill rule."""
+  return [issue.message for issue in name_directory_issues(data, skill_dir)]
 
 
 def validate_resource_layout(skill_dir: str) -> list:

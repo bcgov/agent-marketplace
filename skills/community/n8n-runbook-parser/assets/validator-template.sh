@@ -7,7 +7,7 @@
 # Cleaned from SOURCE NAME (a validator).
 # Input:     stdin JSON — the merged collection output. Read only the keys you check, and
 #            TOLERATE missing data (emit status "skip" rather than failing).
-# Read-only: a pure check; no cluster/db access. Idempotent, safe to re-run any time.
+# Read-only: a pure check; no cluster/db access. Review idempotency and effects for the selected inputs.
 # Output:    stdout JSON { check, status, message, docs, sources }
 #              check   = the report section this verdict sits next to (e.g. "cluster")
 #              status  = ok | warn | error | skip   (skip = the data was not present)
